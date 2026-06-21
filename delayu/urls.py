@@ -6,12 +6,14 @@ from . import (
     api_views_integration,
     views,
     views_dadata,
+    views_deploy,
     views_public,
     views_qr,
     views_uzhv_wizard,
 )
 
 urlpatterns = [
+    path("internal/deploy/", views_deploy.deploy_webhook, name="deploy-webhook"),
     # Остатки демо-шаблона Materio (часто попадают в ?next= после входа)
     path("index/", RedirectView.as_view(pattern_name="platform-home", permanent=False)),
     path("dashboard/", RedirectView.as_view(pattern_name="platform-dashboard", permanent=False)),

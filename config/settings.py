@@ -307,6 +307,9 @@ DELAYU_WEBHOOK_URL = os.getenv("DELAYU_WEBHOOK_URL", "")
 DELAYU_WEBHOOK_SECRET = os.getenv("DELAYU_WEBHOOK_SECRET", "")
 DELAYU_N8N_WEBHOOK_URL = os.getenv("DELAYU_N8N_WEBHOOK_URL", "")
 
+# GitHub Actions → POST /internal/deploy/ (HTTPS, без inbound SSH)
+DEPLOY_WEBHOOK_TOKEN = os.getenv("DEPLOY_WEBHOOK_TOKEN", "")
+
 # Публичная форма обращений УЖВ (пусто = без токена, только для dev)
 UZHV_PUBLIC_APPEAL_TOKEN = os.getenv("UZHV_PUBLIC_APPEAL_TOKEN", "")
 

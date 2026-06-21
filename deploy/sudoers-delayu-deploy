@@ -1,0 +1,3 @@
+# Позволяет gunicorn (delayu) запускать деплой без пароля.
+# Установка: sudo cp deploy/sudoers-delayu-deploy /etc/sudoers.d/delayu-deploy && sudo chmod 440 /etc/sudoers.d/delayu-deploy && sudo visudo -c
+delayu ALL=(root) NOPASSWD: /opt/delayu/deploy/webhook-run.sh
