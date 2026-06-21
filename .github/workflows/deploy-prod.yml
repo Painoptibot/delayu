@@ -1,12 +1,10 @@
 # Деплой на VPS по push в main.
 #
-# Settings → Secrets and variables → Actions (имена ТОЧНО так):
-#   DEPLOY_HOST      dab7798018f1.vps.myjino.ru
-#   DEPLOY_USER      root
-#   DEPLOY_PATH      /opt/delayu
-#   DEPLOY_PASSWORD  пароль root
-#
-# НЕ добавляйте DEPLOY_SSH_KEY, если входите по паролю.
+# Secrets (Settings → Actions):
+#   DEPLOY_HOST       dab7798018f1.vps.myjino.ru
+#   DEPLOY_USER       root
+#   DEPLOY_SSH_KEY    приватный ключ (рекомендуется, см. docs/deploy-github-actions.md)
+#   DEPLOY_PASSWORD   пароль root (если без ключа)
 
 name: Deploy production
 
@@ -24,12 +22,16 @@ jobs:
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
           port: 22
           script_stop: true
           command_timeout: 15m
           script: |
             set -euo pipefail
-            cd "/opt/delayu"
-            sudo -u delayu git pull --ff-only
-            sudo bash deploy/update-prod.sh
+            cd /opt/delayu
+            sudo -u delayu git config --global --add safe.directory /opt/delayu
+            sudo -u delayu git pull --ff-only origin main
+            bash /opt/delayu/deploy/deploy-app.sh
+            sudo -u delayu bash -c 'cd /opt/delayu && .venv/bin/python manage.py link_superusers'
+            systemctl is-active delayu
