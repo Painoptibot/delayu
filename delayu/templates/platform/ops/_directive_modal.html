@@ -1,0 +1,13 @@
+<div class="modal-header">
+  <h5 class="modal-title">Поручение {{ directive.number }}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+  <p><strong>Тема:</strong> {{ directive.title }}</p>
+  <p><strong>Исполнитель:</strong> {{ directive.assignee.get_username }}</p>
+  <p><strong>Срок:</strong> {{ directive.due_date|date:"d.m.Y" }}</p>
+  <p><strong>Статус:</strong> {{ directive.get_status_display }}</p>
+  {% if directive.instruction %}<p>{{ directive.instruction }}</p>{% endif %}
+  {% if directive.report_text %}<hr><p><strong>Отчёт:</strong> {{ directive.report_text }}</p>{% endif %}
+  {% if directive.case %}<p><a href="{% url 'platform-case-detail' directive.case_id %}">Дело #{{ directive.case_id }}</a></p>{% endif %}
+</div>

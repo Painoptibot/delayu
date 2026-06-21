@@ -1,0 +1,29 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ops/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="mb-1">{{ classifier.name }}</h4>
+    <p class="mb-0 text-muted"><code>{{ classifier.code }}</code></p>
+  </div>
+  {% if can_create %}<a href="{% url 'platform-nsi-value-create' classifier.pk %}" class="btn btn-primary btn-sm">Значение</a>{% endif %}
+</div>
+{% if classifier.description %}<p class="text-body-secondary">{{ classifier.description }}</p>{% endif %}
+<div class="card">
+  <table class="table mb-0">
+    <thead><tr><th>Код</th><th>Наименование</th><th>Родитель</th><th>Порядок</th></tr></thead>
+    <tbody>
+      {% for v in values %}
+      <tr>
+        <td><code>{{ v.code }}</code></td>
+        <td>{{ v.name }}</td>
+        <td>{% if v.parent %}{{ v.parent.code }}{% else %}—{% endif %}</td>
+        <td>{{ v.sort_order }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="4" class="text-muted text-center py-3">Нет значений</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<a href="{% url 'platform-nsi' %}" class="btn btn-label-secondary btn-sm mt-3">← К списку</a>
+{% endblock %}

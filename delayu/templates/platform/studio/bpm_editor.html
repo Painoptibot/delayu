@@ -1,0 +1,38 @@
+{% extends "platform/studio/_base.html" %}
+{% block studio_content %}
+<div class="card" data-studio="bpm" data-save-url="{% url 'platform-studio-save' 'bpm' %}" data-template-id="{{ template.pk|default:'' }}">
+  <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <h5 class="mb-0">BPMN-редактор</h5>
+    {% if templates %}
+    <select class="form-select form-select-sm w-auto" onchange="if(this.value) location.href='{% url 'platform-studio-bpm' %}'+this.value+'/'">
+      {% for t in templates %}
+      <option value="{{ t.pk }}" {% if template and template.pk == t.pk %}selected{% endif %}>{{ t.code }} — {{ t.name }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <p class="small text-muted">Узлы процесса</p>
+        <div id="studioBpmPalette" class="studio-palette">
+          {% for n in node_types %}
+          <div class="studio-palette-item" draggable="true" data-node-type="{{ n.type }}" data-node-color="{{ n.color }}">
+            <span class="studio-node-dot me-2" style="background:{{ n.color }}"></span>{{ n.label }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-md-9">
+        <div id="studioBpmCanvas" class="studio-flow-canvas border rounded position-relative">
+          <svg id="studioBpmSvg" class="studio-flow-svg"></svg>
+          <div id="studioBpmNodes" class="studio-flow-nodes"></div>
+        </div>
+        <script type="application/json" id="studioBpmJson">{{ diagram_json|safe }}</script>
+        <p class="small text-muted mt-2">Клик по узлу — связать со следующим. Двойной клик — удалить.</p>
+        <div class="text-end mt-2"><button type="button" class="btn btn-primary" id="studioBpmSave">Сохранить процесс</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

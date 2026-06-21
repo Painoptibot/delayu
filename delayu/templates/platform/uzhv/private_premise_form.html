@@ -1,0 +1,17 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">{{ page_title }}</h5></div>
+  <div class="card-body">
+    <form method="post" action="{% if premise %}{% url 'uzhv-private-premise-edit' premise.pk %}{% else %}{% url 'uzhv-private-premise-create' %}{% endif %}">
+      {% csrf_token %}
+      {% include "platform/uzhv/_form_fields.html" %}
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <a href="{% url 'uzhv-private-premises' %}" class="btn btn-outline-secondary">К списку</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

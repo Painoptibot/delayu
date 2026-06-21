@@ -1,0 +1,60 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="mb-0 text-body-secondary">Звонки, совещания, транскрипты (M46 / M62)</p>
+  </div>
+  {% if can_create %}<a href="{% url 'platform-audio-upload' %}" class="btn btn-primary btn-sm"><i class="ri-upload-2-line me-1"></i>Загрузить</a>{% endif %}
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="card card-border-shadow-primary"><div class="card-body py-3"><p class="small text-muted mb-0">Всего</p><h4 class="mb-0">{{ metrics.total }}</h4></div></div></div>
+  <div class="col-6 col-md-3"><div class="card card-border-shadow-success"><div class="card-body py-3"><p class="small text-muted mb-0">С транскриптом</p><h4 class="mb-0">{{ metrics.with_transcript }}</h4></div></div></div>
+  <div class="col-6 col-md-3"><div class="card card-border-shadow-info"><div class="card-body py-3"><p class="small text-muted mb-0">Звонки</p><h4 class="mb-0">{{ metrics.calls }}</h4></div></div></div>
+  <div class="col-6 col-md-3"><div class="card card-border-shadow-warning"><div class="card-body py-3"><p class="small text-muted mb-0">Истекает хранение</p><h4 class="mb-0">{{ metrics.expiring_soon }}</h4></div></div></div>
+</div>
+<div class="card mb-3"><div class="card-body">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-4"><input name="q" class="form-control form-control-sm" value="{{ search_q }}" placeholder="Поиск"></div>
+    <div class="col-md-3">
+      <select name="source_type" class="form-select form-select-sm">
+        <option value="">Все типы</option>
+        {% for val, label in source_choices %}<option value="{{ val }}" {% if filter_source == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">Найти</button></div>
+  </form>
+</div></div>
+<div class="card">
+  <table class="table table-hover mb-0 align-middle">
+    <thead><tr><th>Запись</th><th>Тип</th><th>Дело</th><th>Длит.</th><th>Транскрипт</th><th></th></tr></thead>
+    <tbody>
+      {% for i in items %}
+      <tr>
+        <td><strong>{{ i.title }}</strong><div class="small text-muted">{{ i.recorded_at|date:"d.m.Y H:i"|default:i.created_at|date:"d.m.Y" }}</div></td>
+        <td>{{ i.get_source_type_display }}</td>
+        <td>{% if i.case %}<a href="{% url 'platform-case-detail' i.case_id %}">{{ i.case.number }}</a>{% else %}—{% endif %}</td>
+        <td>{{ i.duration_sec }} с</td>
+        <td>{% if i.transcript %}<span class="badge bg-label-success">есть</span>{% else %}—{% endif %}</td>
+        <td class="text-end">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary audio-open" data-modal-url="{% url 'platform-audio-modal' i.pk %}"><i class="ri-eye-line"></i></button>
+          <a href="{% url 'platform-audio-detail' i.pk %}" class="btn btn-sm btn-icon btn-text-primary"><i class="ri-external-link-line"></i></a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Записей нет</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="modal fade" id="audioModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Запись</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="audioModalBody"></div>
+  </div></div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-audio-list.js' %}"></script>{% endblock %}

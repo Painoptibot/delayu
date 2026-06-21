@@ -1,0 +1,37 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/ops/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="mb-0 text-body-secondary">Справочники для выпадающих списков в формах: пол, статусы дел, приоритеты задач, типы документов и др. Изменения здесь сразу отражаются в формах.</p>
+  </div>
+  {% if can_create %}<a href="{% url 'platform-nsi-create' %}" class="btn btn-primary btn-sm">Справочник</a>{% endif %}
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-sm-4"><div class="card card-border-shadow-primary"><div class="card-body"><p class="small text-muted mb-1">Справочников</p><h4 class="mb-0">{{ metrics.classifiers }}</h4></div></div></div>
+  <div class="col-sm-4"><div class="card card-border-shadow-success"><div class="card-body"><p class="small text-muted mb-1">Активных</p><h4 class="mb-0">{{ metrics.classifiers_active }}</h4></div></div></div>
+  <div class="col-sm-4"><div class="card card-border-shadow-info"><div class="card-body"><p class="small text-muted mb-1">Значений</p><h4 class="mb-0">{{ metrics.values }}</h4></div></div></div>
+</div>
+<div class="card">
+  <table class="table table-hover mb-0">
+    <thead><tr>        <th>Код</th><th>Наименование</th><th>Описание</th><th>Значений</th><th></th></tr></thead>
+    <tbody>
+      {% for c in classifiers %}
+      <tr>
+        <td><code>{{ c.code }}</code></td>
+        <td>{{ c.name }}{% if not c.is_active %} <span class="badge bg-label-secondary">выкл</span>{% endif %}</td>
+        <td class="small text-muted">{{ c.description|truncatechars:48|default:"—" }}</td>
+        <td>{{ c.value_count }}</td>
+        <td><a href="{% url 'platform-nsi-detail' c.pk %}" class="btn btn-sm btn-outline-primary">Открыть</a></td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="text-muted text-center py-4">Справочники не созданы. Запустите: <code>python manage.py seed_nsi_classifiers</code></td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

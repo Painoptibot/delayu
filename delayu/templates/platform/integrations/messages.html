@@ -1,0 +1,73 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/integrations/_nav.html" %}
+<h4 class="mb-3">{{ page_title }}</h4>
+<div class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-3 align-items-center">
+  <span class="small"><strong>Очередь:</strong> {{ queue_metrics.queue_depth|default:queue_metrics.pending }}</span>
+  <span class="small text-danger"><strong>Dead letter:</strong> {{ queue_metrics.dead_letter|default:0 }}</span>
+  <span class="small"><strong>Ошибки:</strong> {{ queue_metrics.failed }}</span>
+  {% if can_change %}
+  <form method="post" class="ms-auto">{% csrf_token %}
+    <input type="hidden" name="action" value="process_queue">
+    <button class="btn btn-sm btn-warning">Обработать очередь (#34)</button>
+  </form>
+  {% endif %}
+</div></div>
+<div class="card mb-3"><div class="card-body">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">Статус</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="">Все</option>
+        {% for val, label in status_choices %}<option value="{{ val }}" {% if filter_status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Коннектор</label>
+      <select name="endpoint" class="form-select form-select-sm">
+        <option value="">Все</option>
+        {% for e in endpoints %}<option value="{{ e.pk }}" {% if filter_endpoint == e.pk|stringformat:"s" %}selected{% endif %}>{{ e.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100">Найти</button></div>
+  </form>
+</div></div>
+<div class="card">
+  <table class="table table-hover table-sm mb-0">
+    <thead><tr><th>Время</th><th>Коннектор</th><th>Напр.</th><th>Статус</th><th>Ретраи</th><th></th></tr></thead>
+    <tbody>
+      {% for m in messages %}
+      <tr>
+        <td class="small">{{ m.created_at|date:"d.m.Y H:i" }}</td>
+        <td>{{ m.endpoint.code }}</td>
+        <td>{{ m.get_direction_display }}</td>
+        <td><span class="badge bg-label-{% if m.status == 'failed' or m.status == 'dead_letter' %}danger{% elif m.status == 'sent' or m.status == 'received' %}success{% else %}warning{% endif %}">{{ m.get_status_display }}</span></td>
+        <td>{{ m.retry_count }}/{{ m.endpoint.max_retries }}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary int-msg-open" data-modal-url="{% url 'platform-integration-message-modal' m.pk %}"><i class="ri-eye-line"></i></button>
+          {% if m.status == 'failed' or m.status == 'pending' or m.status == 'dead_letter' %}
+          <form method="post" action="{% url 'platform-integration-retry' m.pk %}" class="d-inline">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-warning">Повтор</button>
+          </form>
+          {% endif %}
+          {% if can_change and m.status != 'dead_letter' %}
+          <form method="post" action="{% url 'platform-integration-dead-letter' m.pk %}" class="d-inline">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger">DLQ</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Сообщений нет</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="modal fade" id="intMsgModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Сообщение</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="intMsgModalBody"></div>
+  </div></div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-integrations-list.js' %}"></script>{% endblock %}

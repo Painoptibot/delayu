@@ -1,0 +1,282 @@
+{% extends layout_path %}
+
+{% load static %}
+
+{% block title %}Корреспонденция — ДелаЮ{% endblock %}
+
+{% block vendor_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/quill/katex.css' %}" />
+<link rel="stylesheet" href="{% static 'vendor/libs/quill/editor.css' %}" />
+<link rel="stylesheet" href="{% static 'vendor/libs/select2/select2.css' %}" />
+{% endblock vendor_css %}
+
+{% block vendor_js %}
+{{ block.super }}
+<script src="{% static 'vendor/libs/quill/katex.js' %}"></script>
+<script src="{% static 'vendor/libs/quill/quill.js' %}"></script>
+<script src="{% static 'vendor/libs/select2/select2.js' %}"></script>
+<script src="{% static 'vendor/libs/notiflix/notiflix.js' %}"></script>
+{% endblock vendor_js %}
+
+{% block page_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/app-email.css' %}" />
+{% endblock page_css %}
+
+{% block page_js %}
+{{ block.super }}
+<script src="{% static 'js/app-email.js' %}"></script>
+<script src="{% static 'js/delayu-correspondence-mail.js' %}"></script>
+{% endblock page_js %}
+
+{% block content %}
+{% include "platform/correspondence/_nav.html" %}
+{% csrf_token %}
+<form method="get" class="d-none" id="corrFilterForm"><input type="hidden" name="q" value="{{ search_q }}"><input type="hidden" name="status" value="{{ filter_status }}"><input type="hidden" name="folder" value="{{ mail_folder }}"></form>
+<div class="app-email card" data-actions-url="{% url 'platform-correspondence-actions' %}">
+  <div class="row g-0">
+    <!-- Email Sidebar -->
+    <div class="col app-email-sidebar border-end flex-grow-0" id="app-email-sidebar">
+      <div class="btn-compost-wrapper d-grid">
+        <a href="{% url 'platform-correspondence-inbound' %}" class="btn btn-primary btn-compose w-100">Регистрация входящего</a>
+      </div>
+      <!-- Email Filters -->
+      <div class="email-filters pt-4 pb-2">
+        <!-- Email Filters: Folder -->
+        <ul class="email-filter-folders list-unstyled">
+          <li class="{% if mail_folder == 'inbox' %}active {% endif %}d-flex justify-content-between align-items-center mb-1" data-target="inbox">
+            <a href="{% url 'platform-inbox' %}?folder=inbox" class="d-flex flex-wrap align-items-center">
+              <i class="icon-base ri ri-mail-line me-1"></i>
+              <span class="align-middle ms-2">Входящие</span>
+            </a>
+          </li>
+          <li class="{% if mail_folder == 'sent' %}active {% endif %}d-flex mb-1" data-target="sent">
+            <a href="{% url 'platform-inbox' %}?folder=sent" class="d-flex flex-wrap align-items-center">
+              <i class="icon-base ri ri-send-plane-line me-1"></i>
+              <span class="align-middle ms-2">Исходящие</span>
+            </a>
+          </li>
+          <li class="{% if mail_folder == 'draft' %}active {% endif %}d-flex justify-content-between align-items-center mb-1" data-target="draft">
+            <a href="{% url 'platform-inbox' %}?folder=draft" class="d-flex flex-wrap align-items-center">
+              <i class="icon-base ri ri-edit-box-line me-1"></i>
+              <span class="align-middle ms-2">Черновики</span>
+            </a>
+          </li>
+          <li class="{% if mail_folder == 'starred' %}active {% endif %}d-flex justify-content-between mb-1" data-target="starred">
+            <a href="{% url 'platform-inbox' %}?folder=starred" class="d-flex flex-wrap align-items-center">
+              <i class="icon-base ri ri-star-line me-1"></i>
+              <span class="align-middle ms-2">Избранное</span>
+            </a>
+          </li>
+          <li class="{% if mail_folder == 'spam' %}active {% endif %}d-flex justify-content-between align-items-center mb-1" data-target="spam">
+            <a href="{% url 'platform-inbox' %}?folder=spam" class="d-flex flex-wrap align-items-center">
+              <i class="icon-base ri ri-spam-2-line me-1"></i>
+              <span class="align-middle ms-2">Спам</span>
+            </a>
+          </li>
+          <li class="{% if mail_folder == 'trash' %}active {% endif %}d-flex align-items-center" data-target="trash">
+            <a href="{% url 'platform-inbox' %}?folder=trash" class="d-flex flex-wrap align-items-center">
+              <i class="icon-base ri ri-delete-bin-7-line me-1"></i>
+              <span class="align-middle ms-2">Корзина</span>
+            </a>
+          </li>
+        </ul>
+        <!-- Email Filters: Метки -->
+        <div class="email-filter-labels pt-4">
+          <p class="small mx-5 text-body-secondary text-uppercase">Метки</p>
+          <ul class="list-unstyled mb-2">
+            <li data-target="work">
+              <a href="javascript:void(0);" data-mail-action="label" data-mail-label="work">
+                <i class="badge badge-dot bg-success"></i>
+                <span class="align-middle ms-2">Личное</span>
+              </a>
+            </li>
+            <li data-target="company">
+              <a href="javascript:void(0);" data-mail-action="label" data-mail-label="company">
+                <i class="badge badge-dot bg-primary"></i>
+                <span class="align-middle ms-2">Служебное</span>
+              </a>
+            </li>
+            <li data-target="important">
+              <a href="javascript:void(0);" data-mail-action="label" data-mail-label="important">
+                <i class="badge badge-dot bg-warning"></i>
+                <span class="align-middle ms-2">Важное</span>
+              </a>
+            </li>
+            <li data-target="private">
+              <a href="javascript:void(0);" data-mail-action="label" data-mail-label="private">
+                <i class="badge badge-dot bg-danger"></i>
+                <span class="align-middle ms-2">Конфиденциально</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+        <!--/ Email Filters -->
+      </div>
+    </div>
+    <!--/ Email Sidebar -->
+
+    <!-- Emails List -->
+    <div class="col app-emails-list">
+      <div class="card shadow-none border-0 rounded-0">
+        <div class="card-body emails-list-header p-3 py-2">
+          <!-- Email List: Search -->
+          <div class="d-flex justify-content-between align-items-center px-3 mt-2">
+            <div class="d-flex align-items-center w-100">
+              <i class="icon-base ri ri-menu-line icon-lg cursor-pointer d-block d-lg-none me-4 mb-4" data-bs-toggle="sidebar" data-target="#app-email-sidebar" data-overlay></i>
+              <div class="mb-4 w-100">
+                <div class="input-group input-group-merge shadow-none">
+                  <span class="input-group-text border-0 p-0 pe-3" id="email-search">
+                    <i class="icon-base ri ri-search-line icon-22px text-body"></i>
+                  </span>
+                  <input type="text" class="form-control email-search-input border-0 py-0" placeholder="Поиск по почте" aria-label="Поиск по почте" aria-describedby="email-search" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <hr class="mx-n3 emails-list-header-hr mb-2" />
+          <!-- Email List: Actions -->
+          <div class="d-flex justify-content-between align-items-center ps-1">
+            <div class="d-flex align-items-center">
+              <div class="form-check mb-0 ms-2 mt-1">
+                <input class="form-check-input" type="checkbox" id="email-select-all" />
+                <label class="form-check-label" for="email-select-all"></label>
+              </div>
+              <div class="btn btn-icon btn-text-secondary rounded-pill me-1"><i class="icon-base ri ri-delete-bin-7-line icon-22px email-list-delete cursor-pointer"></i></div>
+              <div class="btn btn-icon btn-text-secondary rounded-pill me-1"><i class="icon-base ri ri-mail-open-line icon-22px email-list-read cursor-pointer"></i></div>
+              <div class="dropdown me-1">
+                <button class="btn btn-icon btn-text-secondary rounded-pill p-0" type="button" id="dropdownMenuFolderOne" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="icon-base ri ri-folder-line icon-22px"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuFolderOne">
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="icon-base ri ri-spam-2-line icon-sm me-1"></i>
+                    <span class="align-middle">Спам</span>
+                  </a>
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="icon-base ri ri-edit-box-line icon-sm me-1"></i>
+                    <span class="align-middle">Черновики</span>
+                  </a>
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="icon-base ri ri-delete-bin-7-line icon-sm me-1"></i>
+                    <span class="align-middle">Корзина</span>
+                  </a>
+                </div>
+              </div>
+              <div class="dropdown mx-1">
+                <button class="btn btn-icon btn-text-secondary rounded-pill dropdown-toggle hide-arrow" data-bs-toggle="dropdown" aria-expanded="true" id="dropdownLabelOne">
+                  <i class="icon-base ri ri-price-tag-3-line icon-22px"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownLabelOne">
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="badge badge-dot bg-success me-1"></i>
+                    <span class="align-middle">Совещание</span>
+                  </a>
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="badge badge-dot bg-primary me-1"></i>
+                    <span class="align-middle">Служебное</span>
+                  </a>
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="badge badge-dot bg-warning me-1"></i>
+                    <span class="align-middle">Важное</span>
+                  </a>
+                  <a class="dropdown-item" href="javascript:void(0)">
+                    <i class="badge badge-dot bg-danger me-1"></i>
+                    <span class="align-middle">Конфиденциально</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex align-items-center">
+              <span class="btn btn-icon btn-text-secondary rounded-pill me-1">
+                <i class="icon-base ri ri-refresh-line icon-22px scaleX-n1-rtl cursor-pointer email-refresh"></i>
+              </span>
+              <div class="dropdown">
+                <button class="btn btn-icon btn-text-secondary rounded-pill p-0" type="button" id="emailsActions" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="icon-base ri ri-more-2-line icon-22px"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="emailsActions">
+                  <a class="dropdown-item" href="javascript:void(0)" data-mail-action="mark_read">Пометить прочитанным</a>
+                  <a class="dropdown-item" href="javascript:void(0)" data-mail-action="mark_unread">Пометить непрочитанным</a>
+                  <a class="dropdown-item" href="javascript:void(0)" data-mail-action="delete">Удалить</a>
+                  <a class="dropdown-item" href="javascript:void(0)">В архив</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <hr class="container-m-nx m-0" />
+        <!-- Email List: Items -->
+        <div class="email-list pt-0">
+          <ul class="list-unstyled m-0">
+            {% for c in items %}
+            <li class="email-list-item d-flex align-items-center{% if c.is_read %} email-marked-read{% endif %}"
+                data-bs-toggle="sidebar"
+                data-target="#app-email-view"
+                data-corr-pk="{{ c.pk }}"
+                data-panel-url="{% url 'platform-correspondence-panel' c.pk %}"
+                data-starred="{% if c.is_starred %}true{% else %}false{% endif %}"
+                {% if c.mail_label %}data-{{ c.mail_label }}="true"{% endif %}>
+              <div class="d-flex align-items-center w-100">
+                <div class="form-check mb-0 ms-2 mt-1" onclick="event.stopPropagation()">
+                  <input class="email-list-item-input form-check-input" type="checkbox" id="email-{{ c.pk }}" />
+                  <label class="form-check-label" for="email-{{ c.pk }}"></label>
+                </div>
+                <span class="ms-sm-2 me-3 d-sm-inline-block d-none"><i class="email-list-item-bookmark icon-base ri {% if c.is_starred %}ri-star-fill{% else %}ri-star-line{% endif %} icon-22px cursor-pointer"></i></span>
+                <div class="avatar avatar-sm d-block flex-shrink-0 me-sm-2 me-0">
+                  <span class="avatar-initial rounded-circle bg-label-secondary delayu-pii">{{ c.counterparty|slice:":2"|upper|default:"?" }}</span>
+                </div>
+                <div class="email-list-item-content ms-2 ms-sm-0 me-2">
+                  <span class="email-list-item-username me-2 text-heading delayu-pii">{{ c.counterparty|truncatechars:24|default:"—" }}</span>
+                  <small class="email-list-item-subject d-xl-inline-block d-block delayu-pii">{{ c.subject|truncatechars:60 }}</small>
+                </div>
+                <div class="email-list-item-meta ms-auto d-flex align-items-center">
+                  {% if c.mail_label %}<span class="email-list-item-label badge badge-dot bg-{% if c.mail_label == 'important' %}warning{% elif c.mail_label == 'private' %}danger{% elif c.mail_label == 'company' %}primary{% else %}success{% endif %} d-none d-md-inline-block me-2"></span>{% endif %}
+                  <span class="badge bg-label-secondary me-2 d-none d-md-inline-block">{{ c.get_status_display }}</span>
+                  <small class="email-list-item-time text-body-secondary">{{ c.reg_date|date:"d.m" }}</small>
+                  <ul class="list-inline email-list-item-actions">
+                    <li class="list-inline-item email-delete btn btn-icon btn-text-secondary rounded-pill"><i class="icon-base ri ri-delete-bin-7-line icon-22px"></i></li>
+                    <li class="list-inline-item {% if c.is_read %}email-read{% else %}email-unread{% endif %} btn btn-icon btn-text-secondary rounded-pill"><i class="icon-base ri {% if c.is_read %}ri-mail-open-line{% else %}ri-mail-line{% endif %} icon-22px"></i></li>
+                    <li class="list-inline-item btn btn-icon btn-text-secondary rounded-pill"><a href="{% url 'platform-correspondence-detail' c.pk %}" class="text-body" onclick="event.stopPropagation()"><i class="icon-base ri ri-information-line icon-22px"></i></a></li>
+                  </ul>
+                </div>
+              </div>
+            </li>
+            {% empty %}
+            <li class="p-5 text-center text-muted">Нет писем в этой папке</li>
+            {% endfor %}
+          </ul>
+          <ul class="list-unstyled m-0">
+            <li class="email-list-empty text-center d-none">Ничего не найдено</li>
+          </ul>
+        </div>
+      </div>
+      <div class="app-overlay"></div>
+    </div>
+    <!-- /Emails List -->
+
+    <!-- Email View -->
+    <div class="col app-email-view flex-grow-0 bg-lightest" id="app-email-view"{% if request.GET.open %} data-open-pk="{{ request.GET.open }}"{% endif %}>
+      <div class="card shadow-none border-0 rounded-0 app-email-view-header p-5 pt-md-4 py-2">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center overflow-hidden">
+            <span class="ms-sm-2 me-4"><i class="icon-base ri ri-arrow-left-s-line icon-22px cursor-pointer scaleX-n1-rtl" data-bs-toggle="sidebar" data-target="#app-email-view"></i></span>
+            <h6 class="text-truncate mb-0 me-2 fw-normal" id="delayuEmailViewTitle">Выберите письмо</h6>
+            <span class="badge bg-label-secondary rounded-pill d-none" id="delayuEmailViewBadge"></span>
+          </div>
+        </div>
+        <hr class="app-email-view-hr mx-n5 mb-2" />
+      </div>
+      <hr class="m-0" />
+      <div class="app-email-view-content py-4" id="delayuEmailViewContent">
+        <p class="text-center text-muted py-6 mb-0">Выберите письмо в списке слева</p>
+      </div>
+    </div>
+    <!-- /Email View -->
+
+  <!-- Регистрация Email -->
+  
+  <!-- /Регистрация Email -->
+</div>
+{% endblock %}

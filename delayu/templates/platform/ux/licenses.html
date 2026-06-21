@@ -1,0 +1,20 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ux/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card">
+  <table class="table mb-0">
+    <thead><tr><th>Модуль</th><th>Включён в подсистеме</th><th>Лицензия до</th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+      <tr class="{% if row.expired %}table-warning{% endif %}">
+        <td><code>{{ row.entitlement.module.code }}</code> — {{ row.entitlement.module.name }}</td>
+        <td>{% if row.enabled %}<span class="badge bg-label-success">да</span>{% else %}<span class="badge bg-label-secondary">нет</span>{% endif %}</td>
+        <td>{{ row.entitlement.valid_until|default:"бессрочно" }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="3" class="text-muted text-center py-4">Нет записей</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

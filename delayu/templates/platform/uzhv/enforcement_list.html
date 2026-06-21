@@ -1,0 +1,45 @@
+{% extends "platform/_page.html" %}
+{% block title %}Исполнительные производства{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2">
+  <a href="{% url 'uzhv-court-cases' %}" class="btn btn-outline-secondary btn-sm">Судебные дела</a>
+  {% if can_create %}<a href="{% url 'uzhv-enforcement-create' %}" class="btn btn-primary btn-sm">+ ИП</a>{% endif %}
+</div>
+{% endblock %}
+{% block card_body %}
+<p class="text-muted small">Учёт решений судов и исполнительных производств УФССП (ТЗ п. 330).</p>
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-4"><input type="search" name="q" class="form-control form-control-sm" placeholder="№ ИП, должник, дело" value="{{ request.GET.q }}"></div>
+  <div class="col-md-3">
+    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все статусы</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}"{% if request.GET.status == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr><th>№ ИП</th><th>Должник</th><th>Дело</th><th>УФССП</th><th>Возбуждено</th><th>Статус</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for e in proceedings %}
+      <tr>
+        <td><code>{{ e.proceeding_number }}</code></td>
+        <td>{{ e.debtor_name }}</td>
+        <td>{{ e.court_case.case_number }}</td>
+        <td>{{ e.bailiff_office|default:"—"|truncatechars:30 }}</td>
+        <td>{{ e.initiated_at|date:"d.m.Y" }}</td>
+        <td>{{ e.get_status_display }}</td>
+        <td class="text-end">{% if can_change %}<a href="{% url 'uzhv-enforcement-edit' e.pk %}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ri-pencil-line"></i></a>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-muted text-center py-4">Исполнительных производств нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% endblock %}

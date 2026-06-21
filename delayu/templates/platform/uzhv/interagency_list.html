@@ -1,0 +1,77 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Межведомственные запросы{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap align-items-center">
+  {% if can_create %}
+  <a href="{% url 'uzhv-interagency-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> Запрос</a>
+  {% endif %}
+  <a href="{% url 'uzhv-report-export' 'otch-8' %}" class="btn btn-outline-primary btn-sm">ОТЧ-8 CSV</a>
+  <form method="get" class="d-flex gap-2 uzhv-filter-form">
+    <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" placeholder="Номер, адресат…">
+    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все статусы</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}"{% if request.GET.status == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <div class="form-check mt-1">
+      <input class="form-check-input" type="checkbox" name="overdue" value="1" id="overdueIv" {% if filter_overdue == "1" %}checked{% endif %} onchange="this.form.submit()">
+      <label class="form-check-label small" for="overdueIv">Просроченные</label>
+    </div>
+    <select name="assignee" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все исполнители</option>
+      <option value="me"{% if filter_assignee == "me" %} selected{% endif %}>Мои</option>
+      {% for u in assignee_users %}
+      <option value="{{ u.pk }}"{% if filter_assignee == u.pk|stringformat:"s" %} selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+{% endblock %}
+{% block card_body %}
+<p class="text-muted small mb-3">Ручной учёт запросов во внешние ведомства (без СМЭВ на этапе 1).</p>
+{% include "platform/uzhv/_bulk_toolbar.html" %}
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle uzhv-bulk-table">
+    <thead>
+      <tr>
+        <th style="width:2.5rem"><input type="checkbox" class="form-check-input uzhv-select-all" title="Выбрать все"></th>
+        <th>№</th>
+        <th>Тип</th>
+        <th>Адресат</th>
+        <th>Тема</th>
+        <th>Отправлен</th>
+        <th>Срок</th>
+        <th>Исполнитель</th>
+        <th>Статус</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in requests %}
+      <tr data-modal-url="{% url 'uzhv-interagency-modal' r.pk %}" data-modal-title="Запрос {{ r.request_number }}"{% if request.GET.open == r.pk|stringformat:"s" %} data-auto-open-modal{% endif %}{% if r.is_overdue %} class="table-warning"{% endif %}>
+        <td><input type="checkbox" class="form-check-input uzhv-row-check" value="{{ r.pk }}"></td>
+        <td><code>{{ r.request_number }}</code></td>
+        <td>{{ r.get_request_type_display }}</td>
+        <td>{{ r.recipient_name|truncatechars:30 }}</td>
+        <td>{{ r.subject|truncatechars:40 }}</td>
+        <td>{{ r.sent_at|date:"d.m.Y" }}</td>
+        <td>{{ r.due_date|date:"d.m.Y" }}</td>
+        <td class="small">{{ r.responsible_label }}</td>
+        <td>{{ r.get_status_display }}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-interagency-modal' r.pk %}" title="Просмотр"><i class="ri-eye-line"></i></button>
+          {% if can_change %}<a href="{% url 'uzhv-interagency-edit' r.pk %}" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать"><i class="ri-pencil-line"></i></a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="10" class="text-muted text-center py-4">Запросов нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% include "platform/uzhv/_list_modal.html" with modal_title="Межвед. запрос" %}
+{% endblock %}
+{% block page_js %}{{ block.super }}{% include "platform/uzhv/_list_modal_js.html" %}{% endblock %}

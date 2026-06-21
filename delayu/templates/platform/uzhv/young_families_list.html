@@ -1,0 +1,60 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Молодые семьи{% endblock %}
+{% block header_actions %}
+<form method="get" class="d-flex gap-2 flex-wrap uzhv-filter-form">
+  <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" placeholder="Дело, ФИО, супруг…">
+  <select name="program" class="form-select form-select-sm" onchange="this.form.submit()">
+    <option value="">Все программы</option>
+    {% for val, label in program_choices %}
+    <option value="{{ val }}"{% if filter_program == val %} selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="meets" class="form-select form-select-sm" onchange="this.form.submit()">
+    <option value="">Критерии</option>
+    <option value="1"{% if filter_meets == "1" %} selected{% endif %}>Соответствуют</option>
+    <option value="0"{% if filter_meets == "0" %} selected{% endif %}>Не соответствуют</option>
+  </select>
+</form>
+{% endblock %}
+{% block card_body %}
+{% include "platform/uzhv/_bulk_toolbar.html" %}
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle uzhv-bulk-table">
+    <thead>
+      <tr>
+        <th style="width:2.5rem"><input type="checkbox" class="form-check-input uzhv-select-all" title="Выбрать все"></th>
+        <th>Дело</th>
+        <th>Заявитель</th>
+        <th>Супруг(а)</th>
+        <th>Детей</th>
+        <th>Программа</th>
+        <th>Критерии</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr data-modal-url="{% url 'uzhv-young-family-modal' r.case.pk %}" data-modal-title="Молодая семья — {{ r.case.case_number }}"{% if request.GET.open == r.case.pk|stringformat:"s" %} data-auto-open-modal{% endif %}>
+        <td><input type="checkbox" class="form-check-input uzhv-row-check" value="{{ r.case.pk }}"></td>
+        <td><code>{{ r.case.case_number }}</code></td>
+        <td>{{ r.case.citizen.full_name }}</td>
+        <td>{{ r.spouse_full_name }}</td>
+        <td>{{ r.children_count }}</td>
+        <td>{{ r.get_program_display }}</td>
+        <td>{% if r.meets_criteria %}<span class="badge bg-label-success">Да</span>{% else %}<span class="badge bg-label-secondary">Нет</span>{% endif %}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-young-family-modal' r.case.pk %}" title="Просмотр"><i class="ri-eye-line"></i></button>
+          {% if can_change %}<a href="{% url 'uzhv-young-family-edit' r.case.pk %}" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать"><i class="ri-pencil-line"></i></a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="text-muted text-center py-4">Нет записей (категория «Молодые семьи» в учётных делах)</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% include "platform/uzhv/_list_modal.html" with modal_title="Молодая семья" %}
+{% endblock %}
+{% block page_js %}{{ block.super }}{% include "platform/uzhv/_list_modal_js.html" %}{% endblock %}

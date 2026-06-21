@@ -1,0 +1,41 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<h4 class="mb-3">{{ page_title }}</h4>
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3"><label class="form-label">Поиск</label><input name="q" class="form-control form-control-sm" value="{{ search_q }}"></div>
+      <div class="col-md-2">
+        <label class="form-label">Направление</label>
+        <select name="direction" class="form-select form-select-sm">
+          <option value="">Все</option>
+          <option value="in" {% if filter_direction == "in" %}selected{% endif %}>Входящие</option>
+          <option value="out" {% if filter_direction == "out" %}selected{% endif %}>Исходящие</option>
+        </select>
+      </div>
+      <div class="col-md-2"><label class="form-label">Год</label><input name="year" class="form-control form-control-sm" value="{{ filter_year }}" placeholder="2026"></div>
+      <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100">Найти</button></div>
+    </form>
+  </div>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover mb-0">
+      <thead><tr><th>№</th><th>Дата</th><th>Тип</th><th>Тема</th><th>Оператор</th><th></th></tr></thead>
+      <tbody>
+        {% for c in items %}
+        <tr>
+          <td><code>{{ c.reg_number }}</code></td>
+          <td>{{ c.reg_date }}</td>
+          <td>{{ c.get_direction_display }}</td>
+          <td>{{ c.subject|truncatechars:50 }}</td>
+          <td class="small">{% if c.journal_entry %}{{ c.journal_entry.operator }}{% else %}—{% endif %}</td>
+          <td><a href="{% url 'platform-correspondence-detail' c.pk %}">Карточка</a></td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Пусто</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

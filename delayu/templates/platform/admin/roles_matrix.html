@@ -1,0 +1,6 @@
+{% extends "platform/_page.html" %}
+{% block title %}Роли и права{% endblock %}
+{% block card_body %}
+<table class="table table-sm"><thead><tr><th>Роль</th>{% for mod in modules %}<th class="small">{{ mod.code }}</th>{% endfor %}</tr></thead>
+<tbody>{% for row in matrix_rows %}<tr><td>{{ row.role.name }}</td>{% for c in row.cells %}<td>{% if c %}✓{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
+{% endblock %}

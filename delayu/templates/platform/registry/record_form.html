@@ -1,0 +1,18 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between">
+    <h5 class="mb-0">{{ page_title }}</h5>
+    <a href="{% url 'platform-registry-records' registry_type.pk %}" class="btn btn-sm btn-outline-secondary">К записям</a>
+  </div>
+  <div class="card-body">
+    <form method="post">{% csrf_token %}
+      {% for field in form %}
+      <div class="mb-3"><label class="form-label">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

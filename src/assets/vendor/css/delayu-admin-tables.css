@@ -1,0 +1,11 @@
+/* Кнопки действий в таблицах админки — контрастные иконки на светлом фоне */
+.delayu-table-actions .btn-outline-secondary {
+  --bs-btn-color: var(--bs-heading-color);
+  --bs-btn-border-color: var(--bs-border-color);
+}
+.delayu-table-actions .btn-outline-secondary .icon-base {
+  color: var(--bs-heading-color);
+}
+.delayu-table-actions .btn-outline-danger .icon-base {
+  color: var(--bs-danger);
+}

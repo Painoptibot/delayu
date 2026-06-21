@@ -1,0 +1,12 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/integrations/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card col-lg-6"><div class="card-body">
+  <form method="post">{% csrf_token %}
+    {% for field in form %}<div class="mb-3"><label class="form-label">{{ field.label }}</label>{{ field }}</div>{% endfor %}
+    <button type="submit" class="btn btn-primary">Создать</button>
+  </form>
+</div></div>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% extends "platform/_page.html" %}
+{% block title %}Структура{% endblock %}
+{% block card_body %}
+<ul>{% for d in departments %}<li>{{ d.name }} ({{ d.code }}){% if d.manager %} — {{ d.manager.username }}{% endif %}</li>{% empty %}<li class="text-muted">Подразделения не созданы</li>{% endfor %}</ul>
+{% endblock %}

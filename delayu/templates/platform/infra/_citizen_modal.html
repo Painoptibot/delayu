@@ -1,0 +1,11 @@
+<div class="modal-header">
+  <h5 class="modal-title">Обращение {{ appeal.public_id }}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+  <p><strong>Заявитель:</strong> {{ appeal.applicant_name }}</p>
+  <p><strong>Тема:</strong> {{ appeal.subject }}</p>
+  <p><strong>Статус:</strong> {{ appeal.get_status_display }}</p>
+  <p><strong>Дата:</strong> {{ appeal.created_at|date:"d.m.Y H:i" }}</p>
+  {% if appeal.case %}<p><a href="{% url 'platform-case-detail' appeal.case_id %}">Карточка дела #{{ appeal.case_id }}</a></p>{% endif %}
+</div>

@@ -1,0 +1,17 @@
+{
+  "name": "ДелаЮ",
+  "short_name": "ДелаЮ",
+  "description": "Платформа управления делами и документами",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#696cff",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/static/img/favicon/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

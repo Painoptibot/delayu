@@ -1,0 +1,24 @@
+{% extends "platform/studio/_base.html" %}
+{% block studio_content %}
+<div class="card">
+  <div class="card-body">
+    <h4 class="mb-2">Студия ДелаЮ</h4>
+    <p class="text-muted mb-4">Визуальные конструкторы с drag-and-drop для настройки подсистемы без программирования.</p>
+    <div class="row g-3">
+      {% for ed in studio_editors %}
+      <div class="col-md-6">
+        <a href="{{ ed.url }}" class="card border h-100 text-decoration-none studio-tile">
+          <div class="card-body d-flex align-items-start gap-3">
+            <span class="avatar avatar-sm"><span class="avatar-initial rounded bg-label-primary"><i class="ri {{ ed.icon }}"></i></span></span>
+            <div>
+              <h6 class="mb-1">{{ ed.title }}</h6>
+              <small class="text-muted">Модуль {{ ed.module }}</small>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+{% if building and building.has_coordinates %}
+{% include "platform/uzhv/_map_assets.html" %}
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">{{ page_title }}</h5></div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      {% include "platform/uzhv/_form_fields.html" %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        {% if building %}
+        <a href="{% url 'uzhv-building-detail' building.pk %}" class="btn btn-outline-secondary">Отмена</a>
+        {% else %}
+        <a href="{% url 'uzhv-fund' %}" class="btn btn-outline-secondary">Отмена</a>
+        {% endif %}
+      </div>
+    </form>
+    {% if building and building.has_coordinates %}
+    <hr class="my-4">
+    <h6 class="mb-2">Предпросмотр на карте</h6>
+    {% include "platform/uzhv/_map_embed.html" with map_title="Текущее положение" map_height=240 %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block page_js %}
+{% if building and building.has_coordinates %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.uzhvInitMapsIn) window.uzhvInitMapsIn(document);
+});
+</script>
+{% endif %}
+{% endblock %}

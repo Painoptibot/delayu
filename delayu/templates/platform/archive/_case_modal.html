@@ -1,0 +1,34 @@
+<h5><code>{{ case.number }}</code></h5>
+<p class="text-muted mb-2">{{ case.title }}</p>
+<dl class="row small mb-0">
+  <dt class="col-sm-4">Организация</dt><dd class="col-sm-8">{{ case.organization.name }}</dd>
+  <dt class="col-sm-4">В архиве</dt><dd class="col-sm-8">{{ case.archived_at|date:"d.m.Y H:i" }}</dd>
+  <dt class="col-sm-4">Кто архивировал</dt><dd class="col-sm-8">{% if case.archived_by %}{{ case.archived_by.get_full_name|default:case.archived_by.username }}{% else %}—{% endif %}</dd>
+  <dt class="col-sm-4">Срок хранения</dt><dd class="col-sm-8">{% if case.retention_until %}{{ case.retention_until|date:"d.m.Y" }}{% else %}не задан{% endif %}</dd>
+  <dt class="col-sm-4">Legal hold</dt><dd class="col-sm-8">{% if case.legal_hold %}<span class="badge bg-label-danger">активен</span>{% else %}нет{% endif %}</dd>
+</dl>
+{% if case.archive_reason %}
+<h6 class="mt-3">Основание</h6>
+<p class="small border rounded p-2 bg-light">{{ case.archive_reason }}</p>
+{% endif %}
+<div class="d-flex flex-wrap gap-2 mt-3">
+  <a href="{% url 'platform-case-detail' case.pk %}" class="btn btn-sm btn-outline-primary">Карточка дела</a>
+  <a href="{% url 'platform-archive-case-export' case.pk %}" class="btn btn-sm btn-outline-secondary">Экспорт (заглушка)</a>
+  {% if can_change %}
+  <form method="post" action="{% url 'platform-archive-case-legal-hold' case.pk %}" class="d-inline">{% csrf_token %}
+    {% if case.legal_hold %}
+    <input type="hidden" name="legal_hold" value="0">
+    <button type="submit" class="btn btn-sm btn-warning">Снять legal hold</button>
+    {% else %}
+    <input type="hidden" name="legal_hold" value="1">
+    <button type="submit" class="btn btn-sm btn-outline-danger">Включить legal hold</button>
+    {% endif %}
+  </form>
+  {% if not case.legal_hold %}
+  <form method="post" action="{% url 'platform-archive-case-restore' case.pk %}" class="d-inline"
+        onsubmit="return confirm('Восстановить дело из архива?');">{% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-success">Восстановить</button>
+  </form>
+  {% endif %}
+  {% endif %}
+</div>

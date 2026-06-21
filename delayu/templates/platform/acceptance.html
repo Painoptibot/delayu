@@ -1,0 +1,17 @@
+{% extends layout_path %}
+{% block title %}Приёмка — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card mb-4"><div class="card-body">
+  <h4>Чек-лист приёмки (ТЗ §15)</h4>
+  <p class="text-muted">Отметьте сценарии вручную после прохода.</p>
+</div></div>
+<div class="list-group">
+  <a href="{% url 'platform-subsystem-create' %}" class="list-group-item list-group-item-action">1. Создать подсистему с модулями (мастер M01)</a>
+  <a href="{% url 'platform-users' %}" class="list-group-item list-group-item-action">2. Назначить пользователей и роли</a>
+  <a href="{% url 'platform-case-create' %}" class="list-group-item list-group-item-action">3. Создать дело, приложить документ</a>
+  <a href="{% url 'platform-dashboard' %}" class="list-group-item list-group-item-action">4. Отчёт / дашборд для руководителя</a>
+  <a href="{% url 'platform-archive-cases' %}" class="list-group-item list-group-item-action">5. Архив завершённых дел</a>
+  <a href="{% url 'platform-roles' %}" class="list-group-item list-group-item-action">6. Проверка прав (войти как demo)</a>
+  <a href="{% url 'platform-product-passport' %}" class="list-group-item list-group-item-action">7. Паспорт продукта и журнал соответствия реестру</a>
+</div>
+{% endblock %}

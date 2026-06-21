@@ -1,0 +1,13 @@
+{% if section_nav_items %}
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    {% for item in section_nav_items %}
+    <li class="nav-item">
+      <a class="nav-link{% if item.active %} active{% endif %}" href="{{ item.url }}">
+        {% if item.icon %}<i class="icon-base {{ item.icon }} icon-sm me-2"></i>{% endif %}{{ item.label }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}

@@ -1,0 +1,92 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Пользователи{% endblock %}
+{% block header_actions %}
+{% if can_create %}
+<a href="{% url 'platform-user-create' %}" class="btn btn-primary btn-sm">
+  <i class="ri-user-add-line me-1"></i>Добавить
+</a>
+{% endif %}
+{% endblock %}
+{% block card_body %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>ФИО / логин</th>
+        <th>E-mail</th>
+        <th>Роль</th>
+        <th>Организация</th>
+        <th>Статус</th>
+        <th class="text-end">Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in memberships %}
+      <tr{% if request.GET.open == m.pk|stringformat:"s" %} data-auto-open-modal data-modal-url="{% url 'platform-user-modal' m.pk %}"{% endif %}>
+        <td>
+          <strong>{{ m.user.get_full_name|default:m.user.username }}</strong>
+          <div class="text-muted small">@{{ m.user.username }}</div>
+        </td>
+        <td>{{ m.user.email|default:"—" }}</td>
+        <td><span class="badge bg-label-primary">{{ m.role.name }}</span></td>
+        <td>{{ m.organization.name }}</td>
+        <td>
+          {% if m.user.is_active %}
+          <span class="badge bg-label-success">Активен</span>
+          {% else %}
+          <span class="badge bg-label-secondary">Заблокирован</span>
+          {% endif %}
+        </td>
+        <td class="text-end text-nowrap delayu-table-actions">
+          <button type="button" class="btn btn-sm btn-icon btn-outline-secondary rounded-pill user-open-card"
+                  data-modal-url="{% url 'platform-user-modal' m.pk %}" title="Карточка">
+            <i class="icon-base ri ri-eye-line icon-20px"></i>
+          </button>
+          {% if can_change %}
+          <button type="button" class="btn btn-sm btn-icon btn-outline-secondary rounded-pill user-open-edit"
+                  data-modal-url="{% url 'platform-user-modal' m.pk %}?mode=edit" title="Редактировать">
+            <i class="icon-base ri ri-pencil-line icon-20px"></i>
+          </button>
+          {% endif %}
+          {% if can_delete and m.user_id != request.user.id %}
+          <form method="post" action="{% url 'platform-user-delete' m.pk %}" class="d-inline"
+                onsubmit="return confirm('Заблокировать пользователя {{ m.user.username }}?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-icon btn-outline-danger rounded-pill" title="Заблокировать">
+              <i class="icon-base ri ri-user-forbid-line icon-20px"></i>
+            </button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-4">Нет пользователей в подсистеме</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="modal fade" id="userCardModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Карточка пользователя</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body" id="userCardModalBody">
+        <div class="text-center py-5 text-muted">Загрузка…</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/delayu-admin-tables.css' %}" />
+<link rel="stylesheet" href="{% static 'vendor/libs/bs-stepper/bs-stepper.css' %}">
+{% endblock %}
+
+{% block page_js %}{{ block.super }}
+<script src="{% static 'js/delayu-users-list.js' %}"></script>
+{% endblock %}

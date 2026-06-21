@@ -1,0 +1,6 @@
+<p class="mb-2"><strong>{{ tpl.name }}</strong> <code>{{ tpl.code }}</code></p>
+{% if tpl.description %}<p class="small text-muted">{{ tpl.description }}</p>{% endif %}
+<ol class="small mb-3">
+  {% for s in tpl.steps %}<li>{{ s.name|default:s.id }}{% if s.assignee_id %} (id {{ s.assignee_id }}){% endif %}</li>{% empty %}<li class="text-muted">Шаги не заданы</li>{% endfor %}
+</ol>
+{% if can_change %}<a href="{% url 'platform-bpm-template-edit' tpl.pk %}" class="btn btn-sm btn-primary">Редактировать</a>{% endif %}

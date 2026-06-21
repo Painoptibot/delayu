@@ -1,0 +1,165 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="delayu-page-cases">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-case-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> Новое дело</a>{% endif %}
+</div>
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Поиск</label>
+        <input name="q" class="form-control form-control-sm" value="{{ search_q }}" placeholder="Номер, тема">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Статус</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">Все</option>
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if filter_status == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Исполнитель</label>
+        <select name="assignee" class="form-select form-select-sm">
+          <option value="">Все</option>
+          {% for u in assignees %}
+          <option value="{{ u.pk }}" {% if filter_assignee == u.pk|stringformat:"s" %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Приоритет</label>
+        <select name="priority" class="form-select form-select-sm">
+          <option value="">Все</option>
+          <option value="1" {% if filter_priority == "1" %}selected{% endif %}>1</option>
+          <option value="2" {% if filter_priority == "2" %}selected{% endif %}>2</option>
+          <option value="3" {% if filter_priority == "3" %}selected{% endif %}>3</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <div class="form-check mt-4">
+          <input class="form-check-input" type="checkbox" name="overdue" value="1" id="overdueChk" {% if filter_overdue == "1" %}checked{% endif %}>
+          <label class="form-check-label" for="overdueChk">Просроченные</label>
+        </div>
+      </div>
+      <div class="col-md-1"><button type="submit" class="btn btn-sm btn-primary w-100">Найти</button></div>
+    </form>
+  </div>
+</div>
+{% if can_bulk %}
+<form method="post" action="{% url 'platform-cases-bulk' %}" id="casesBulkForm" class="card mb-3">
+  <div class="card-body py-2">
+    <div class="row g-2 align-items-end">
+      <div class="col-auto"><span class="small text-muted">Выбрано: <strong id="bulkSelCount">0</strong></span></div>
+      <div class="col-md-2">
+        <select name="bulk_action" class="form-select form-select-sm" id="bulkAction">
+          <option value="status">Сменить статус</option>
+          <option value="assign">Назначить исполнителя</option>
+        </select>
+      </div>
+      <div class="col-md-2" id="bulkStatusWrap">
+        <select name="new_status" class="form-select form-select-sm">
+          {% for val, label in status_choices %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-none" id="bulkAssigneeWrap">
+        <select name="assignee_id" class="form-select form-select-sm">
+          {% for u in assignees %}
+          <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-warning" id="bulkSubmit" disabled>Применить</button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endif %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          {% if can_bulk %}<th style="width:2rem"><input type="checkbox" class="form-check-input" id="bulkSelectAll" title="Выбрать все"></th>{% endif %}
+          <th>Номер</th><th>Тема</th><th>Статус</th><th>Исполнитель</th><th>Срок</th><th>P</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cases %}
+        <tr{% if request.GET.open == c.pk|stringformat:"s" %} data-auto-open data-modal-url="{% url 'platform-case-modal' c.pk %}"{% endif %}>
+          {% if can_bulk %}<td data-label=""><input type="checkbox" class="form-check-input case-bulk-chk" name="case_ids" value="{{ c.pk }}" form="casesBulkForm"></td>{% endif %}
+          <td data-label="Номер"><code>{{ c.number }}</code></td>
+          <td data-label="Тема">{{ c.title|truncatechars:50 }}</td>
+          <td data-label="Статус"><span class="badge bg-label-secondary">{{ c.get_status_display }}</span></td>
+          <td data-label="Исполнитель" class="small">{{ c.assignee|default:"—" }}</td>
+          <td data-label="Срок" class="small">{{ c.due_date|default:"—" }}</td>
+          <td data-label="P">{{ c.priority }}</td>
+          <td data-label="" class="text-end text-nowrap">
+            <button type="button" class="btn btn-sm btn-icon btn-text-secondary case-open" data-modal-url="{% url 'platform-case-modal' c.pk %}"><i class="ri-eye-line"></i></button>
+            <a href="{% url 'platform-case-detail' c.pk %}" class="btn btn-sm btn-icon btn-text-primary" title="Карточка"><i class="ri-external-link-line"></i></a>
+            {% if can_change %}<a href="{% url 'platform-case-edit' c.pk %}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ri-pencil-line"></i></a>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="{% if can_bulk %}8{% else %}7{% endif %}" class="text-center text-muted py-4">Дел не найдено</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page_obj.has_other_pages %}
+  <div class="card-footer d-flex justify-content-between small">
+    <span>Стр. {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+    <div>
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&q={{ search_q }}&status={{ filter_status }}&assignee={{ filter_assignee }}">←</a>{% endif %}
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&q={{ search_q }}&status={{ filter_status }}&assignee={{ filter_assignee }}">→</a>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+<div class="modal fade" id="caseModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Дело</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="caseModalBody"></div>
+  </div></div>
+</div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}
+<script src="{% static 'js/delayu-cases-list.js' %}"></script>
+{% if can_bulk %}
+<script>
+(function(){
+  var form = document.getElementById('casesBulkForm');
+  if (!form) return;
+  var chks = form.querySelectorAll('.case-bulk-chk');
+  var all = document.getElementById('bulkSelectAll');
+  var cnt = document.getElementById('bulkSelCount');
+  var submit = document.getElementById('bulkSubmit');
+  var action = document.getElementById('bulkAction');
+  var statusWrap = document.getElementById('bulkStatusWrap');
+  var assigneeWrap = document.getElementById('bulkAssigneeWrap');
+  function refresh(){
+    var n = form.querySelectorAll('.case-bulk-chk:checked').length;
+    cnt.textContent = n;
+    submit.disabled = n === 0;
+  }
+  chks.forEach(function(c){ c.addEventListener('change', refresh); });
+  if (all) all.addEventListener('change', function(){ chks.forEach(function(c){ c.checked = all.checked; }); refresh(); });
+  if (action) action.addEventListener('change', function(){
+    var assign = action.value === 'assign';
+    statusWrap.classList.toggle('d-none', assign);
+    assigneeWrap.classList.toggle('d-none', !assign);
+  });
+  refresh();
+})();
+</script>
+{% endif %}
+{% endblock %}

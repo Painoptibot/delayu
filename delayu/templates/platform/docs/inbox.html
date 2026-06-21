@@ -1,0 +1,7 @@
+{% extends "platform/_page.html" %}
+{% block title %}Входящие{% endblock %}
+{% block header_actions %}<a href="{% url 'platform-correspondence-create' %}" class="btn btn-sm btn-primary">Регистрация</a>{% endblock %}
+{% block card_body %}
+<table class="table table-sm"><thead><tr><th>№</th><th>Дата</th><th>Тема</th><th>Статус</th></tr></thead>
+<tbody>{% for i in items %}<tr><td>{{ i.reg_number }}</td><td>{{ i.reg_date }}</td><td>{{ i.subject }}</td><td>{{ i.get_status_display }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">Пусто</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

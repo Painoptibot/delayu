@@ -1,0 +1,25 @@
+{% extends layout_path %}
+{% block title %}{{ item.title }} — Аудио{% endblock %}
+{% block content %}
+<div class="mb-3"><a href="{% url 'platform-audio' %}" class="btn btn-sm btn-text-secondary"><i class="ri-arrow-left-line"></i> К архиву</a></div>
+<div class="card mb-4">
+  <div class="card-body">
+    <h4 class="mb-2">{{ item.title }}</h4>
+    <p class="text-muted small mb-3">{{ item.get_source_type_display }} · {{ item.duration_sec }} сек.{% if item.retention_until %} · хранить до {{ item.retention_until }}{% endif %}</p>
+    {% if item.file %}
+    <audio controls class="w-100 mb-3" src="{{ item.file.url }}">Ваш браузер не поддерживает audio.</audio>
+    {% else %}
+    <p class="alert alert-secondary small">Файл не загружен (демо-запись без медиа).</p>
+    {% endif %}
+    {% if item.case %}<p><a href="{% url 'platform-case-detail' item.case_id %}">Дело {{ item.case.number }}</a></p>{% endif %}
+    {% if can_change and not item.transcript %}
+    <form method="post" action="{% url 'platform-audio-transcribe' item.pk %}">{% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-outline-primary">Транскрибировать (M62)</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% if item.transcript %}
+<div class="card"><div class="card-header">Транскрипт</div><div class="card-body"><p class="mb-0">{{ item.transcript|linebreaksbr }}</p></div></div>
+{% endif %}
+{% endblock %}

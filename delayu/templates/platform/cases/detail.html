@@ -1,0 +1,225 @@
+{% extends layout_path %}
+{% block title %}Дело {{ case.number }}{% endblock %}
+{% block content %}
+<div class="delayu-page-case-360">
+{% if case.is_archived %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <strong>Дело в архиве</strong> с {{ case.archived_at|date:"d.m.Y H:i" }}.
+    {% if case.retention_until %}Срок хранения до {{ case.retention_until|date:"d.m.Y" }}.{% endif %}
+    {% if case.legal_hold %}<span class="badge bg-danger ms-2">Legal hold</span>{% endif %}
+  </div>
+  {% if can_m06_change %}
+  <div class="d-flex flex-wrap gap-2">
+    <form method="post" action="{% url 'platform-archive-case-legal-hold' case.pk %}" class="d-inline">{% csrf_token %}
+      {% if case.legal_hold %}
+      <input type="hidden" name="legal_hold" value="0"><button type="submit" class="btn btn-sm btn-warning">Снять hold</button>
+      {% else %}
+      <input type="hidden" name="legal_hold" value="1"><button type="submit" class="btn btn-sm btn-outline-danger">Legal hold</button>
+      {% endif %}
+    </form>
+    {% if not case.legal_hold %}
+    <form method="post" action="{% url 'platform-archive-case-restore' case.pk %}" class="d-inline" onsubmit="return confirm('Восстановить из архива?');">{% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-success">Восстановить</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card mb-3"><div class="card-body">
+  <div class="d-flex justify-content-between flex-wrap gap-2 align-items-start">
+    <div>
+      <h4 class="mb-1">{{ case.number }} — {{ case.title }}</h4>
+      <p class="text-muted mb-2 small">Карточка 360° · обновлено {{ case.updated_at|date:"d.m.Y H:i" }}</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      {% if not case.is_archived %}<a href="{% url 'platform-case-edit' case.pk %}" class="btn btn-sm btn-outline-primary">Изменить</a>{% endif %}
+      {% if not case.is_archived %}
+      <button class="btn btn-sm btn-warning" type="button" data-bs-toggle="collapse" data-bs-target="#archiveFormCollapse">В архив</button>
+      {% endif %}
+    </div>
+  </div>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <span class="badge bg-label-primary">Док. {{ stats.documents }}</span>
+    <span class="badge bg-label-info">Задач {{ stats.tasks_open }}/{{ stats.tasks_total }}</span>
+    <span class="badge bg-label-secondary">Комм. {{ stats.comments }}</span>
+    <span class="badge bg-label-warning">BPM {{ stats.bpm_running }}</span>
+    <span class="badge bg-label-dark">Корр. {{ stats.correspondence }}</span>
+  </div>
+  {% if not case.is_archived %}
+  <div class="collapse mb-3" id="archiveFormCollapse">
+    <form method="post" action="{% url 'platform-case-archive' case.pk %}" class="border rounded p-3 bg-light">{% csrf_token %}
+      <div class="mb-2">
+        <label class="form-label small">Основание / комментарий</label>
+        <textarea name="archive_reason" class="form-control form-control-sm" rows="2" placeholder="Необязательно"></textarea>
+      </div>
+      <div class="mb-2">
+        <label class="form-label small">Срок хранения (лет, 0 — без даты окончания)</label>
+        <select name="retention_years" class="form-select form-select-sm" style="max-width:12rem">
+          <option value="1">1 год</option>
+          <option value="3">3 года</option>
+          <option value="5" selected>5 лет</option>
+          <option value="10">10 лет</option>
+          <option value="0">Бессрочно</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-sm btn-warning">Подтвердить перевод в архив</button>
+    </form>
+  </div>
+  {% endif %}
+</div></div>
+
+<ul class="nav nav-tabs mb-3 flex-nowrap overflow-auto" role="tablist">
+  <li class="nav-item"><a class="nav-link {% if active_tab == 'overview' %}active{% endif %}" href="?tab=overview">Обзор</a></li>
+  <li class="nav-item"><a class="nav-link {% if active_tab == 'documents' %}active{% endif %}" href="?tab=documents">Документы</a></li>
+  <li class="nav-item"><a class="nav-link {% if active_tab == 'bpm' %}active{% endif %}" href="?tab=bpm">BPM</a></li>
+  <li class="nav-item"><a class="nav-link {% if active_tab == 'tasks' %}active{% endif %}" href="?tab=tasks">Задачи</a></li>
+  <li class="nav-item"><a class="nav-link {% if active_tab == 'links' %}active{% endif %}" href="?tab=links">Связи</a></li>
+  <li class="nav-item"><a class="nav-link {% if active_tab == 'history' %}active{% endif %}" href="?tab=history">История</a></li>
+  <li class="nav-item"><a class="nav-link {% if active_tab == 'comments' %}active{% endif %}" href="?tab=comments">Комментарии</a></li>
+  <li class="nav-item"><a class="nav-link {% if active_tab == 'ai' %}active{% endif %}" href="?tab=ai">ИИ</a></li>
+</ul>
+
+{% if active_tab == 'overview' %}
+<div class="card mb-4"><div class="card-body">
+  <p class="text-muted mb-1">Статус: {{ case.get_status_display }} · Исполнитель: {{ case.assignee|default:"—" }} · Срок: {{ case.due_date|default:"—" }}</p>
+  {% if can_change and not case.is_archived %}
+  <form method="post" action="{% url 'platform-case-status' case.pk %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">{% csrf_token %}
+    <label class="small mb-0">Быстрая смена статуса:</label>
+    <select name="status" class="form-select form-select-sm" style="max-width:12rem">
+      {% for val, label in status_choices %}
+      <option value="{{ val }}" {% if case.status == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-sm btn-outline-primary">Применить</button>
+  </form>
+  {% endif %}
+  <p>{{ case.description }}</p>
+  {% include "platform/cases/_extra_fields.html" %}
+</div></div>
+{% endif %}
+
+{% if active_tab == 'documents' %}
+<div class="card mb-4"><div class="card-header d-flex justify-content-between align-items-center">
+  <span>Документы</span>
+  <a href="{% url 'platform-documents' %}?case={{ case.pk }}" class="btn btn-xs btn-link btn-sm">Все</a>
+</div><ul class="list-group list-group-flush">{% for d in documents %}
+<li class="list-group-item d-flex justify-content-between flex-wrap gap-1">
+  <span>{{ d.title }} v{{ d.version }}{% if d.is_signed %} <span class="badge bg-success">ЭП</span>{% endif %}</span>
+  <span class="small text-muted">{{ d.get_doc_type_display }}{% if d.content_sha256 %} · <code title="SHA-256">{{ d.content_sha256|slice:":12" }}…</code>{% endif %}</span>
+</li>{% empty %}<li class="list-group-item text-muted">Нет документов</li>{% endfor %}</ul></div>
+{% endif %}
+
+{% if active_tab == 'bpm' %}
+<div class="card mb-4"><div class="card-header">Процессы согласования</div>
+<ul class="list-group list-group-flush">{% for inst in bpm_instances %}
+<li class="list-group-item">
+  <strong>{{ inst.template.name }}</strong> — {{ inst.get_status_display }}
+  <span class="small text-muted">{{ inst.started_at|date:"d.m.Y H:i" }}</span>
+</li>{% empty %}<li class="list-group-item text-muted">Процессы не запускались</li>{% endfor %}</ul>
+<div class="card-header border-top">Активные шаги</div>
+<ul class="list-group list-group-flush">{% for t in bpm_tasks %}
+<li class="list-group-item">{{ t.step_name }} — {{ t.assignee }}</li>{% empty %}<li class="list-group-item text-muted">Нет ожидающих шагов</li>{% endfor %}</ul>
+{% if not case.is_archived %}
+{% for t in my_bpm_tasks %}<form method="post" action="{% url 'platform-bpm-decide' t.pk %}" class="p-3 border-top">{% csrf_token %}
+<input name="comment" class="form-control form-control-sm mb-2" placeholder="Комментарий">
+<button name="decision" value="approve" class="btn btn-sm btn-success">Согласовать</button>
+<button name="decision" value="reject" class="btn btn-sm btn-danger ms-1">Отклонить</button></form>{% endfor %}
+{% endif %}
+</div>
+{% endif %}
+
+{% if active_tab == 'tasks' %}
+<div class="card mb-4"><div class="card-header d-flex justify-content-between align-items-center">
+  <span>Задачи по делу</span>
+  {% if not case.is_archived %}<a href="{% url 'platform-task-create' %}?case={{ case.pk }}" class="btn btn-sm btn-link">+ Задача</a>{% endif %}
+</div>
+<table class="table table-sm mb-0"><thead><tr><th>Задача</th><th>Исполнитель</th><th>Срок</th><th>Колонка</th></tr></thead>
+<tbody>{% for t in tasks %}
+<tr><td>{{ t.title }}</td><td>{{ t.assignee|default:"—" }}</td><td>{{ t.due_date|default:"—" }}</td><td>{{ t.get_kanban_column_display }}</td></tr>
+{% empty %}<tr><td colspan="4" class="text-muted text-center py-3">Задач нет</td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
+
+{% if active_tab == 'links' %}
+<div class="card mb-4"><div class="card-header d-flex justify-content-between align-items-center">
+  <span>Граф связей ({{ link_graph.count }})</span>
+  <span class="small text-muted">#30</span>
+</div>
+<div class="card-body">
+  {% if link_graph.nodes|length > 1 %}
+  <div class="table-responsive mb-3">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Объект</th><th>Тип</th><th>Связь</th></tr></thead>
+      <tbody>
+        {% for e in link_graph.edges %}
+        {% for n in link_graph.nodes %}{% if n.id == e.to %}
+        <tr>
+          <td>{% if n.url %}<a href="{{ n.url }}">{{ n.label }}</a>{% else %}{{ n.label }}{% endif %}</td>
+          <td><span class="badge bg-label-secondary">{{ n.type }}</span></td>
+          <td class="small text-muted">{{ e.label }}</td>
+        </tr>
+        {% endif %}{% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div></div>
+<div class="card mb-4"><div class="card-header">Корреспонденция</div>
+<ul class="list-group list-group-flush">{% for c in correspondence %}
+<li class="list-group-item d-flex justify-content-between">
+  <span><a href="{% url 'platform-correspondence-detail' c.pk %}">{{ c.reg_number }}</a> — {{ c.subject|truncatechars:80 }}</span>
+  <span class="badge bg-label-secondary">{{ c.get_direction_display }}</span>
+</li>{% empty %}<li class="list-group-item text-muted">Связанной корреспонденции нет</li>{% endfor %}</ul></div>
+{% endif %}
+
+{% if active_tab == 'history' %}
+<div class="card mb-4"><div class="card-header">Хронология 360°</div>
+<ul class="list-group list-group-flush">{% for e in timeline %}
+<li class="list-group-item">
+  <div class="d-flex justify-content-between flex-wrap gap-1">
+    <span><span class="badge bg-label-secondary me-1">{{ e.kind }}</span> {{ e.title }}</span>
+    <span class="small text-muted text-nowrap">{{ e.at|date:"d.m.Y H:i" }}</span>
+  </div>
+  <div class="small text-muted">{{ e.actor_label }}{% if e.detail %} · {{ e.detail|truncatechars:120 }}{% endif %}</div>
+</li>{% empty %}<li class="list-group-item text-muted">Событий пока нет</li>{% endfor %}</ul>
+{% if audit_slice %}
+<div class="card-header border-top small">Последние записи аудита (M01)</div>
+<ul class="list-group list-group-flush">{% for a in audit_slice %}
+<li class="list-group-item small"><code>{{ a.action }}</code> · {{ a.created_at|date:"d.m.Y H:i" }} · {{ a.user|default:"—" }}</li>{% endfor %}</ul>
+{% endif %}
+</div>
+{% endif %}
+
+{% if active_tab == 'comments' %}
+<div class="card mb-4"><div class="card-header d-flex justify-content-between align-items-center">
+  <span>Комментарии</span>
+  <a href="{% url 'platform-comments' %}?case={{ case.pk }}" class="btn btn-xs btn-link btn-sm">Все (M38)</a>
+</div><div class="card-body">{% for c in comments %}
+<div class="mb-3 pb-2 border-bottom">
+  <div class="d-flex justify-content-between"><strong>{{ c.author.get_full_name|default:c.author.username }}</strong><span class="small text-muted">{{ c.created_at|date:"d.m.Y H:i" }}</span></div>
+  <p class="mb-1">{{ c.body|linebreaksbr }}</p>
+  {% for r in c.replies.all %}<div class="ms-3 small text-muted border-start ps-2 mb-1"><strong>{{ r.author.username }}</strong>: {{ r.body }}</div>{% endfor %}
+</div>
+{% empty %}<p class="text-muted">Нет комментариев</p>{% endfor %}
+{% if not case.is_archived %}
+<form method="post" action="{% url 'platform-case-comment' case.pk %}">{% csrf_token %}<textarea name="body" class="form-control mb-2" rows="2" placeholder="Текст, @username для упоминания"></textarea><button class="btn btn-sm btn-primary">Добавить</button></form>
+{% else %}
+<p class="text-muted small mb-0">Комментарии в архивном деле только для чтения (M06).</p>
+{% endif %}
+</div></div>
+{% endif %}
+
+{% if active_tab == 'ai' %}
+<div class="card mb-4"><div class="card-body">
+  <h6 class="mb-3">ИИ-анализ дела</h6>
+  <div class="alert alert-info small mb-2"><strong>Краткое содержание:</strong> {{ ai_summary }}</div>
+  <div class="alert alert-{% if ai_risk.risk == 'high' %}danger{% elif ai_risk.risk == 'medium' %}warning{% else %}secondary{% endif %} small mb-0">
+    <strong>Риск просрочки:</strong> {{ ai_risk.message }}
+  </div>
+</div></div>
+{% endif %}
+</div>
+{% endblock %}

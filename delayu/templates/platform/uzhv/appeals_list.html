@@ -1,0 +1,77 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Обращения граждан{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap align-items-center">
+  {% if can_create %}
+  <a href="{% url 'uzhv-create-hub' %}" class="btn btn-outline-primary btn-sm"><i class="ri-magic-line"></i> Мастер</a>
+  <a href="{% url 'uzhv-appeal-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> Зарегистрировать</a>
+  {% endif %}
+  <form method="get" class="d-flex gap-2 uzhv-filter-form">
+    <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" placeholder="Номер, тема, ФИО…">
+    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все статусы</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}"{% if request.GET.status == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <div class="form-check mt-1">
+      <input class="form-check-input" type="checkbox" name="overdue" value="1" id="overdueChk" {% if filter_overdue == "1" %}checked{% endif %} onchange="this.form.submit()">
+      <label class="form-check-label small" for="overdueChk">Просроченные</label>
+    </div>
+    <select name="assignee" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все исполнители</option>
+      <option value="me"{% if filter_assignee == "me" %} selected{% endif %}>Мои</option>
+      {% for u in appeal_assignee_users %}
+      <option value="{{ u.pk }}"{% if filter_assignee == u.pk|stringformat:"s" %} selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+{% endblock %}
+{% block card_body %}
+{% include "platform/uzhv/_bulk_toolbar.html" %}
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle uzhv-bulk-table">
+    <thead>
+      <tr>
+        <th style="width:2.5rem"><input type="checkbox" class="form-check-input uzhv-select-all" title="Выбрать все"></th>
+        <th>Номер</th>
+        <th>Тема</th>
+        <th>Заявитель</th>
+        <th>Поступило</th>
+        <th>Срок ответа</th>
+        <th>Статус</th>
+        <th>Исполнитель</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in appeals %}
+      <tr data-modal-url="{% url 'uzhv-appeal-modal' a.pk %}" data-modal-title="Обращение {{ a.appeal_number }}"{% if request.GET.open == a.pk|stringformat:"s" %} data-auto-open-modal{% endif %}{% if a.is_overdue %} class="table-danger"{% endif %}>
+        <td><input type="checkbox" class="form-check-input uzhv-row-check" value="{{ a.pk }}"></td>
+        <td><code>{{ a.appeal_number }}</code></td>
+        <td>{{ a.subject|truncatechars:50 }}</td>
+        <td>{{ a.citizen.full_name|default:"—" }}</td>
+        <td>{{ a.received_at|date:"d.m.Y" }}</td>
+        <td>
+          {{ a.due_date|date:"d.m.Y" }}
+          {% if a.is_overdue %}<span class="badge bg-danger ms-1">!</span>{% endif %}
+        </td>
+        <td><span class="badge bg-label-{% if a.is_overdue %}danger{% else %}primary{% endif %}">{{ a.get_status_display }}</span></td>
+        <td>{{ a.assignee|default:"—" }}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-appeal-modal' a.pk %}" title="Просмотр"><i class="ri-eye-line"></i></button>
+          {% if can_change %}<a href="{% url 'uzhv-appeal-edit' a.pk %}" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать"><i class="ri-pencil-line"></i></a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" class="text-muted text-center py-4">Обращений нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% include "platform/uzhv/_list_modal.html" with modal_title="Обращение" %}
+{% endblock %}
+{% block page_js %}{{ block.super }}{% include "platform/uzhv/_list_modal_js.html" %}{% endblock %}

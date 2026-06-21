@@ -1,0 +1,27 @@
+{% extends layout_path %}
+{% block title %}Процесс — {{ instance.case.number }}{% endblock %}
+{% block content %}
+{% include "platform/bpm/_nav.html" %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ instance.template.name }}</h4>
+    <p class="mb-0 text-body-secondary"><a href="{% url 'platform-case-detail' instance.case_id %}">{{ instance.case.number }}</a> · {{ instance.get_status_display }}</p>
+  </div>
+  <span class="badge bg-label-primary">Шаг: {{ instance.current_step_id|default:"завершён" }}</span>
+</div>
+<div class="card">
+  <div class="card-header">Хронология согласования</div>
+  <ul class="list-group list-group-flush">
+    {% for t in tasks %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <strong>{{ t.step_name }}</strong>
+        <div class="small text-muted">{{ t.assignee }} · {{ t.decided_at|date:"d.m.Y H:i"|default:"ожидает" }}</div>
+        {% if t.comment %}<div class="small">{{ t.comment }}</div>{% endif %}
+      </div>
+      <span class="badge bg-label-{% if t.status == 'done' %}success{% elif t.status == 'rejected' %}danger{% else %}warning{% endif %}">{{ t.get_status_display }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

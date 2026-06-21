@@ -1,0 +1,13 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<h4 class="mb-3">{{ page_title }}</h4>
+<div class="card col-lg-9">
+  <div class="card-body">
+    <form method="post">{% csrf_token %}
+      {% for field in form %}<div class="mb-3"><label class="form-label">{{ field.label }}</label>{{ field }}</div>{% endfor %}
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

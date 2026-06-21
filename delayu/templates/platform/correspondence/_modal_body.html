@@ -1,0 +1,10 @@
+<dl class="row small mb-0">
+  <dt class="col-4">Номер</dt><dd class="col-8"><code>{{ corr.reg_number }}</code></dd>
+  <dt class="col-4">Тема</dt><dd class="col-8">{{ corr.subject }}</dd>
+  <dt class="col-4">Контрагент</dt><dd class="col-8">{{ corr.counterparty|default:"—" }}</dd>
+  <dt class="col-4">Статус</dt><dd class="col-8">{{ corr.get_status_display }}</dd>
+  <dt class="col-4">Исполнитель</dt><dd class="col-8">{{ corr.assignee|default:"—" }}</dd>
+</dl>
+<div class="mt-3 text-end">
+  <a href="{% url 'platform-correspondence-detail' corr.pk %}" class="btn btn-sm btn-primary">Карточка</a>
+</div>

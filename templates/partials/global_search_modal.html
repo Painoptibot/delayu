@@ -1,0 +1,25 @@
+<div class="modal fade" id="delayuGlobalSearchModal" tabindex="-1" aria-hidden="true" data-search-url="{% url 'api-v1-search' %}">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <input type="search" class="form-control form-control-lg border-0 shadow-none" id="delayuGlobalSearchInput" placeholder="Поиск… (обращение:номер, дело:ФИО, Ctrl+K)" autocomplete="off" />
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <div class="list-group list-group-flush" id="delayuGlobalSearchResults"></div>
+        <div class="d-flex flex-wrap gap-1 mt-2" id="delayuGlobalSearchTypes">
+          <button type="button" class="btn btn-xs btn-outline-secondary btn-sm delayu-search-type" data-prefix="обращение:">обращение:</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary btn-sm delayu-search-type" data-prefix="дело:">дело:</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary btn-sm delayu-search-type" data-prefix="гражданин:">гражданин:</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary btn-sm delayu-search-type" data-prefix="мкд:">мкд:</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary btn-sm delayu-search-type" data-prefix="межвед:">межвед:</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary btn-sm delayu-search-type" data-prefix="договор:">договор:</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary btn-sm delayu-search-type" data-prefix="предписание:">предписание:</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary btn-sm delayu-search-type" data-prefix="проверка:">проверка:</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary btn-sm delayu-search-type" data-prefix="суд:">суд:</button>
+        </div>
+        <p class="small text-muted mt-2 mb-0" id="delayuGlobalSearchHint">Клик по фильтру вставит префикс · ↑↓ Enter для выбора</p>
+      </div>
+    </div>
+  </div>
+</div>

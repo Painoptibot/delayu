@@ -1,0 +1,5 @@
+{% extends "platform/_page.html" %}
+{% block title %}Мониторинг{% endblock %}
+{% block card_body %}
+<ul>{% for k, v in metrics.items %}<li><strong>{{ k }}</strong>: {{ v }}</li>{% endfor %}</ul>
+{% endblock %}

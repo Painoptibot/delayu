@@ -1,0 +1,30 @@
+{% extends "platform/studio/_base.html" %}
+{% block studio_content %}
+<div class="card" data-studio="permissions" data-save-url="{% url 'platform-studio-save' 'permissions' %}">
+  <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+    <h5 class="mb-0">Матрица прав</h5>
+    <select class="form-select form-select-sm w-auto" onchange="location.search='role='+this.value">
+      {% for r in roles %}
+      <option value="{{ r.pk }}" {% if active_role and active_role.pk == r.pk %}selected{% endif %}>{{ r.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="card-body">
+    <div class="mb-3 d-flex flex-wrap gap-2">
+      <span class="small text-muted me-2">Пресеты:</span>
+      <button type="button" class="btn btn-sm btn-outline-secondary studio-preset" data-preset="viewer">Только просмотр</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary studio-preset" data-preset="operator">Оператор</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary studio-preset" data-preset="admin">Администратор</button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm" id="studioPermTable">
+        <thead><tr><th>Модуль</th><th>Просмотр</th><th>Создание</th><th>Изменение</th><th>Удаление</th><th>ПДн</th><th>Экспорт ПДн</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <script type="application/json" id="studioPermJson">{{ matrix_json|safe }}</script>
+    <input type="hidden" id="studioPermRoleId" value="{{ active_role.pk|default:'' }}">
+    <div class="text-end mt-3"><button type="button" class="btn btn-primary" id="studioPermSave">Сохранить матрицу</button></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% if bulk_enabled %}
+<div class="uzhv-bulk-bar d-none align-items-center gap-2 flex-wrap mb-3 px-3 py-2 border rounded bg-label-secondary" id="uzhvBulkBar">
+  <span class="small mb-0"><strong id="uzhvBulkCount">0</strong> выбрано</span>
+  <form method="post" action="{% url 'uzhv-bulk' %}" class="d-flex gap-2 flex-wrap align-items-center mb-0 uzhv-bulk-form" id="uzhvBulkForm">
+    {% csrf_token %}
+    <input type="hidden" name="entity" value="{{ bulk_entity }}">
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <div id="uzhvBulkIds"></div>
+    <select name="action" class="form-select form-select-sm uzhv-bulk-action" style="width:auto">
+      <option value="export_csv">Экспорт CSV</option>
+      {% if can_change %}
+      {% if bulk_status_choices %}
+      <option value="status">Сменить статус</option>
+      {% endif %}
+      {% if bulk_show_assignee %}
+      <option value="assign">Назначить исполнителя</option>
+      {% endif %}
+      {% if bulk_allow_close %}
+      <option value="close">Закрыть договоры</option>
+      {% endif %}
+      {% if bulk_show_meets %}
+      <option value="meets_criteria">Критерии участия</option>
+      {% endif %}
+      {% if bulk_program_choices %}
+      <option value="program">Сменить программу</option>
+      {% endif %}
+      {% endif %}
+    </select>
+    {% if can_change and bulk_status_choices %}
+    <select name="status" class="form-select form-select-sm uzhv-bulk-status d-none" style="width:auto">
+      {% for val, label in bulk_status_choices %}
+      <option value="{{ val }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+    {% if can_change and bulk_show_assignee %}
+    <select name="assignee" class="form-select form-select-sm uzhv-bulk-assignee d-none" style="width:auto">
+      <option value="">— снять назначение —</option>
+      {% for u in bulk_assignee_users %}
+      <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+    {% if can_change and bulk_show_meets %}
+    <select name="meets" class="form-select form-select-sm uzhv-bulk-meets d-none" style="width:auto">
+      <option value="1">Соответствуют критериям</option>
+      <option value="0">Не соответствуют</option>
+    </select>
+    {% endif %}
+    {% if can_change and bulk_program_choices %}
+    <select name="program" class="form-select form-select-sm uzhv-bulk-program d-none" style="width:auto">
+      {% for val, label in bulk_program_choices %}
+      <option value="{{ val }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+    <button type="submit" class="btn btn-sm btn-primary">Применить</button>
+  </form>
+</div>
+{% endif %}

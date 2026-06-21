@@ -1,0 +1,11 @@
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    <li class="nav-item"><a class="nav-link{% if ai_tab == 'hub' %} active{% endif %}" href="{% url 'platform-ai-hub' %}"><i class="icon-base ri ri-dashboard-line icon-sm me-2"></i>Обзор</a></li>
+    <li class="nav-item"><a class="nav-link{% if ai_tab == 'assistant' %} active{% endif %}" href="{% url 'platform-ai-assistant' %}"><i class="icon-base ri ri-robot-line icon-sm me-2"></i>Ассистент</a></li>
+    <li class="nav-item"><a class="nav-link{% if ai_tab == 'search' %} active{% endif %}" href="{% url 'platform-ai-search' %}"><i class="icon-base ri ri-search-line icon-sm me-2"></i>Поиск</a></li>
+    <li class="nav-item"><a class="nav-link{% if ai_tab == 'knowledge' %} active{% endif %}" href="{% url 'platform-knowledge' %}"><i class="icon-base ri ri-book-open-line icon-sm me-2"></i>База знаний</a></li>
+    <li class="nav-item"><a class="nav-link{% if ai_tab == 'tools' %} active{% endif %}" href="{% url 'platform-ai-tools' %}"><i class="icon-base ri ri-magic-line icon-sm me-2"></i>Инструменты</a></li>
+    <li class="nav-item"><a class="nav-link{% if ai_tab == 'hitl' %} active{% endif %}" href="{% url 'platform-ai-hitl' %}"><i class="icon-base ri ri-user-search-line icon-sm me-2"></i>HITL</a></li>
+    <li class="nav-item"><a class="nav-link{% if ai_tab == 'policies' %} active{% endif %}" href="{% url 'platform-ai-policies' %}"><i class="icon-base ri ri-shield-check-line icon-sm me-2"></i>Политики</a></li>
+  </ul>
+</div>

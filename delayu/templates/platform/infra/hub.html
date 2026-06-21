@@ -1,0 +1,64 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/infra/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-primary h-100">
+      <div class="card-body">
+        <p class="small text-muted mb-1">Геообъекты (M67)</p>
+        <h3 class="mb-0">{{ metrics.geo_objects }}</h3>
+        <a href="{% url 'platform-gis' %}" class="small">Карта →</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-info h-100">
+      <div class="card-body">
+        <p class="small text-muted mb-1">PWA / черновики (M68)</p>
+        <h3 class="mb-0">{{ metrics.pwa_drafts_pending }}</h3>
+        <span class="small text-muted">устройств: {{ metrics.pwa_devices }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-success h-100">
+      <div class="card-body">
+        <p class="small text-muted mb-1">SSO активно (M69)</p>
+        <h3 class="mb-0">{{ metrics.sso_active }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-warning h-100">
+      <div class="card-body">
+        <p class="small text-muted mb-1">ETL ошибки (M70)</p>
+        <h3 class="mb-0">{{ metrics.etl_failed }}</h3>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-md-6">
+    <a href="{% url 'platform-data-hub' %}" class="card card-hover h-100 text-body">
+      <div class="card-body">
+        <h6>Витрина данных (M71)</h6>
+        <p class="small text-muted mb-0">Опубликовано наборов: {{ metrics.datasets_published }}</p>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-6">
+    <a href="{% url 'platform-citizen' %}" class="card card-hover h-100 text-body">
+      <div class="card-body">
+        <h6>Портал гражданина (M72)</h6>
+        <p class="small text-muted mb-0">Новых обращений: {{ metrics.appeals_new }}</p>
+      </div>
+    </a>
+  </div>
+</div>
+{% endblock %}

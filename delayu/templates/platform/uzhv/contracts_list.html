@@ -1,0 +1,64 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Договоры{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap align-items-center">
+  {% if can_create %}<a href="{% url 'uzhv-contract-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> Новый договор</a>{% endif %}
+  <a href="{% url 'uzhv-contract-import' %}" class="btn btn-outline-primary btn-sm"><i class="ri-upload-2-line"></i> Импорт xlsx</a>
+  <form method="get" class="d-flex gap-2 uzhv-filter-form">
+    <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" placeholder="Номер, ФИО, адрес…">
+    <select name="active" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все</option>
+      <option value="1"{% if filter_active == "1" %} selected{% endif %}>Действующие</option>
+      <option value="0"{% if filter_active == "0" %} selected{% endif %}>Закрытые</option>
+    </select>
+  </form>
+</div>
+{% endblock %}
+{% block card_body %}
+{% include "platform/uzhv/_bulk_toolbar.html" %}
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle uzhv-bulk-table">
+    <thead>
+      <tr>
+        <th style="width:2.5rem"><input type="checkbox" class="form-check-input uzhv-select-all" title="Выбрать все"></th>
+        <th>Номер</th>
+        <th>Тип</th>
+        <th>Гражданин</th>
+        <th>Помещение</th>
+        <th>Дата</th>
+        <th>Статус</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in contracts %}
+      <tr data-modal-url="{% url 'uzhv-contract-modal' c.pk %}" data-modal-title="Договор {{ c.contract_number }}"{% if request.GET.open == c.pk|stringformat:"s" %} data-auto-open-modal{% endif %}>
+        <td><input type="checkbox" class="form-check-input uzhv-row-check" value="{{ c.pk }}"></td>
+        <td><strong>{{ c.contract_number }}</strong></td>
+        <td>{{ c.get_contract_type_display }}</td>
+        <td>{{ c.citizen.full_name }}</td>
+        <td>{% if c.premise %}{{ c.premise }}{% else %}—{% endif %}</td>
+        <td>{{ c.signed_at|date:"d.m.Y" }}</td>
+        <td>
+          {% if c.is_active %}
+          <span class="badge bg-label-success">Действует</span>
+          {% else %}
+          <span class="badge bg-label-secondary">Закрыт</span>
+          {% endif %}
+        </td>
+        <td class="text-end">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-contract-modal' c.pk %}" title="Просмотр"><i class="ri-eye-line"></i></button>
+          {% if can_change %}<a href="{% url 'uzhv-contract-edit' c.pk %}" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать"><i class="ri-edit-line"></i></a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="text-muted text-center py-4">Договоры не найдены</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% include "platform/uzhv/_list_modal.html" with modal_title="Договор" %}
+{% endblock %}
+{% block page_js %}{{ block.super }}{% include "platform/uzhv/_list_modal_js.html" %}{% endblock %}

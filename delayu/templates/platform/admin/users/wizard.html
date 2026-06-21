@@ -1,0 +1,145 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Новый пользователь — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Создание пользователя (M03)</h5>
+    <a href="{% url 'platform-users' %}" class="btn btn-sm btn-outline-secondary">К списку</a>
+  </div>
+  <div class="card-body">
+    <form method="post" id="userWizardForm">{% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="bs-stepper wizard-numbered">
+        <div class="bs-stepper-header">
+          <div class="step" data-target="#wizard-account">
+            <button type="button" class="step-trigger">
+              <span class="bs-stepper-circle">1</span>
+              <span class="bs-stepper-label">
+                <span class="bs-stepper-title">Учётная запись</span>
+                <span class="bs-stepper-subtitle">Логин и пароль</span>
+              </span>
+            </button>
+          </div>
+          <div class="line"></div>
+          <div class="step" data-target="#wizard-personal">
+            <button type="button" class="step-trigger">
+              <span class="bs-stepper-circle">2</span>
+              <span class="bs-stepper-label">
+                <span class="bs-stepper-title">Личные данные</span>
+                <span class="bs-stepper-subtitle">ФИО, документы</span>
+              </span>
+            </button>
+          </div>
+          <div class="line"></div>
+          <div class="step" data-target="#wizard-contacts">
+            <button type="button" class="step-trigger">
+              <span class="bs-stepper-circle">3</span>
+              <span class="bs-stepper-label">
+                <span class="bs-stepper-title">Контакты</span>
+                <span class="bs-stepper-subtitle">Телефоны, адреса</span>
+              </span>
+            </button>
+          </div>
+          <div class="line"></div>
+          <div class="step" data-target="#wizard-work">
+            <button type="button" class="step-trigger">
+              <span class="bs-stepper-circle">4</span>
+              <span class="bs-stepper-label">
+                <span class="bs-stepper-title">Работа и доступ</span>
+                <span class="bs-stepper-subtitle">Должность, роль</span>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div class="bs-stepper-content">
+          <div id="wizard-account" class="content">
+            <div class="row g-4">
+              {% for field in form %}
+              {% if field.name in "username,email,password1,password2" %}
+              <div class="col-md-6">
+                <label class="form-label" for="id_{{ field.name }}">{{ field.label }}</label>
+                {{ field }}
+                {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+            <div class="col-12 d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-outline-secondary btn-prev" disabled>Назад</button>
+              <button type="button" class="btn btn-primary btn-next">Далее</button>
+            </div>
+          </div>
+          <div id="wizard-personal" class="content">
+            <div class="row g-4">
+              {% for field in form %}
+              {% if field.name in "first_name,last_name,middle_name,gender,birth_date,snils,inn,passport_series,passport_number,passport_issued_by,passport_issued_date" %}
+              <div class="col-md-6">
+                <label class="form-label" for="id_{{ field.name }}">{{ field.label }}</label>
+                {{ field }}
+                {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+            <div class="col-12 d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+              <button type="button" class="btn btn-primary btn-next">Далее</button>
+            </div>
+          </div>
+          <div id="wizard-contacts" class="content">
+            <div class="row g-4">
+              {% for field in form %}
+              {% if field.name in "phone,phone_mobile,phone_work,phone_internal,email_personal,telegram,address_registration,address_residence" %}
+              <div class="col-md-6">
+                <label class="form-label" for="id_{{ field.name }}">{{ field.label }}</label>
+                {{ field }}
+                {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+            <div class="col-12 d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+              <button type="button" class="btn btn-primary btn-next">Далее</button>
+            </div>
+          </div>
+          <div id="wizard-work" class="content">
+            <div class="row g-4">
+              {% for field in form %}
+              {% if field.name in "employee_number,tab_number,position_title,employment_type,hire_date,dismissal_date,department_text,manager_name,timezone,locale,organization,role,must_change_password,two_factor_enabled,comment" %}
+              <div class="col-md-6">
+                <label class="form-label" for="id_{{ field.name }}">{{ field.label }}</label>
+                {% if field.field.widget.input_type == 'checkbox' %}
+                <div class="form-check mt-2">{{ field }}</div>
+                {% else %}
+                {{ field }}
+                {% endif %}
+                {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+            <div class="col-12 d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+              <button type="submit" class="btn btn-success btn-submit">Создать пользователя</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/bs-stepper/bs-stepper.css' %}">
+{% endblock %}
+{% block vendor_js %}{{ block.super }}
+<script src="{% static 'vendor/libs/bs-stepper/bs-stepper.js' %}"></script>
+{% endblock %}
+{% block page_js %}{{ block.super }}
+<script src="{% static 'js/delayu-user-wizard.js' %}"></script>
+{% endblock %}

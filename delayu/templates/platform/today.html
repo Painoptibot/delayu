@@ -1,0 +1,7 @@
+{% extends "platform/_page.html" %}
+{% block title %}Мне на сегодня{% endblock %}
+{% block header_actions %}<a href="{% url 'platform-task-create' %}" class="btn btn-sm btn-primary">+ Задача</a>{% endblock %}
+{% block card_body %}
+<table class="table"><thead><tr><th>Задача</th><th>Срок</th><th>Колонка</th></tr></thead>
+<tbody>{% for t in tasks %}<tr><td><a href="{% url 'platform-task-edit' t.pk %}">{{ t.title }}</a></td><td>{{ t.due_date|default:"—" }}</td><td>{{ t.get_kanban_column_display }}</td></tr>{% empty %}<tr><td colspan="3" class="text-muted">Задач нет</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

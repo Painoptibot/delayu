@@ -1,0 +1,21 @@
+{% extends "platform/studio/_base.html" %}
+{% block studio_content %}
+<div class="card" data-studio="menu" data-save-url="{% url 'platform-studio-save' 'menu' %}">
+  <div class="card-header"><h5 class="mb-0">Конструктор меню подсистемы</h5></div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-5">
+        <p class="small text-muted">Доступные пункты</p>
+        <div id="studioMenuPool" class="studio-palette"></div>
+        <script type="application/json" id="studioMenuAllJson">{{ all_items_json|safe }}</script>
+      </div>
+      <div class="col-md-7">
+        <p class="small text-muted">Меню подсистемы (перетаскивайте разделы и пункты)</p>
+        <div id="studioMenuLayout" class="studio-menu-layout"></div>
+        <script type="application/json" id="studioMenuJson">{{ layout_json|safe }}</script>
+        <div class="text-end mt-3"><button type="button" class="btn btn-primary" id="studioMenuSave">Сохранить меню</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

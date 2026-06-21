@@ -1,0 +1,24 @@
+{% extends layout_path %}
+{% block title %}Импорт договоров{% endblock %}
+{% block content %}
+<div class="alert alert-info">
+  Загрузите xlsx в формате Горжилхоз:
+  <strong>«в_Горжилхоз_Таблица_еженедельно.xlsx»</strong> или
+  <strong>«Шаблон_импорта_договоров_социального_найма.xlsx»</strong>.
+  Колонки: тип, номер, дата заключения, ФИО, СНИЛС, адрес, № помещения, площадь, комнатность, дата окончания.
+  Шаблоны: <code>docs/uzv/form/</code>
+</div>
+<div class="card">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Файл Excel (.xlsx)</label>
+        <input type="file" name="file" class="form-control" accept=".xlsx" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Импортировать</button>
+      <a href="{% url 'uzhv-contracts' %}" class="btn btn-outline-secondary">Отмена</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

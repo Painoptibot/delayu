@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DelaYu — platform presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="icon" href="assets/img/yugit-logo.svg" type="image/svg+xml" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+:root {
+  --primary:#696cff; --primary-2:#9055fd; --accent:#03c3ec;
+  --text:#1a2332; --muted:#4a5c6e;
+  --glass:rgba(255,255,255,.88); --glass-border:rgba(210,218,230,.85);
+  --shadow:0 20px 50px rgba(38,43,67,.12);
+  --slide-bg:rgba(248,250,252,.84);
+  --slide-bg-solid:linear-gradient(165deg,#ffffff 0%,#f8f9fc 48%,#f1f4f8 100%);
+  --font:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);color:var(--text);background:#0b1020;overflow:hidden}
+.bg-live{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+#bg-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.bg-spotlight{position:absolute;width:min(55vw,620px);height:min(55vw,620px);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(105,108,255,.28) 0%,rgba(144,85,253,.12) 38%,transparent 72%);filter:blur(8px);will-change:left,top}
+.bg-aurora{position:absolute;inset:-20%;background:conic-gradient(from 180deg at 50% 50%,rgba(105,108,255,.22),rgba(3,195,236,.16),rgba(144,85,253,.2),rgba(105,108,255,.22));animation:auroraSpin 26s linear infinite;opacity:.85}
+@keyframes auroraSpin{to{transform:rotate(360deg)}}
+.bg-live .orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.62;will-change:transform;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.bg-live .orb-1{width:460px;height:460px;background:#696cff;top:-100px;left:-80px}
+.bg-live .orb-2{width:380px;height:380px;background:#9055fd;bottom:-60px;right:8%}
+.bg-live .orb-3{width:300px;height:300px;background:#03c3ec;top:38%;right:-90px}
+.bg-live .grid-mesh{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(ellipse at 50% 45%,black 10%,transparent 78%);animation:meshDrift 24s linear infinite}
+@keyframes meshDrift{0%{transform:translate(0,0)}50%{transform:translate(-22px,-22px)}100%{transform:translate(0,0)}}
+.deck{position:relative;z-index:1;height:100vh;overflow:hidden}
+.slide{position:absolute;inset:0;display:none;padding:36px 52px 78px;overflow:auto;color:var(--text)}
+.slide:not(.slide--cover){background:var(--slide-bg);border:1px solid rgba(255,255,255,.5);box-shadow:0 0 0 1px rgba(210,218,230,.3),0 24px 60px rgba(15,18,36,.08)}
+.slide.active{display:flex;flex-direction:column}
+.slide.active.is-entering{animation:slideIn .4s cubic-bezier(.2,.8,.2,1)}
+@keyframes slideIn{from{transform:translateY(14px) scale(.99)}to{transform:none}}
+.slide--cover{color:#fff;text-align:center;justify-content:center;align-items:center;background:transparent!important;border:none;box-shadow:none!important}
+.slide--cover::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(105,108,255,.72),rgba(144,85,253,.68) 50%,rgba(3,195,236,.58));z-index:-1}
+.slide--cover>*{position:relative;z-index:1}
+.slide--cover h1{font-size:clamp(2.2rem,4.5vw,3.4rem);font-weight:900;margin:14px 0 8px;text-shadow:0 4px 24px rgba(0,0,0,.2);font-family:var(--font)}
+.slide--cover p{font-size:1.1rem;opacity:.95;max-width:760px;line-height:1.5;font-weight:400}
+.slide--cover .meta{margin-top:18px;font-size:.92rem;opacity:.88}
+.logo{height:60px;filter:brightness(0) invert(1)}
+.glass{background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--glass-border);border-radius:16px;box-shadow:var(--shadow)}
+.header{margin-bottom:18px;flex-shrink:0;padding:14px 18px}
+.header:not(.header--plain){background:var(--glass);border:1px solid var(--glass-border);border-radius:16px;box-shadow:var(--shadow)}
+.header h2{font-size:1.6rem;font-weight:900;background:linear-gradient(90deg,var(--primary),var(--primary-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:var(--font)}
+.header p{color:var(--muted);font-size:.88rem;margin-top:4px;font-weight:400}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:22px;flex:1;align-items:start}
+@media(max-width:1100px){.grid-2{grid-template-columns:1fr}}
+.hero,.shot{width:100%;border-radius:18px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.35)}
+.hero{object-fit:cover;max-height:420px}
+.shot{object-fit:cover;object-position:top left}
+.shot-sm{max-height:200px;width:100%}
+.shot-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.shot-row figcaption{font-size:.68rem;color:var(--muted);margin-top:4px;text-align:center;font-weight:500}
+ul.features{list-style:none;display:flex;flex-direction:column;gap:9px}
+ul.features li{display:flex;gap:12px;padding:12px 14px;font-size:.9rem;line-height:1.4;background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;box-shadow:0 2px 10px rgba(38,43,67,.06)}
+.ico,.ico-sm{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:14px;background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;box-shadow:0 8px 20px rgba(105,108,255,.35)}
+.ico{width:44px;height:44px}
+.ico-sm{width:36px;height:36px;border-radius:12px}
+.ico svg,.ico-sm svg{width:22px;height:22px;stroke-width:2}
+ul.features li strong{display:block;margin-bottom:2px;color:var(--text);font-weight:700}
+.impl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+@media(max-width:1200px){.impl-grid{grid-template-columns:repeat(2,1fr)}}
+.impl{padding:11px;font-size:.8rem;line-height:1.35}
+.impl strong{display:block;margin-bottom:3px;font-size:.85rem;font-weight:700}
+.impl small{color:var(--muted);display:block;margin-bottom:5px;font-weight:400}
+.tag{display:inline-block;border-radius:999px;font-size:.62rem;font-weight:700;padding:3px 9px;margin:2px;font-family:var(--font)}
+.tag-ok{background:rgba(113,221,55,.2);color:#3d9e00}
+.tag-plan{background:rgba(255,171,0,.2);color:#a67c00}
+.tag-chip{background:rgba(105,108,255,.12);color:var(--primary);padding:5px 11px;font-size:.72rem}
+.stats{display:flex;gap:14px;flex-wrap:wrap;margin:12px 0}
+.stat{padding:14px 22px;text-align:center;min-width:96px}
+.stat b{display:block;font-size:1.6rem;font-weight:900;background:linear-gradient(90deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat span{font-size:.72rem;color:var(--muted);font-weight:500}
+.int-list{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.84rem}
+.int-list li{display:flex;gap:10px;padding:10px 12px;align-items:flex-start}
+.int-list strong{display:block;font-size:.86rem;font-weight:700}
+.int-list span{color:var(--muted);font-size:.76rem;font-weight:400}
+.int-done .ico-sm{background:linear-gradient(135deg,#71dd37,#49AC00)}
+.int-plan .ico-sm{background:linear-gradient(135deg,#ffab00,#ff9f43)}
+.tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.tech{padding:14px}
+.tech .ico{width:40px;height:40px;margin-bottom:8px}
+.tech h4{font-size:.92rem;margin-bottom:5px;font-weight:700}
+.tech p{font-size:.76rem;color:var(--muted);line-height:1.35;font-weight:400}
+.devops{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.lead{font-size:.98rem;line-height:1.55;color:var(--muted);margin-bottom:12px;font-weight:400}
+.btn-dl{display:inline-flex;align-items:center;gap:10px;margin:10px 8px;padding:14px 28px;border-radius:14px;font-weight:700;font-size:1rem;text-decoration:none;color:#fff;background:linear-gradient(135deg,#fff,rgba(255,255,255,.85));color:var(--primary);box-shadow:0 12px 32px rgba(0,0,0,.2);transition:transform .2s,box-shadow .2s;font-family:var(--font)}
+.btn-dl:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(0,0,0,.28)}
+.btn-dl--ghost{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35)}
+.btn-dl svg{width:20px;height:20px}
+.dl-box{margin-top:24px;padding:20px 28px;border-radius:20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(12px)}
+.lang-switch{position:fixed;top:14px;right:18px;z-index:120}
+.lang-switch a{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;text-decoration:none;font-size:.82rem;font-weight:500;color:#fff;background:rgba(15,18,36,.75);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(10px);font-family:var(--font)}
+.lang-switch a:hover{background:rgba(105,108,255,.85)}
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:rgba(15,18,36,.88);color:#fff;backdrop-filter:blur(14px);border-top:1px solid rgba(255,255,255,.08);font-family:var(--font)}
+.nav button{background:linear-gradient(135deg,var(--primary),var(--primary-2));border:none;color:#fff;padding:9px 18px;border-radius:10px;cursor:pointer;font-weight:500;font-family:var(--font)}
+.nav button:disabled{opacity:.35;cursor:default}
+.dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:55%}
+.dots button{width:8px;height:8px;border-radius:50%;border:none;background:rgba(255,255,255,.25);cursor:pointer;padding:0;transition:transform .2s,background .2s}
+.dots button.active{background:var(--accent);transform:scale(1.35)}
+.counter{font-size:.8rem;opacity:.85;min-width:72px;text-align:center;font-weight:400}
+body.pdf-export,body.pdf-export html{overflow:visible!important;height:auto!important;background:#fff!important}
+body.pdf-export .bg-live,body.pdf-export .nav,body.pdf-export .lang-switch{display:none!important}
+body.pdf-export .deck{position:static!important;height:auto!important;overflow:visible!important}
+body.pdf-export .slide{position:relative!important;inset:auto!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;display:flex!important;flex-direction:column!important;opacity:1!important;visibility:visible!important;animation:none!important;transform:none!important;page-break-after:always;break-after:page;break-inside:avoid;min-height:100vh;width:100%;padding:28px 40px 32px;box-sizing:border-box;background:var(--slide-bg-solid)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:none!important;box-shadow:none!important}
+body.pdf-export .slide--cover::before{display:block}
+body.pdf-export .slide:last-child{page-break-after:auto;break-after:auto}
+@media print{html,body{overflow:visible!important;height:auto!important;background:#fff!important}.nav,.bg-live,.lang-switch{display:none!important}.deck{position:static!important;height:auto!important;overflow:visible!important}.slide{position:relative!important;inset:auto!important;display:flex!important;flex-direction:column!important;page-break-after:always;break-after:page;break-inside:avoid;min-height:100vh;width:100%;padding:28px 40px 32px;animation:none!important;background:var(--slide-bg-solid)!important;backdrop-filter:none!important}.slide:last-child{page-break-after:auto}}
+@media (prefers-reduced-motion:reduce){.bg-aurora,.bg-live .grid-mesh,.bg-live .orb{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="lang-switch"><a href="index.html"><i data-lucide="languages"></i> Русский</a></div>
+<div class="bg-live" aria-hidden="true">
+  <canvas id="bg-canvas"></canvas>
+  <div class="bg-aurora"></div>
+  <div class="bg-spotlight"></div>
+  <div class="grid-mesh"></div>
+  <span class="orb orb-1"></span>
+  <span class="orb orb-2"></span>
+  <span class="orb orb-3"></span>
+</div>
+<div class="deck" id="deck">
+  <section class="slide slide--cover active" data-title="Title">
+    <img src="assets/img/yugit-logo.svg" alt="YUGIT" class="logo" />
+    <h1>DelaYu</h1>
+    <p>Modular platform <strong>Dela.YUGIT</strong> — cases, documents, BPM, analytics</p>
+    <p class="meta">YUGIT · v2.2 · 2026</p>
+    <img src="assets/screenshots/02-home.png" class="shot" style="max-width:760px;margin-top:18px;border:3px solid rgba(255,255,255,.35)" alt="" loading="lazy" />
+  </section>
+  <section class="slide" data-title="About">
+    <div class="header"><h2>About DelaYu</h2><p>20 scenarios — from core to industry configurations</p></div>
+    <p class="lead glass" style="padding:14px 18px"><strong>DelaYu</strong> is a domestic platform for case management, documents, deadlines, and reporting. One product for housing, CRM, legal cases, and assets.</p>
+    <div class="stats">
+      <div class="stat glass"><b>86</b><span>modules</span></div>
+      <div class="stat glass"><b>20</b><span>scenarios</span></div>
+      <div class="stat glass"><b>4</b><span>configurations</span></div>
+    </div>
+    <div class="impl-grid"><div class="glass impl"><strong>Case registry and 360° card</strong><small>M22</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>Universal registries and import</strong><small>M23</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>Kanban and assignee tasks</strong><small>M13</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>Inbound / outbound correspondence</strong><small>M24–M25</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>BPM approvals and SLA</strong><small>M33–M36</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>KPI dashboard and analytics</strong><small>M15–M21</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>Report builder Excel/PDF</strong><small>M16</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>Studio: forms, menus, no-code BPM</strong><small>Studio</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>Personal cabinet, 2FA, delegation</strong><small>M07</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>AIS UHV — housing records</strong><small>UHV</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>REST API and OpenAPI</strong><small>M43</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>AI: OCR, search, assistant</strong><small>M47–M66</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>Citizen request portal</strong><small>M72</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>PWA and push notifications</strong><small>M68</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>CRM and lead funnel</strong><small>Roadmap</small><span class="tag tag-plan">roadmap</span></div><div class="glass impl"><strong>Legal cases and court practice</strong><small>Roadmap</small><span class="tag tag-plan">roadmap</span></div><div class="glass impl"><strong>Construction asset accounting</strong><small>Roadmap</small><span class="tag tag-plan">roadmap</span></div><div class="glass impl"><strong>Unified electronic case archive (EDM)</strong><small>M46</small><span class="tag tag-ok">in product</span></div><div class="glass impl"><strong>Mobile field inspector app</strong><small>Roadmap</small><span class="tag tag-plan">roadmap</span></div><div class="glass impl"><strong>Digital twin of processes</strong><small>Roadmap</small><span class="tag tag-plan">roadmap</span></div></div>
+    <div class="shot-row">
+      <figure><img src="assets/screenshots/03-cases.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Case registry</figcaption></figure>
+      <figure><img src="assets/screenshots/04-kanban.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Kanban</figcaption></figure>
+      <figure><img src="assets/img/hero/hero-solution.png" class="hero shot-sm" alt="" loading="lazy" /><figcaption>Unified workflow</figcaption></figure>
+    </div>
+  </section>
+  <section class="slide" data-title="Customer challenge">
+    <div class="grid-2">
+      <div>
+        <div class="header"><h2>Customer challenge</h2><p>10 typical pain points</p></div>
+        <ul class="features"><li><span class="ico"><i data-lucide="flag"></i></span><div><strong>Import substitution</strong>Replace foreign ECM/CRM with a platform from the domestic software registry</div></li><li><span class="ico"><i data-lucide="refresh-cw"></i></span><div><strong>Replacing costly systems</strong>Move off heavy ERP/ECM with million-ruble licenses</div></li><li><span class="ico"><i data-lucide="file-spreadsheet"></i></span><div><strong>Fragmented data</strong>Excel, email, folders — no single case view</div></li><li><span class="ico"><i data-lucide="clock"></i></span><div><strong>Missed deadlines</strong>No SLA monitoring, overdue tracking, or escalation</div></li><li><span class="ico"><i data-lucide="user-x"></i></span><div><strong>Lost context</strong>Approvals and documents not linked to the case card</div></li><li><span class="ico"><i data-lucide="lock"></i></span><div><strong>Access risks</strong>Weak role control, personal data protection, and audit</div></li><li><span class="ico"><i data-lucide="coins"></i></span><div><strong>Expensive customizations</strong>Monoliths are hard to adapt to regulations</div></li><li><span class="ico"><i data-lucide="unlink"></i></span><div><strong>Integration gaps</strong>Duplication across 1C, SMEV, and portals</div></li><li><span class="ico"><i data-lucide="file-warning"></i></span><div><strong>Manual reporting</strong>Supervisory summaries take weeks</div></li><li><span class="ico"><i data-lucide="smartphone"></i></span><div><strong>Low mobility</strong>No case work outside the office</div></li></ul>
+      </div>
+      <img src="assets/img/hero/hero-problem.png" class="hero" alt="" loading="lazy" />
+    </div>
+  </section>
+  <section class="slide" data-title="Solution">
+    <div class="grid-2">
+      <img src="assets/img/hero/hero-solution.png" class="hero" alt="" loading="lazy" />
+      <div>
+        <div class="header"><h2>The DelaYu solution</h2><p>Unified workflow — full lifecycle</p></div>
+        <ul class="features"><li><span class="ico"><i data-lucide="inbox"></i></span><div><strong>Intake</strong>Register inbound mail and requests</div></li><li><span class="ico"><i data-lucide="folder-open"></i></span><div><strong>Execution</strong>360° case card, registries, tasks</div></li><li><span class="ico"><i data-lucide="git-merge"></i></span><div><strong>Approval</strong>BPM, e-signatures, print forms</div></li><li><span class="ico"><i data-lucide="archive"></i></span><div><strong>Archive</strong>Retention periods, legal hold</div></li><li><span class="ico"><i data-lucide="pie-chart"></i></span><div><strong>Control</strong>KPIs, reports, overdue tracking</div></li><li><span class="ico"><i data-lucide="flag"></i></span><div><strong>Import substitution</strong>Domestic software registry</div></li></ul>
+      </div>
+    </div>
+  </section>
+  <section class="slide" data-title="System screens">
+    <div class="header"><h2>Real system screens</h2><p>Screenshots from the live platform</p></div>
+    <div class="shot-row" style="grid-template-columns:repeat(4,1fr)">
+      <figure><img src="assets/screenshots/02-home.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Dashboard</figcaption></figure><figure><img src="assets/screenshots/03-cases.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Case registry</figcaption></figure><figure><img src="assets/screenshots/04-kanban.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Kanban</figcaption></figure><figure><img src="assets/screenshots/05-inbox.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Inbox</figcaption></figure><figure><img src="assets/screenshots/06-bpm.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>BPM</figcaption></figure><figure><img src="assets/screenshots/07-analytics.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Analytics</figcaption></figure><figure><img src="assets/screenshots/08-users.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Users</figcaption></figure><figure><img src="assets/screenshots/09-cabinet.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Cabinet</figcaption></figure>
+    </div>
+    <div class="shot-row" style="grid-template-columns:repeat(4,1fr);margin-top:8px">
+      <figure><img src="assets/screenshots/10-calendar.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Calendar</figcaption></figure><figure><img src="assets/screenshots/11-studio.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Studio</figcaption></figure><figure><img src="assets/screenshots/12-integrations.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Integrations</figcaption></figure><figure><img src="assets/screenshots/01-login.png" class="shot shot-sm" alt="" loading="lazy" /><figcaption>Login</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Architecture">
+    <div class="grid-2"><img src="assets/img/hero/hero-architecture.png" class="hero" alt="" loading="lazy" /><div>
+      <div class="header"><h2>Architecture</h2><p>86 modules M01–M86</p></div>
+      <ul class="features"><li><span class="ico"><i data-lucide="layers"></i></span><div><strong>Subsystems</strong>Multi-tenancy, catalog</div></li><li><span class="ico"><i data-lucide="layout-dashboard"></i></span><div><strong>Workplace</strong>Cabinet, kanban, calendar</div></li><li><span class="ico"><i data-lucide="mail"></i></span><div><strong>ECM</strong>Correspondence, e-signatures</div></li><li><span class="ico"><i data-lucide="bot"></i></span><div><strong>AI</strong>20 modules</div></li></ul>
+    </div></div>
+  </section>
+
+  <section class="slide" data-title="Core M01–M06">
+    <div class="grid-2"><img src="assets/screenshots/08-users.png" class="shot" alt="" loading="lazy" /><div>
+      <div class="header"><h2>Core M01–M06</h2><p>Administration</p></div>
+      <ul class="features"><li><span class="ico"><i data-lucide="server"></i></span><div><strong>Subsystems</strong>Wizard, publishing</div></li><li><span class="ico"><i data-lucide="shield"></i></span><div><strong>Roles</strong>Role × module matrix</div></li><li><span class="ico"><i data-lucide="network"></i></span><div><strong>Org structure</strong>Staffing table, departments</div></li></ul>
+    </div></div>
+  </section>
+
+  <section class="slide" data-title="Workplace">
+    <div class="grid-2"><img src="assets/screenshots/04-kanban.png" class="shot" alt="" loading="lazy" /><div>
+      <div class="header"><h2>Workplace</h2><p>M07–M14</p></div>
+      <ul class="features"><li><span class="ico"><i data-lucide="kanban"></i></span><div><strong>Kanban</strong>Drag-and-drop</div></li><li><span class="ico"><i data-lucide="calendar"></i></span><div><strong>Calendar</strong>Deadlines and events</div></li><li><span class="ico"><i data-lucide="sun"></i></span><div><strong>Today</strong>Cases for the day</div></li></ul>
+    </div></div>
+  </section>
+
+  <section class="slide" data-title="Cases and registries">
+    <div class="grid-2"><img src="assets/screenshots/03-cases.png" class="shot" alt="" loading="lazy" /><div>
+      <div class="header"><h2>Cases and registries</h2><p>M22–M23</p></div>
+      <ul class="features"><li><span class="ico"><i data-lucide="folder"></i></span><div><strong>Registry</strong>Filters, statuses</div></li><li><span class="ico"><i data-lucide="layout-grid"></i></span><div><strong>360° card</strong>Documents, BPM</div></li></ul>
+    </div></div>
+  </section>
+
+  <section class="slide" data-title="Document management">
+    <div class="grid-2"><img src="assets/screenshots/05-inbox.png" class="shot" alt="" loading="lazy" /><div>
+      <div class="header"><h2>Document management</h2><p>M24–M32</p></div>
+      <ul class="features"><li><span class="ico"><i data-lucide="inbox"></i></span><div><strong>Inbox</strong>Journal, routing</div></li><li><span class="ico"><i data-lucide="pen-line"></i></span><div><strong>E-signatures</strong>Goskey, signatures</div></li></ul>
+    </div></div>
+  </section>
+
+  <section class="slide" data-title="BPM">
+    <div class="grid-2"><img src="assets/screenshots/06-bpm.png" class="shot" alt="" loading="lazy" /><div>
+      <div class="header"><h2>BPM</h2><p>M33–M36</p></div>
+      <ul class="features"><li><span class="ico"><i data-lucide="workflow"></i></span><div><strong>Processes</strong>Visual templates</div></li><li><span class="ico"><i data-lucide="timer"></i></span><div><strong>SLA</strong>Escalation</div></li></ul>
+    </div></div>
+  </section>
+
+  <section class="slide" data-title="Analytics">
+    <div class="grid-2"><img src="assets/screenshots/07-analytics.png" class="shot" alt="" loading="lazy" /><div>
+      <div class="header"><h2>Analytics</h2><p>M15–M21</p></div>
+      <ul class="features"><li><span class="ico"><i data-lucide="bar-chart-3"></i></span><div><strong>Dashboard</strong>KPIs, charts</div></li><li><span class="ico"><i data-lucide="alarm-clock"></i></span><div><strong>Overdue</strong>Deadline traffic light</div></li></ul>
+    </div></div>
+  </section>
+
+  <section class="slide" data-title="AI">
+    <div class="grid-2">
+      <div>
+        <div class="header"><h2>Artificial intelligence</h2><p>20 modules M47–M66</p></div>
+        <ul class="features"><li><span class="ico"><i data-lucide="message-circle"></i></span><div><strong>Assistant</strong>Answers based on regulations</div></li><li><span class="ico"><i data-lucide="search"></i></span><div><strong>Semantic search</strong>pgvector</div></li><li><span class="ico"><i data-lucide="scan-text"></i></span><div><strong>OCR</strong>Document recognition</div></li><li><span class="ico"><i data-lucide="book-open"></i></span><div><strong>RAG</strong>Knowledge base</div></li><li><span class="ico"><i data-lucide="user-check"></i></span><div><strong>HITL</strong>Human-in-the-loop control</div></li></ul>
+      </div>
+      <img src="assets/img/hero/hero-ai.png" class="hero" alt="" loading="lazy" />
+    </div>
+  </section>
+  <section class="slide" data-title="Integrations">
+    <div class="header"><h2>Integrations — delivered</h2><p>14+ connectors in code</p></div>
+    <div class="grid-2">
+      <ul class="int-list"><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>DaData</strong><span>Addresses, names, phones</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>Yandex Maps</strong><span>Housing stock map</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>REST / OpenAPI</strong><span>/api/v1/, webhooks</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>Telegram</strong><span>Notifications, inbound</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>1C JSON</strong><span>Master data exchange</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>EPGU inbound</strong><span>Portal requests</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>MFC inbound</strong><span>Registration from service centers</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>n8n / Webhook</strong><span>Automation</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>SMTP / IMAP</strong><span>Email</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>Web Push / iCal</strong><span>PWA, deadlines</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>SSO / OIDC</strong><span>Single sign-on</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>MAX</strong><span>Messenger</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>QR codes</strong><span>Cards, requests</span></div></li><li class="int-done glass"><span class="ico ico-sm"><i data-lucide="circle-check-big"></i></span><div><strong>Public form</strong><span>No authentication required</span></div></li></ul>
+      <div><img src="assets/screenshots/12-integrations.png" class="shot" alt="" loading="lazy" /><img src="assets/img/hero/hero-integrations.png" class="hero shot-sm" alt="" loading="lazy" /></div>
+    </div>
+  </section>
+  <section class="slide" data-title="Integration roadmap">
+    <div class="grid-2">
+      <img src="assets/img/hero/hero-integrations.png" class="hero" alt="" loading="lazy" />
+      <div>
+        <div class="header"><h2>Integration roadmap</h2><p>15+ target systems</p></div>
+        <ul class="int-list"><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>SMEV 3.x</strong><span>Interagency exchange</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>GIS ZhKKh</strong><span>Stock and billing</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>ESIA (prod)</strong><span>Public services</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>FRT / Ministry of Labor</strong><span>Resettlement, categories</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>Directum / Tezis</strong><span>ECM migration</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>SAP / Oracle</strong><span>ERP connectors</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>Bitrix24 / amoCRM</strong><span>CRM</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>Elasticsearch</strong><span>Search</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>Kafka / RabbitMQ</strong><span>Event bus</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>Keycloak</strong><span>IAM</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>OnlyOffice</strong><span>Online editor</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>CryptoPro</strong><span>Qualified e-signature</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>Goskey (prod)</strong><span>Mobile signature</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>AIS Housing</strong><span>Regional systems</span></div></li><li class="int-plan glass"><span class="ico ico-sm"><i data-lucide="clock"></i></span><div><strong>Power BI</strong><span>BI dashboards</span></div></li></ul>
+        <div class="devops" style="margin-top:12px"><span class="tag tag-chip">SMEV</span><span class="tag tag-chip">GIS ZhKKh</span><span class="tag tag-chip">ESIA</span><span class="tag tag-chip">Kafka</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="slide" data-title="AIS UHV">
+    <div class="grid-2">
+      <img src="assets/img/hero/hero-uzhv.png" class="hero" alt="" loading="lazy" />
+      <div>
+        <div class="header"><h2>AIS UHV</h2><p>Housing records</p></div>
+        <ul class="features"><li><span class="ico"><i data-lucide="users"></i></span><div><strong>Citizens</strong>Queues, categories</div></li><li><span class="ico"><i data-lucide="building-2"></i></span><div><strong>Stock</strong>Map, objects</div></li><li><span class="ico"><i data-lucide="table"></i></span><div><strong>OTCH-1…10</strong>Regulatory reports</div></li><li><span class="ico"><i data-lucide="qr-code"></i></span><div><strong>QR / PWA</strong>Field access</div></li></ul>
+      </div>
+    </div>
+  </section>
+  <section class="slide" data-title="Studio">
+    <div class="grid-2">
+      <img src="assets/screenshots/11-studio.png" class="shot" alt="" loading="lazy" />
+      <div>
+        <div class="header"><h2>Studio and security</h2><p>Low-code · audit · 2FA</p></div>
+        <ul class="features"><li><span class="ico"><i data-lucide="layout-grid"></i></span><div><strong>Studio</strong>Forms, BPM, menus</div></li><li><span class="ico"><i data-lucide="key-round"></i></span><div><strong>2FA</strong>TOTP, re-auth</div></li><li><span class="ico"><i data-lucide="scroll-text"></i></span><div><strong>Audit</strong>Append-only log</div></li><li><span class="ico"><i data-lucide="eye-off"></i></span><div><strong>Personal data</strong>Masking</div></li></ul>
+        <img src="assets/img/hero/hero-security.png" class="hero shot-sm" alt="" loading="lazy" />
+      </div>
+    </div>
+  </section>
+  <section class="slide" data-title="Stack">
+    <div class="grid-2">
+      <div>
+        <div class="header"><h2>Technology stack</h2><p>Languages · DevOps · orchestration</p></div>
+        <div class="tech-grid"><div class="tech glass"><span class="ico"><i data-lucide="code-2"></i></span><h4>Python 3.12</h4><p>Django 5 — core, API, BPM</p></div><div class="tech glass"><span class="ico"><i data-lucide="braces"></i></span><h4>JavaScript</h4><p>Materialize, ApexCharts, Kanban</p></div><div class="tech glass"><span class="ico"><i data-lucide="file-code"></i></span><h4>PHP 8.x</h4><p>Dev environment, legacy connectors</p></div><div class="tech glass"><span class="ico"><i data-lucide="database"></i></span><h4>PostgreSQL</h4><p>DB, pgvector for AI</p></div><div class="tech glass"><span class="ico"><i data-lucide="layout-template"></i></span><h4>HTML / CSS</h4><p>Bootstrap 5, responsive, dark mode</p></div><div class="tech glass"><span class="ico"><i data-lucide="file-json"></i></span><h4>TypeScript</h4><p>Integration SDK (roadmap)</p></div><div class="tech glass"><span class="ico"><i data-lucide="cpu"></i></span><h4>Go / Rust</h4><p>Microservices (roadmap)</p></div></div>
+        <div class="devops"><span class="tag tag-chip">Docker: Build and pilot</span><span class="tag tag-chip">Kubernetes: Orchestration, Helm</span><span class="tag tag-chip">Nginx: Proxy, TLS</span><span class="tag tag-chip">Redis / Celery: Cache, queues</span><span class="tag tag-chip">GitLab CI: DevOps pipelines</span><span class="tag tag-chip">Prometheus: Monitoring</span><span class="tag tag-chip">Astra Linux: Domestic OS</span><span class="tag tag-chip">Terraform: Infrastructure as Code</span></div>
+        <p class="lead glass" style="padding:12px;margin-top:12px">Helm, GitOps, dev/stage/prod, Kubernetes, hot-reload — flexible configuration out of the box.</p>
+      </div>
+      <img src="assets/img/hero/hero-deploy.png" class="hero" alt="" loading="lazy" />
+    </div>
+  </section>
+  <section class="slide slide--cover" data-title="Download">
+    <img src="assets/img/yugit-logo.svg" alt="YUGIT" class="logo" style="height:52px" />
+    <h1 style="font-size:2rem">Thank you!</h1>
+    <p>Pilot in 30–60 days · Docker · Kubernetes · PostgreSQL · Astra Linux</p>
+    <div class="dl-box">
+      <p style="margin-bottom:14px;opacity:.95">Download the deck or open the interactive version</p>
+      <a href="Delayu-presentation-en.pdf" class="btn-dl" download="Delayu-presentation-en.pdf">
+        <i data-lucide="file-down"></i> Download PDF
+      </a>
+      <a href="index-en.html" class="btn-dl btn-dl--ghost">
+        <i data-lucide="presentation"></i> Interactive version
+      </a>
+    </div>
+    <p class="meta">YUGIT · demo admin/admin · localhost:8000</p>
+  </section>
+</div>
+<nav class="nav" aria-label="Navigation">
+  <button type="button" id="prev">← Back</button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter">1 / 1</span>
+  <button type="button" id="next">Next →</button>
+</nav>
+<script>
+(function(){
+  const slides=[...document.querySelectorAll('.slide')];
+  const dotsEl=document.getElementById('dots');
+  const counter=document.getElementById('counter');
+  const prev=document.getElementById('prev');
+  const next=document.getElementById('next');
+  const slideWord='Slide';
+  const brand='DelaYu';
+  let i=0;
+  slides.forEach((_,idx)=>{const b=document.createElement('button');b.type='button';b.title=slides[idx].dataset.title||(slideWord+' '+(idx+1));b.addEventListener('click',()=>go(idx));dotsEl.appendChild(b);});
+  function syncUi(){[...dotsEl.children].forEach((d,j)=>d.classList.toggle('active',j===i));counter.textContent=(i+1)+' / '+slides.length;prev.disabled=i===0;next.disabled=i===slides.length-1;document.title=(slides[i].dataset.title||slideWord)+' — '+brand;if(window.lucide)lucide.createIcons();}
+  function go(n,animate){const next=Math.max(0,Math.min(slides.length-1,n));if(next===i)return;slides[i].classList.remove('active','is-entering');i=next;slides[i].classList.add('active');if(animate!==false){slides[i].classList.add('is-entering');slides[i].addEventListener('animationend',()=>slides[i].classList.remove('is-entering'),{once:true});}syncUi();}
+  prev.addEventListener('click',()=>go(i-1));next.addEventListener('click',()=>go(i+1));
+  document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ' ){e.preventDefault();go(i+1);}if(e.key==='ArrowLeft'){e.preventDefault();go(i-1);}if(e.key==='Home')go(0);if(e.key==='End')go(slides.length-1);});
+  syncUi();
+  if(window.lucide)lucide.createIcons();
+})();
+
+(function(){
+  const canvas=document.getElementById('bg-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const spotlight=document.querySelector('.bg-spotlight');
+  const orbs=[...document.querySelectorAll('.bg-live .orb')];
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let w=0,h=0,mx=0,my=0,px=0,py=0,t=0;
+  const particles=[];
+  const COUNT= reduced ? 36 : 72;
+  const LINK= reduced ? 100 : 130;
+
+  function resize(){
+    w=canvas.width=window.innerWidth;
+    h=canvas.height=window.innerHeight;
+    px=mx=w/2; py=my=h/2;
+  }
+
+  function seed(){
+    particles.length=0;
+    for(let i=0;i<COUNT;i++){
+      particles.push({
+        x:Math.random()*w,
+        y:Math.random()*h,
+        vx:(Math.random()-.5)*.45,
+        vy:(Math.random()-.5)*.45,
+        r:Math.random()*1.8+1
+      });
+    }
+  }
+
+  window.addEventListener('resize',()=>{resize();seed();});
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+  document.addEventListener('touchmove',e=>{if(e.touches[0]){mx=e.touches[0].clientX;my=e.touches[0].clientY;}},{passive:true});
+
+  function draw(){
+    t+=0.008;
+    px+=(mx-px)*0.09;
+    py+=(my-py)*0.09;
+    if(spotlight){
+      spotlight.style.left=px+'px';
+      spotlight.style.top=py+'px';
+    }
+    orbs.forEach((orb,i)=>{
+      const k=.028+i*.012;
+      orb.style.transform='translate('+(px-w/2)*k+'px,'+(py-h/2)*k+'px) scale('+(1+Math.sin(t+i)*.04)+')';
+    });
+
+    ctx.clearRect(0,0,w,h);
+    for(const p of particles){
+      if(!reduced){
+        const dx=px-p.x, dy=py-p.y, dist=Math.hypot(dx,dy)||1;
+        if(dist<180){ p.vx+=dx/dist*.018; p.vy+=dy/dist*.018; }
+        p.vx+=(Math.random()-.5)*.004;
+        p.vy+=(Math.random()-.5)*.004;
+        p.vx*=.985; p.vy*=.985;
+        p.x+=p.vx; p.y+=p.vy;
+        if(p.x<0||p.x>w)p.vx*=-1;
+        if(p.y<0||p.y>h)p.vy*=-1;
+        p.x=Math.max(0,Math.min(w,p.x));
+        p.y=Math.max(0,Math.min(h,p.y));
+      }
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(105,108,255,.55)';
+      ctx.fill();
+    }
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const a=particles[i], b=particles[j];
+        const d=Math.hypot(a.x-b.x,a.y-b.y);
+        if(d<LINK){
+          ctx.strokeStyle='rgba(3,195,236,'+(1-d/LINK)*.28+')';
+          ctx.lineWidth=1;
+          ctx.beginPath();
+          ctx.moveTo(a.x,a.y);
+          ctx.lineTo(b.x,b.y);
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+
+  resize(); seed(); draw();
+})();
+
+</script>
+</body>
+</html>

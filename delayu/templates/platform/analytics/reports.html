@@ -1,0 +1,6 @@
+{% extends "platform/_page.html" %}
+{% block title %}Отчёты{% endblock %}
+{% block card_body %}
+{% for t in templates %}<a class="btn btn-outline-primary btn-sm me-2 mb-2" href="?run={{ t.query_key }}">{{ t.name }}</a>{% endfor %}
+{% if result %}<hr><h6>{{ ran }}</h6><pre class="small">{{ result }}</pre>{% endif %}
+{% endblock %}

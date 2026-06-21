@@ -1,0 +1,42 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/ops/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card card-border-shadow-primary h-100">
+      <div class="card-body">
+        <p class="small text-muted mb-1">НСИ (M73)</p>
+        <h3>{{ nsi_metrics.classifiers_active }} / {{ nsi_metrics.classifiers }}</h3>
+        <p class="small mb-0">значений: {{ nsi_metrics.values }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-border-shadow-info h-100">
+      <div class="card-body">
+        <p class="small text-muted mb-1">Схемы форм (M74)</p>
+        <h3>{{ metrics.form_schemas }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-border-shadow-warning h-100">
+      <div class="card-body">
+        <p class="small text-muted mb-1">Поручения открыты (M77)</p>
+        <h3>{{ metrics.directives_open }}</h3>
+        <span class="small text-danger">просрочено: {{ metrics.directives_overdue }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-sm-6"><a href="{% url 'platform-bulk-ops' %}" class="card card-hover h-100 text-body"><div class="card-body"><h6>Массовые операции</h6><p class="small text-muted mb-0">M75 · сегодня: {{ metrics.bulk_today }}</p></div></a></div>
+  <div class="col-sm-6"><a href="{% url 'platform-exports' %}" class="card card-hover h-100 text-body"><div class="card-body"><h6>Выгрузки</h6><p class="small text-muted mb-0">M76 · в очереди: {{ metrics.exports_pending }}</p></div></a></div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    <li class="nav-item"><a class="nav-link{% if ux_tab == 'hub' %} active{% endif %}" href="{% url 'platform-ux' %}"><i class="icon-base ri ri-dashboard-line icon-sm me-2"></i>Обзор</a></li>
+    <li class="nav-item"><a class="nav-link{% if ux_tab == 'licenses' %} active{% endif %}" href="{% url 'platform-licenses' %}"><i class="icon-base ri ri-key-line icon-sm me-2"></i>Лицензии</a></li>
+    <li class="nav-item"><a class="nav-link{% if ux_tab == 'onboarding' %} active{% endif %}" href="{% url 'platform-onboarding' %}"><i class="icon-base ri ri-graduation-cap-line icon-sm me-2"></i>Обучение</a></li>
+    <li class="nav-item"><a class="nav-link{% if ux_tab == 'dashboards' %} active{% endif %}" href="{% url 'platform-dashboard-layouts' %}"><i class="icon-base ri ri-layout-grid-line icon-sm me-2"></i>Дашборды</a></li>
+    <li class="nav-item"><a class="nav-link{% if ux_tab == 'marketplace' %} active{% endif %}" href="{% url 'platform-marketplace' %}"><i class="icon-base ri ri-store-2-line icon-sm me-2"></i>Коннекторы</a></li>
+  </ul>
+</div>

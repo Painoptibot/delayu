@@ -1,0 +1,21 @@
+{% load delayu_access %}
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    {% if request.user|can_module:"M73" %}
+    <li class="nav-item"><a class="nav-link{% if ops_tab == 'hub' %} active{% endif %}" href="{% url 'platform-ops' %}"><i class="icon-base ri ri-dashboard-line icon-sm me-2"></i>Обзор</a></li>
+    <li class="nav-item"><a class="nav-link{% if ops_tab == 'nsi' %} active{% endif %}" href="{% url 'platform-nsi' %}"><i class="icon-base ri ri-list-check icon-sm me-2"></i>НСИ</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M74" %}
+    <li class="nav-item"><a class="nav-link{% if ops_tab == 'forms' %} active{% endif %}" href="{% url 'platform-form-schemas' %}"><i class="icon-base ri ri-layout-4-line icon-sm me-2"></i>Формы</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M75" %}
+    <li class="nav-item"><a class="nav-link{% if ops_tab == 'bulk' %} active{% endif %}" href="{% url 'platform-bulk-ops' %}"><i class="icon-base ri ri-stack-line icon-sm me-2"></i>Массовые</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M76" %}
+    <li class="nav-item"><a class="nav-link{% if ops_tab == 'exports' %} active{% endif %}" href="{% url 'platform-exports' %}"><i class="icon-base ri ri-file-download-line icon-sm me-2"></i>Выгрузки</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M77" %}
+    <li class="nav-item"><a class="nav-link{% if ops_tab == 'directives' %} active{% endif %}" href="{% url 'platform-directives' %}"><i class="icon-base ri ri-task-line icon-sm me-2"></i>Поручения</a></li>
+    {% endif %}
+  </ul>
+</div>

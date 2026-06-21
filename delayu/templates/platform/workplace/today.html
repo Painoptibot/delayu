@@ -1,0 +1,181 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Мне на сегодня — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/datatables-bs5/datatables.bootstrap5.css' %}" />
+{% endblock %}
+{% block vendor_js %}{{ block.super }}
+<script src="{% static 'vendor/libs/datatables-bs5/datatables-bootstrap5.js' %}"></script>
+{% endblock %}
+{% block content %}
+<div class="delayu-page-today">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 delayu-today-widgets-toolbar">
+  <h4 class="mb-0">Мне на сегодня</h4>
+  <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#todayWidgetsModal">
+    <i class="ri-layout-line me-1"></i>Настроить виджеты
+  </button>
+</div>
+
+<div class="card mb-6">
+  <div class="card-widget-separator-wrapper">
+    <div class="card-body card-widget-separator">
+      <div class="row gy-4 gy-sm-1">
+        <div class="col-sm-6 col-lg-3" data-today-widget="kpi_today"{% if "kpi_today" not in today_widgets %} hidden{% endif %}>
+          <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-4 pb-sm-0">
+            <div>
+              <p class="mb-1">На сегодня</p>
+              <h4 class="mb-1">{{ tasks|length }}</h4>
+              <p class="mb-0"><span class="badge rounded-pill bg-label-primary">M08</span></p>
+            </div>
+            <div class="avatar me-sm-6">
+              <span class="avatar-initial rounded-3 text-heading"><i class="icon-base ri ri-calendar-check-line icon-28px"></i></span>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3" data-today-widget="kpi_overdue"{% if "kpi_overdue" not in today_widgets %} hidden{% endif %}>
+          <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-4 pb-sm-0">
+            <div>
+              <p class="mb-1">Просрочено</p>
+              <h4 class="mb-1 text-danger">{{ overdue_count }}</h4>
+            </div>
+            <div class="avatar me-lg-6">
+              <span class="avatar-initial rounded-3 text-heading"><i class="icon-base ri ri-alarm-warning-line icon-28px"></i></span>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3" data-today-widget="kpi_priority"{% if "kpi_priority" not in today_widgets %} hidden{% endif %}>
+          <div class="d-flex justify-content-between align-items-start border-end pb-4 pb-sm-0 card-widget-3">
+            <div>
+              <p class="mb-1">Высокий приоритет</p>
+              <h4 class="mb-1">{{ high_priority_count }}</h4>
+            </div>
+            <div class="avatar me-sm-6">
+              <span class="avatar-initial rounded-3 text-heading"><i class="icon-base ri ri-flag-line icon-28px"></i></span>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3" data-today-widget="kpi_no_due"{% if "kpi_no_due" not in today_widgets %} hidden{% endif %}>
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <p class="mb-1">Без срока</p>
+              <h4 class="mb-1">{{ no_due_count }}</h4>
+            </div>
+            <div class="avatar">
+              <span class="avatar-initial rounded-3 text-heading"><i class="icon-base ri ri-time-line icon-28px"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if "quick_inbox" in today_widgets %}
+<div class="card mb-4" data-today-widget="quick_inbox">
+  <div class="card-header d-flex justify-content-between align-items-center py-3">
+    <h6 class="mb-0">Входящие на вас</h6>
+    <a href="{% url 'platform-inbox' %}" class="small">Все →</a>
+  </div>
+  <ul class="list-group list-group-flush">
+    {% for c in inbox_preview %}
+    <li class="list-group-item d-flex justify-content-between py-2 small">
+      <a href="{% url 'platform-correspondence-detail' c.pk %}">{{ c.subject|truncatechars:45 }}</a>
+      <span class="text-muted">{{ c.reg_date|date:"d.m" }}</span>
+    </li>
+    {% empty %}
+    <li class="list-group-item text-muted small">Нет входящих</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="card" data-today-widget="tasks_table"{% if "tasks_table" not in today_widgets %} hidden{% endif %}>
+  <div class="card-header border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h5 class="card-title mb-0">Задачи</h5>
+    <div class="d-flex gap-2">
+      <a href="?tab=today" class="btn btn-sm {% if tab == 'today' %}btn-primary{% else %}btn-outline-primary{% endif %}">Сегодня</a>
+      <a href="?tab=overdue" class="btn btn-sm {% if tab == 'overdue' %}btn-primary{% else %}btn-outline-primary{% endif %}">Просроченные</a>
+      <a href="?tab=week" class="btn btn-sm {% if tab == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}">Неделя</a>
+      {% if can_create %}<button type="button" class="btn btn-sm btn-primary rec-form-open-task" data-form-modal-url="{% url 'platform-task-form-modal' %}" data-form-modal-title="Новая задача"><i class="ri-add-line"></i></button>{% endif %}
+    </div>
+  </div>
+  <div class="card-datatable table-responsive">
+    <table class="table datatables-tasks table-sm">
+      <thead>
+        <tr>
+          <th>Задача</th>
+          <th>Срок</th>
+          <th>Дело</th>
+          <th>Приоритет</th>
+          <th class="text-end">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tasks %}
+        <tr>
+          <td><button type="button" class="btn btn-link p-0 task-open" data-modal-url="{% url 'platform-task-modal' t.pk %}">{{ t.title }}</button></td>
+          <td class="{% if t.due_date and t.due_date < today %}text-danger{% endif %}">{{ t.due_date|default:"—" }}</td>
+          <td>{% if t.case %}<code>{{ t.case.number }}</code>{% else %}—{% endif %}</td>
+          <td>{{ t.priority }}</td>
+          <td class="text-end text-nowrap">
+            {% if can_change %}
+            <button type="button" class="btn btn-sm btn-icon btn-text-secondary rec-form-open-task" title="Редактировать" data-form-modal-url="{% url 'platform-task-form-modal-edit' t.pk %}" data-form-modal-title="Редактировать задачу"><i class="ri-pencil-line"></i></button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="taskModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Задача</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="taskModalBody"></div>
+  </div></div>
+</div>
+
+<div class="modal fade" id="todayWidgetsModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="{% url 'platform-today-widgets-save' %}">
+      {% csrf_token %}
+      <div class="modal-header"><h5 class="modal-title">Виджеты «Мне на сегодня»</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p class="small text-muted">Отметьте блоки, которые показывать на странице.</p>
+        <div class="vstack gap-2">
+          {% for w in today_widget_catalog %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="widgets" value="{{ w.id }}" id="tw-{{ w.id }}"
+              {% if w.id in today_widgets %}checked{% endif %}>
+            <label class="form-check-label" for="tw-{{ w.id }}"><i class="{{ w.icon }} me-1"></i>{{ w.label }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+      </div>
+    </form>
+  </div></div>
+</div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}
+<script src="{% static 'js/delayu-datatables-ru.js' %}"></script>
+<script src="{% static 'js/delayu-workplace.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.delayuBindFormModal) {
+    window.delayuBindFormModal('taskFormModal', 'taskFormModalBody', '.rec-form-open-task');
+  }
+  if (window.DataTable && document.querySelector('.datatables-tasks')) {
+    new DataTable('.datatables-tasks', {
+      order: [[1, 'asc']],
+      language: window.DELAYU_DATATABLES_RU,
+    });
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+# ДелаЮ / УЖВ — фоновые задачи (пользователь delayu)
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# Очередь льгот / PY-05 — ежедневно в 02:00
+0 2 * * * delayu cd /opt/delayu && .venv/bin/python manage.py uzhv_py05_recalc_queue >> logs/cron.log 2>&1
+
+# Интеграции: уведомления, webhook, IMAP, PY-07 — в 06:00
+0 6 * * * delayu cd /opt/delayu && .venv/bin/python manage.py integrations_cron --all-uzhv >> logs/cron.log 2>&1
+
+# Отчёты УЖВ — по воскресеньям в 03:00
+0 3 * * 0 delayu cd /opt/delayu && .venv/bin/python manage.py uzhv_py02_reports --output media/uzhv_exports --format both >> logs/cron.log 2>&1
+
+# Резервная копия БД — ежедневно в 04:00
+0 4 * * * delayu bash /opt/delayu/deploy/backup.sh >> logs/backup.log 2>&1

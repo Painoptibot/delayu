@@ -1,0 +1,45 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Расселение{% endblock %}
+{% block header_actions %}
+<a href="{% url 'uzhv-fund' %}" class="btn btn-outline-secondary btn-sm">← Жилфонд</a>
+<a href="{% url 'uzhv-report-export' 'otch-9' %}" class="btn btn-outline-primary btn-sm">ОТЧ-9 CSV</a>
+<a href="{% url 'uzhv-report-export-xlsx' 'otch-9' %}" class="btn btn-outline-success btn-sm">ОТЧ-9 XLSX</a>
+{% endblock %}
+{% block card_body %}
+<p class="text-muted small">МКД в программе расселения, аварийные и на расселении (ТЗ ОТЧ-9).</p>
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Адрес</th>
+        <th>Площадь, м²</th>
+        <th>Жители</th>
+        <th>Состояние</th>
+        <th>4779</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in buildings %}
+      <tr data-modal-url="{% url 'uzhv-building-modal' b.pk %}" data-modal-title="{{ b.address|truncatechars:60 }}"{% if request.GET.open == b.pk|stringformat:"s" %} data-auto-open-modal{% endif %}>
+        <td><strong>{{ b.address }}</strong></td>
+        <td>{{ b.total_area_sqm|default:"—" }}</td>
+        <td>{{ b.residents_count|default:"—" }}</td>
+        <td>{{ b.get_condition_display }}</td>
+        <td>{% if b.in_resettlement_program %}<span class="badge bg-label-warning">Да</span>{% else %}—{% endif %}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-building-modal' b.pk %}" title="Просмотр"><i class="ri-eye-line"></i></button>
+          {% if can_change %}<a href="{% url 'uzhv-building-edit' b.pk %}" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать"><i class="ri-pencil-line"></i></a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted text-center py-4">Объекты расселения не найдены</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% include "platform/uzhv/_list_modal.html" with modal_title="МКД" %}
+{% endblock %}
+{% block page_js %}{{ block.super }}{% include "platform/uzhv/_list_modal_js.html" %}{% endblock %}

@@ -1,0 +1,24 @@
+{% if form_schema %}
+<div class="card mb-4 border-primary border-opacity-25">
+  <div class="card-header py-2">
+    <span class="small text-primary"><i class="ri-layout-4-line me-1"></i>Доп. поля (M74 · {{ form_schema.name|default:form_schema.code }})</span>
+  </div>
+  <div class="card-body">
+    {% if extra_form %}
+    {% for field in extra_form %}
+    <div class="mb-3">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    {% elif extra_display %}
+    <dl class="row mb-0 small">
+      {% for label, value in extra_display %}
+      <dt class="col-sm-4">{{ label }}</dt><dd class="col-sm-8">{{ value }}</dd>
+      {% endfor %}
+    </dl>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

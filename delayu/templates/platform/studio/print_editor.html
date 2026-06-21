@@ -1,0 +1,31 @@
+{% extends "platform/studio/_base.html" %}
+{% block studio_content %}
+<div class="card" data-studio="print" data-save-url="{% url 'platform-studio-save' 'print' %}" data-template-id="{{ template.pk|default:'' }}">
+  <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <h5 class="mb-0">WYSIWYG печатных форм</h5>
+    {% if templates %}
+    <select class="form-select form-select-sm w-auto" onchange="if(this.value) location.href='/studio/print/'+this.value+'/'">
+      {% for t in templates %}
+      <option value="{{ t.pk }}" {% if template and template.pk == t.pk %}selected{% endif %}>{{ t.code }} — {{ t.name }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <p class="small text-muted">Переменные — перетащите в текст</p>
+        <div id="studioPrintVars" class="studio-palette">
+          {% for v in variables %}
+          <div class="studio-palette-item" draggable="true" data-var="{{ v }}"><code>{{ v }}</code></div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-md-9">
+        <div id="studioPrintEditor" class="studio-wysiwyg border rounded p-3" contenteditable="true">{% if template %}{{ template.body|safe }}{% else %}<p>Текст печатной формы…</p>{% endif %}</div>
+        <div class="text-end mt-3"><button type="button" class="btn btn-primary" id="studioPrintSave">Сохранить шаблон</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

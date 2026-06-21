@@ -1,0 +1,4 @@
+<p class="mb-2"><strong>{{ item.title }}</strong></p>
+<p class="small text-muted">{{ item.get_source_type_display }} · {{ item.duration_sec }} с</p>
+{% if item.transcript %}<p class="small">{{ item.transcript|truncatechars:200 }}</p>{% endif %}
+<a href="{% url 'platform-audio-detail' item.pk %}" class="btn btn-sm btn-primary">Открыть</a>

@@ -1,0 +1,21 @@
+{% if user.is_authenticated and user_memberships %}
+<li class="nav-item dropdown me-2">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+    <i class="ri-building-line me-1"></i>
+    {% if active_membership %}{{ active_membership.subsystem.name }}{% else %}Контур{% endif %}
+  </a>
+  <ul class="dropdown-menu">
+    {% for m in user_memberships %}
+    <li>
+      <form method="post" action="{% url 'platform-switch-subsystem' %}">
+        {% csrf_token %}
+        <input type="hidden" name="membership_id" value="{{ m.pk }}">
+        <button type="submit" class="dropdown-item {% if active_membership.pk == m.pk %}active{% endif %}">
+          {{ m.subsystem.name }} · {{ m.role.name }}
+        </button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+</li>
+{% endif %}

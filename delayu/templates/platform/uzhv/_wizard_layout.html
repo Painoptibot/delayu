@@ -1,0 +1,23 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h5 class="mb-0">{{ page_title }}</h5>
+      {% if wizard_subtitle %}<p class="small text-muted mb-0">{{ wizard_subtitle }}</p>{% endif %}
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'uzhv-create-hub' %}" class="btn btn-sm btn-outline-secondary"><i class="ri-magic-line"></i> Мастер</a>
+      {% if wizard_cancel_url %}<a href="{{ wizard_cancel_url }}" class="btn btn-sm btn-outline-secondary">Отмена</a>{% endif %}
+    </div>
+  </div>
+  <div class="card-body">
+    {% block wizard_body %}{% endblock %}
+  </div>
+</div>
+{% endblock %}
+{% block vendor_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'vendor/libs/bs-stepper/bs-stepper.css' %}">{% endblock %}
+{% block vendor_js %}{{ block.super }}<script src="{% static 'vendor/libs/bs-stepper/bs-stepper.js' %}"></script>{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-stepper-wizard.js' %}"></script>{% block wizard_js %}{% endblock %}{% endblock %}

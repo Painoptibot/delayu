@@ -1,0 +1,18 @@
+{% load delayu_access %}
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    {% if request.user|can_module:"M34" %}
+    <li class="nav-item"><a class="nav-link{% if bpm_tab == 'approvals' %} active{% endif %}" href="{% url 'platform-bpm-approvals' %}"><i class="icon-base ri ri-checkbox-circle-line icon-sm me-2"></i>Согласования</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M33" %}
+    <li class="nav-item"><a class="nav-link{% if bpm_tab == 'instances' %} active{% endif %}" href="{% url 'platform-bpm-instances' %}"><i class="icon-base ri ri-play-circle-line icon-sm me-2"></i>Процессы</a></li>
+    <li class="nav-item"><a class="nav-link{% if bpm_tab == 'templates' %} active{% endif %}" href="{% url 'platform-bpm-templates' %}"><i class="icon-base ri ri-flow-chart icon-sm me-2"></i>Шаблоны</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M35" %}
+    <li class="nav-item"><a class="nav-link{% if bpm_tab == 'sla' or bpm_tab == 'sla_monitor' %} active{% endif %}" href="{% url 'platform-bpm-sla-monitor' %}"><i class="icon-base ri ri-timer-flash-line icon-sm me-2"></i>SLA</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M36" %}
+    <li class="nav-item"><a class="nav-link{% if bpm_tab == 'regulations' %} active{% endif %}" href="{% url 'platform-bpm-regulations' %}"><i class="icon-base ri ri-calendar-schedule-line icon-sm me-2"></i>Регламенты</a></li>
+    {% endif %}
+  </ul>
+</div>

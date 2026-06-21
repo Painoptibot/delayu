@@ -1,0 +1,39 @@
+{% extends "platform/_page.html" %}
+{% block title %}Планировщик{% endblock %}
+{% block header_actions %}
+<a href="?mine={% if filter_mine %}0{% else %}1{% endif %}" class="btn btn-sm btn-outline-primary">
+  {% if filter_mine %}Показать все{% else %}Только мои{% endif %}
+</a>
+{% endblock %}
+{% block card_body %}
+{% if not rows %}
+<p class="text-muted">Нет задач с датами начала или срока. Укажите <code>start_date</code> или <code>due_date</code> при редактировании задачи.</p>
+{% else %}
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead><tr><th style="min-width:220px">Задача</th><th>Начало</th><th>Окончание</th><th>Дней</th><th>Шкала (относительно)</th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'platform-task-edit' row.task.pk %}">{{ row.task.title }}</a>
+          {% if row.task.case %}<div class="small text-muted">{{ row.task.case.number }}</div>{% endif %}
+        </td>
+        <td>{{ row.start|date:"d.m.Y" }}</td>
+        <td>{{ row.end|date:"d.m.Y" }}</td>
+        <td>{{ row.days }}</td>
+        <td>
+          <div class="progress" style="height:1.25rem">
+            <div class="progress-bar" role="progressbar" style="width:{% widthratio row.days 1 12 %}%; min-width:3rem" title="{{ row.days }} дн.">
+              {{ row.task.get_kanban_column_display }}
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="small text-muted">Этап 2: зависимости задач, критический путь, интерактивное перетаскивание сроков.</p>
+{% endif %}
+{% endblock %}

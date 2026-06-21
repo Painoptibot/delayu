@@ -1,0 +1,33 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/analytics/_nav.html" %}
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">{{ page_title }}</h5></div>
+  <div class="card-body">
+    <div class="d-flex gap-3 mb-4 flex-wrap">
+      <span class="badge bg-danger">Красный: {{ counts.red }}</span>
+      <span class="badge bg-warning text-dark">Жёлтый: {{ counts.yellow }}</span>
+      <span class="badge bg-success">Зелёный: {{ counts.green }}</span>
+    </div>
+    <table class="table table-sm table-hover align-middle">
+      <thead><tr><th></th><th>Тип</th><th>Ref</th><th>Наименование</th><th>Срок</th><th>Исполнитель</th><th>Статус</th></tr></thead>
+      <tbody>
+        {% for i in items %}
+        <tr>
+          <td><span class="badge rounded-pill bg-{% if i.light == 'red' %}danger{% elif i.light == 'yellow' %}warning text-dark{% else %}success{% endif %}">&nbsp;</span></td>
+          <td>{{ i.kind }}</td>
+          <td><a href="{{ i.url }}">{{ i.ref }}</a></td>
+          <td>{{ i.title }}</td>
+          <td>{{ i.due|default:"—" }}</td>
+          <td class="small">{{ i.assignee|default:"—" }}</td>
+          <td class="small">{{ i.light_label }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-muted">Нет объектов в мониторинге</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

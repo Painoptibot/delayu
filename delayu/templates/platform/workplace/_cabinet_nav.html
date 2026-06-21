@@ -1,0 +1,29 @@
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    <li class="nav-item">
+      <a class="nav-link{% if cabinet_tab == 'account' %} active{% endif %}" href="{% url 'platform-cabinet' %}">
+        <i class="icon-base ri ri-group-line icon-sm me-2"></i>Профиль
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link{% if cabinet_tab == 'security' %} active{% endif %}" href="{% url 'platform-cabinet-security' %}">
+        <i class="icon-base ri ri-lock-line icon-sm me-2"></i>Безопасность
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link{% if cabinet_tab == 'billing' %} active{% endif %}" href="{% url 'platform-cabinet-billing' %}">
+        <i class="icon-base ri ri-briefcase-line icon-sm me-2"></i>Работа
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link{% if cabinet_tab == 'access' %} active{% endif %}" href="{% url 'platform-cabinet-notifications' %}">
+        <i class="icon-base ri ri-shield-keyhole-line icon-sm me-2"></i>Доступ
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link{% if cabinet_tab == 'connections' %} active{% endif %}" href="{% url 'platform-cabinet-connections' %}">
+        <i class="icon-base ri ri-link-m icon-sm me-2"></i>Связи
+      </a>
+    </li>
+  </ul>
+</div>

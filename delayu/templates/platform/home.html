@@ -1,0 +1,449 @@
+{% extends layout_path %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}Главная — ДелаЮ{% endblock title %}
+
+{% block vendor_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/apex-charts/apex-charts.css' %}" />
+{% endblock vendor_css %}
+
+{% block vendor_js %}
+{{ block.super }}
+<script src="{% static 'vendor/libs/apex-charts/apexcharts.js' %}"></script>
+{% endblock vendor_js %}
+
+{% block page_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}" />
+{% endblock page_css %}
+
+{% block page_js %}
+{{ block.super }}
+<script>window.DELAYU_DASHBOARD = {{ dashboard_json|safe }};</script>
+<script src="{% static 'js/delayu-dashboard-analytics.js' %}"></script>
+{% endblock page_js %}
+
+{% block content %}
+{% if not active_membership %}
+<div class="alert alert-warning">
+  Выберите подсистему в верхней панели, чтобы увидеть сводку по контуру.
+</div>
+{% else %}
+
+<div class="row g-6">
+  <div class="col-md-12 col-xxl-8">
+    <div class="card">
+      <div class="d-flex align-items-end row">
+        <div class="col-md-6 order-2 order-md-1">
+          <div class="card-body">
+            <h4 class="card-title mb-4">Добро пожаловать, <span class="fw-bold">{{ request.user.first_name|default:request.user.username }}</span>!</h4>
+            <p class="mb-0">Сводка по платформе «ДелаЮ» — {{ active_membership.subsystem.name }}.</p>
+            <p class="mb-0 text-body-secondary">Показатели и графики за последние 30 дней по данным вашего контура.</p>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <a href="{% url 'platform-cabinet' %}" class="btn btn-primary">Личный кабинет</a>
+              {% if active_membership.subsystem.code == "uzhv" %}
+              <a href="{% url 'uzhv-hub' %}" class="btn btn-outline-primary">Обзор АИС УЖВ</a>
+              {% endif %}
+              <a href="{% url 'platform-dashboard' %}" class="btn btn-outline-secondary">Аналитика</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 text-center text-md-end order-1 order-md-2">
+          <div class="card-body pb-0 px-0 pt-2">
+            <img src="{% static 'img/illustrations/illustration-john-' %}{{ theme }}.png" height="186" class="scaleX-n1-rtl" alt="Профиль" data-app-light-img="illustrations/illustration-john-light.png" data-app-dark-img="illustrations/illustration-john-dark.png" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xxl-2 col-sm-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+          <div class="avatar">
+            <div class="avatar-initial bg-label-primary rounded-3">
+              <i class="icon-base ri ri-folder-3-line icon-24px"></i>
+            </div>
+          </div>
+          {% if kpi.cases_overdue %}
+          <span class="badge bg-label-danger rounded-pill">{{ kpi.cases_overdue }} проср.</span>
+          {% endif %}
+        </div>
+        <div class="card-info mt-5">
+          <h5 class="mb-1">{{ stats.cases }}</h5>
+          <p class="mb-0">Активных дел</p>
+          <a href="{% url 'platform-cases' %}" class="badge bg-label-secondary rounded-pill text-decoration-none mt-2">Реестр дел</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xxl-2 col-sm-6">
+    <div class="card h-100">
+      <div class="card-header pb-0">
+        <div class="d-flex align-items-center mb-1 flex-wrap">
+          <h5 class="mb-0 me-1">{{ weekly_summary.new_cases_week }}</h5>
+        </div>
+        <span class="d-block card-subtitle">Новых дел за 7 дней</span>
+      </div>
+      <div class="card-body">
+        <div id="sessions"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xxl-8">
+    <div class="card h-100">
+      <div class="row row-bordered g-0 h-100">
+        <div class="col-md-7 col-12 order-2 order-md-0">
+          <div class="card-header">
+            <h5 class="mb-0">Задачи по исполнителям</h5>
+          </div>
+          <div class="card-body">
+            <div id="totalTransactionChart"></div>
+          </div>
+        </div>
+        <div class="col-md-5 col-12">
+          <div class="card-header">
+            <h5 class="mb-1">Сводка контура</h5>
+            <p class="mb-0 card-subtitle">Текущие показатели подсистемы</p>
+          </div>
+          <div class="card-body pt-4">
+            <div class="row">
+              <div class="col-6 border-end">
+                <div class="d-flex flex-column align-items-center text-center px-2">
+                  <div class="avatar">
+                    <div class="avatar-initial bg-label-success rounded-3">
+                      <i class="icon-base ri ri-folder-add-line icon-24px"></i>
+                    </div>
+                  </div>
+                  <p class="mt-3 mb-1">За неделю</p>
+                  <h6 class="mb-0">{{ weekly_summary.new_cases_week }}</h6>
+                  <small class="text-muted">новых дел</small>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="d-flex flex-column align-items-center text-center px-2">
+                  <div class="avatar">
+                    <div class="avatar-initial bg-label-danger rounded-3">
+                      <i class="icon-base ri ri-alarm-warning-line icon-24px"></i>
+                    </div>
+                  </div>
+                  <p class="mt-3 mb-1">Просрочено</p>
+                  <h6 class="mb-0 text-danger">{{ weekly_summary.overdue_cases }}</h6>
+                  <small class="text-muted">дел</small>
+                </div>
+              </div>
+            </div>
+            <hr class="my-4" />
+            <div class="d-flex justify-content-around align-items-center flex-wrap gap-2">
+              <div>
+                <p class="mb-1">С исполнителем</p>
+                <h6 class="mb-0">{{ quality.assignee_fill_pct|default:"0" }}%</h6>
+              </div>
+              <div>
+                <a href="{% url 'platform-overdue' %}" class="btn btn-primary btn-sm">Мониторинг сроков</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xxl-4 col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-1">Нагрузка по направлениям</h5>
+      </div>
+      <div class="card-body">
+        <div id="performanceChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-xxl-4">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="card-title m-0 me-2">Сводка по направлениям</h5>
+      </div>
+      <div class="d-flex justify-content-between p-4 border-bottom">
+        <p class="mb-0 fs-xsmall">НАПРАВЛЕНИЕ</p>
+        <p class="mb-0 fs-xsmall">КОЛИЧЕСТВО</p>
+      </div>
+      <div class="card-body">
+        <ul class="p-0 m-0">
+          {% for row in module_breakdown %}
+          <li class="d-flex align-items-center{% if not forloop.last %} mb-4{% endif %}">
+            <div class="avatar avatar-md flex-shrink-0 me-3">
+              <div class="avatar-initial bg-label-{{ row.color }} rounded-3">
+                <i class="icon-base {{ row.icon }} icon-24px"></i>
+              </div>
+            </div>
+            <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
+              <div class="me-2">
+                <h6 class="mb-0">{{ row.title }}</h6>
+                <small class="text-muted">{{ row.subtitle }}</small>
+              </div>
+              <div class="badge bg-label-{{ row.color }} rounded-pill">{{ row.count }}</div>
+            </div>
+          </li>
+          {% empty %}
+          <li class="text-muted">Нет данных по контуру</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-xxl-4">
+    <div class="row g-4">
+      <div class="col-md-6 col-sm-6">
+        <div class="card h-100">
+          <div class="card-header pb-xl-8">
+            <h5 class="mb-0">{{ weekly_summary.new_cases_week }}</h5>
+            <span class="d-block card-subtitle">Новых дел за неделю</span>
+          </div>
+          <div class="card-body">
+            <div id="totalRevenue"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-sm-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="avatar mb-4">
+              <div class="avatar-initial bg-label-success rounded-3">
+                <i class="icon-base ri ri-mail-line icon-24px"></i>
+              </div>
+            </div>
+            <div class="card-info">
+              <h5 class="mb-1">{{ stats.inbox }}</h5>
+              <p class="mb-0">Входящих в работе</p>
+              <a href="{% url 'platform-inbox' %}" class="badge bg-label-secondary rounded-pill text-decoration-none mt-2">Входящие</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-sm-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="avatar mb-4">
+              <div class="avatar-initial bg-label-info rounded-3">
+                <i class="icon-base ri ri-file-text-line icon-24px"></i>
+              </div>
+            </div>
+            <div class="card-info">
+              <h5 class="mb-1">{{ stats.documents }}</h5>
+              <p class="mb-0">Документов в делах</p>
+              <span class="badge bg-label-secondary rounded-pill mt-2">Актуальные версии</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-sm-6">
+        <div class="card h-100">
+          <div class="card-header pb-xl-7">
+            <h5 class="mb-0">{{ kpi.cases_done }}/{{ kpi.cases_total }}</h5>
+            <span class="d-block card-subtitle">Доля исполненных дел</span>
+          </div>
+          <div class="card-body pb-xl-8">
+            <div id="overviewChart" class="d-flex align-items-center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xxl-4 col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-1">Дела по статусам</h5>
+        <p class="mb-0 card-subtitle">Всего активных: {{ stats.cases }}</p>
+      </div>
+      <div class="card-body pb-1 px-0">
+        <div id="salesCountryChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xxl-8">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="card-title mb-1">Очереди по модулям</h5>
+        <p class="card-subtitle mb-0">Последние записи в реестрах контура</p>
+      </div>
+      <div class="card-body pb-0">
+        <ul class="nav nav-tabs nav-tabs-widget pb-4 gap-3 mx-1 d-flex flex-nowrap" role="tablist">
+          {% for tab in queue_tabs %}
+          <li class="nav-item">
+            <a
+              href="javascript:void(0);"
+              class="nav-link btn{% if forloop.first %} active{% endif %} d-flex flex-column align-items-center justify-content-center"
+              role="tab"
+              data-bs-toggle="tab"
+              data-bs-target="#{{ tab.tab_id }}"
+              aria-controls="{{ tab.tab_id }}"
+              aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+              <div class="avatar avatar-sm">
+                <div class="avatar-initial bg-label-{{ tab.color }} rounded">
+                  <i class="icon-base {{ tab.icon }} icon-22px"></i>
+                </div>
+              </div>
+              <span class="small mt-1 d-none d-md-inline">{{ tab.label }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="tab-content p-0">
+        {% for tab in queue_tabs %}
+        <div class="tab-pane fade{% if forloop.first %} show active{% endif %}" id="{{ tab.tab_id }}" role="tabpanel">
+          <div class="table-responsive text-nowrap">
+            <table class="table border-top">
+              <thead>
+                <tr>
+                  <th class="bg-transparent border-bottom">Наименование</th>
+                  <th class="bg-transparent border-bottom">Статус</th>
+                  <th class="text-end bg-transparent border-bottom">{% if tab.label == "Задачи" %}Приоритет{% else %}Срок / дата{% endif %}</th>
+                  <th class="text-end bg-transparent border-bottom">{% if tab.label == "БПМ" %}Дело{% else %}Исполнитель{% endif %}</th>
+                </tr>
+              </thead>
+              <tbody class="table-border-bottom-0">
+                {% for row in tab.rows %}
+                <tr>
+                  <td>{{ row.title }}</td>
+                  <td>
+                    <div class="badge bg-label-{{ row.status_class }} rounded-pill">{{ row.status }}</div>
+                  </td>
+                  <td class="text-end fw-medium">{{ row.col3 }}</td>
+                  <td class="text-end fw-medium">{{ row.col4 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-muted py-4 text-center">Записей пока нет</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xxl-4 col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-1">Динамика регистрации дел</h5>
+        <p class="mb-0 card-subtitle">За последние 30 дней</p>
+      </div>
+      <div class="card-body">
+        <div class="row mb-4">
+          <div class="col-6 d-flex align-items-center">
+            <div class="avatar">
+              <div class="avatar-initial bg-label-primary rounded">
+                <i class="icon-base ri ri-folder-add-line icon-24px"></i>
+              </div>
+            </div>
+            <div class="ms-3 d-flex flex-column">
+              <p class="mb-0">Новых за неделю</p>
+              <h6 class="mb-0">{{ weekly_summary.new_cases_week }}</h6>
+            </div>
+          </div>
+          <div class="col-6 d-flex align-items-center">
+            <div class="avatar">
+              <div class="avatar-initial bg-label-warning rounded">
+                <i class="icon-base ri ri-alarm-warning-line icon-24px"></i>
+              </div>
+            </div>
+            <div class="ms-3 d-flex flex-column">
+              <p class="mb-0">Просрочено</p>
+              <h6 class="mb-0">{{ weekly_summary.overdue_cases }}</h6>
+            </div>
+          </div>
+        </div>
+        <div id="weeklySalesChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xxl-4 col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-1">Приоритет открытых задач</h5>
+        <p class="mb-0 card-subtitle">Всего открытых: {{ stats.tasks }}</p>
+      </div>
+      <div class="card-body pt-xl-5">
+        <div id="visitsByDayChart"></div>
+        <div class="d-flex justify-content-between mt-4">
+          <div>
+            <h6 class="mb-0">Просроченных задач</h6>
+            <p class="mb-0 small text-muted">{{ kpi.tasks_overdue }} из {{ stats.tasks }}</p>
+          </div>
+          <a href="{% url 'platform-kanban' %}" class="avatar text-decoration-none">
+            <div class="avatar-initial bg-label-warning rounded">
+              <i class="icon-base ri ri-arrow-right-s-line icon-24px scaleX-n1-rtl"></i>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xxl-8">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Лента активности</h5>
+        <a href="{% url 'platform-activity' %}" class="btn btn-sm btn-link">Вся лента</a>
+      </div>
+      <div class="card-body pt-2">
+        <ul class="timeline card-timeline mb-0">
+          {% for ev in activity_feed %}
+          <li class="timeline-item timeline-item-transparent">
+            <span class="timeline-point timeline-point-{% cycle 'primary' 'success' 'info' 'warning' %}"></span>
+            <div class="timeline-event">
+              <div class="timeline-header mb-2">
+                <h6 class="mb-0">{{ ev.verb }}</h6>
+                <small class="text-body-secondary">{{ ev.created_at|date:"d.m.Y H:i" }}</small>
+              </div>
+              <p class="mb-1">{{ ev.target_repr }}</p>
+              {% if ev.actor %}
+              <small class="text-muted">{{ ev.actor.get_full_name|default:ev.actor.username }}</small>
+              {% endif %}
+            </div>
+          </li>
+          {% empty %}
+          <li class="text-muted py-3">Событий в контуре пока нет. Действия по делам и документам появятся здесь автоматически.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  {% if overdue_cases %}
+  <div class="col-12 col-xxl-4">
+    <div class="card h-100 border-danger">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-danger">Просроченные дела</h5>
+        <a href="{% url 'platform-overdue' %}" class="btn btn-sm btn-outline-danger">Все</a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for c in overdue_cases %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <a href="{% url 'platform-case-detail' c.pk %}">{{ c.number }} — {{ c.title|truncatechars:40 }}</a>
+          <span class="small text-danger">{{ c.due_date|date:"d.m.Y" }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

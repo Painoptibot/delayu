@@ -1,0 +1,23 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-print-template-create' %}" class="btn btn-sm btn-primary">Новый шаблон</a>{% endif %}
+</div>
+<div class="card">
+  <table class="table mb-0">
+    <thead><tr><th>Код</th><th>Название</th><th>Активен</th><th></th></tr></thead>
+    <tbody>
+      {% for t in templates %}
+      <tr>
+        <td><code>{{ t.code }}</code></td>
+        <td>{{ t.name }}</td>
+        <td>{% if t.is_active %}Да{% else %}Нет{% endif %}</td>
+        <td><a href="{% url 'platform-print-template-preview' t.pk %}">Предпросмотр</a></td>
+      </tr>
+      {% empty %}<tr><td colspan="4" class="text-muted text-center py-3">Шаблонов нет</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Документы{% endblock %}
+{% block header_actions %}
+{% if can_create %}
+<a href="{% url 'platform-document-create' %}" class="btn btn-primary btn-sm">
+  <i class="ri-upload-2-line me-1"></i>Загрузить
+</a>
+{% endif %}
+{% endblock %}
+{% block card_body %}
+<form method="get" class="row g-2 mb-3 align-items-end">
+  <div class="col-md-3">
+    <label class="form-label">Поиск</label>
+    <input name="q" class="form-control form-control-sm" value="{{ search_q }}" placeholder="Название">
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">Тип</label>
+    <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все</option>
+      {% for val, label in doc_types %}
+      <option value="{{ val }}" {% if filter_type == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">ЭП</label>
+    <select name="signed" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все</option>
+      <option value="1" {% if filter_signed == "1" %}selected{% endif %}>Подписан</option>
+      <option value="0" {% if filter_signed == "0" %}selected{% endif %}>Без подписи</option>
+    </select>
+  </div>
+  <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100">Найти</button></div>
+</form>
+
+<table class="table table-hover table-sm align-middle">
+  <thead>
+    <tr>
+      <th>Наименование</th>
+      <th>Тип</th>
+      <th>Дело</th>
+      <th>v.</th>
+      <th>ЭП</th>
+      <th>Загружен</th>
+      <th class="text-end"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in documents %}
+    <tr{% if request.GET.open == d.pk|stringformat:"s" %} data-auto-open data-modal-url="{% url 'platform-document-modal' d.pk %}"{% endif %}>
+      <td>{{ d.title }}</td>
+      <td class="small">{{ d.get_doc_type_display }}</td>
+      <td class="small">{% if d.case %}<a href="{% url 'platform-case-detail' d.case_id %}">{{ d.case.number }}</a>{% else %}—{% endif %}</td>
+      <td>{{ d.version }}</td>
+      <td>{% if d.is_signed %}<span class="badge bg-label-success">да</span>{% else %}—{% endif %}</td>
+      <td class="small text-muted">{{ d.created_at|date:"d.m.Y" }}</td>
+      <td class="text-end">
+        <button type="button" class="btn btn-sm btn-icon btn-text-secondary doc-open"
+                data-modal-url="{% url 'platform-document-modal' d.pk %}"><i class="ri-eye-line"></i></button>
+        {% if d.file %}
+        <a href="{{ d.file.url }}" class="btn btn-sm btn-icon btn-text-secondary" target="_blank" rel="noopener"><i class="ri-download-line"></i></a>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" class="text-center text-muted py-4">Документов нет</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="modal fade" id="docModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Документ</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body" id="docModalBody"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-documents-list.js' %}"></script>{% endblock %}

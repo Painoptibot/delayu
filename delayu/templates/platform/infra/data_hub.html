@@ -1,0 +1,25 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/infra/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-data-hub-create' %}" class="btn btn-primary btn-sm">Набор</a>{% endif %}
+</div>
+<div class="card">
+  <table class="table mb-0">
+    <thead><tr><th>Название</th><th>Slug</th><th>Строк</th><th>Публикация</th><th>Обновлён</th></tr></thead>
+    <tbody>
+      {% for ds in datasets %}
+      <tr>
+        <td>{{ ds.name }}</td>
+        <td><code>{{ ds.slug }}</code></td>
+        <td>{{ ds.row_count }}</td>
+        <td>{% if ds.is_published %}<span class="badge bg-label-success">Да</span>{% else %}<span class="badge bg-label-secondary">Черновик</span>{% endif %}</td>
+        <td class="small">{{ ds.updated_at|date:"d.m.Y" }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="text-muted text-center py-4">Нет наборов</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "platform/uzhv/_wizard_layout.html" %}
+{% block wizard_body %}
+<form method="post" id="uzhvWizardForm">{% csrf_token %}
+  <div class="bs-stepper wizard-numbered">
+    <div class="bs-stepper-header">
+      <div class="step" data-target="#uzhv-s1"><button type="button" class="step-trigger"><span class="bs-stepper-circle">1</span><span class="bs-stepper-label"><span class="bs-stepper-title">Заявитель</span></span></button></div>
+      <div class="line"></div>
+      <div class="step" data-target="#uzhv-s2"><button type="button" class="step-trigger"><span class="bs-stepper-circle">2</span><span class="bs-stepper-label"><span class="bs-stepper-title">Учёт</span></span></button></div>
+      <div class="line"></div>
+      <div class="step" data-target="#uzhv-s3"><button type="button" class="step-trigger"><span class="bs-stepper-circle">3</span><span class="bs-stepper-label"><span class="bs-stepper-title">Исполнение</span></span></button></div>
+    </div>
+    <div class="bs-stepper-content">
+      <div id="uzhv-s1" class="content">
+        <div class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.citizen col=12 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.case_number col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.registered_at col=6 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev" disabled>Назад</button>
+          <button type="button" class="btn btn-primary btn-next">Далее</button>
+        </div>
+      </div>
+      <div id="uzhv-s2" class="content">
+        <div class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.category col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.status col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.income_verified col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.household_size col=6 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+          <button type="button" class="btn btn-primary btn-next">Далее</button>
+        </div>
+      </div>
+      <div id="uzhv-s3" class="content">
+        <div class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.assignee col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.notes col=12 %}
+        </div>
+        <p class="small text-muted">Очерёдность пересчитается автоматически (PY-05).</p>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+          <button type="submit" class="btn btn-success">Создать дело</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

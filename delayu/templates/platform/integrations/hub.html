@@ -1,0 +1,150 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/integrations/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="mb-0 text-body-secondary">Очереди, ретраи и мониторинг обменов</p>
+  </div>
+  {% if can_create %}<a href="{% url 'platform-integration-endpoint-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line me-1"></i>Коннектор</a>{% endif %}
+</div>
+<div class="row g-4 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-primary h-100">
+      <div class="card-body">
+        <p class="mb-1 text-body-secondary">Активных коннекторов</p>
+        <h3 class="mb-0">{{ metrics.endpoints_active }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-warning h-100">
+      <div class="card-body">
+        <p class="mb-1 text-body-secondary">В очереди</p>
+        <h3 class="mb-0">{{ metrics.pending }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-danger h-100">
+      <div class="card-body">
+        <p class="mb-1 text-body-secondary">Ошибки</p>
+        <h3 class="mb-0">{{ metrics.failed }}</h3>
+        <a href="{% url 'platform-integrations-messages' %}?status=failed" class="small">Журнал →</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-success h-100">
+      <div class="card-body">
+        <p class="mb-1 text-body-secondary">Отправлено сегодня</p>
+        <h3 class="mb-0">{{ metrics.sent_today }}</h3>
+        <span class="small text-muted">API-ключей: {{ metrics.api_keys }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% if external_services %}
+<div class="card mb-4">
+  <div class="card-header"><span>Внешние сервисы</span></div>
+  <ul class="list-group list-group-flush">
+    {% for svc in external_services %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <strong>{{ svc.name }}</strong>
+        <div class="small text-muted">{{ svc.hint }}</div>
+      </div>
+      {% if svc.enabled %}
+      <span class="badge bg-label-success">{% if svc.code == 'smev' %}этап 2{% else %}активно{% endif %}</span>
+      {% else %}
+      <span class="badge bg-label-secondary">{% if svc.code == 'smev' %}позже{% else %}не настроен{% endif %}</span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% if tz_integrations %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>Опции ТЗ УЖВ (I-01…I-14)</span>
+    <span class="badge bg-label-warning">этап 2: СМЭВ, ГИС ЖКХ, Катарсис</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover mb-0">
+      <thead>
+        <tr><th>Код</th><th>Система</th><th>Этап 1</th><th>Статус</th></tr>
+      </thead>
+      <tbody>
+        {% for row in tz_integrations %}
+        <tr>
+          <td><code>{{ row.code }}</code></td>
+          <td>{{ row.name }}</td>
+          <td class="small text-muted">{{ row.stage1 }}{% if row.endpoint %}<br><code>{{ row.endpoint }}</code>{% endif %}</td>
+          <td>
+            {% if row.tz_status == "done" %}<span class="badge bg-label-success">готово</span>
+            {% elif row.tz_status == "partial" %}<span class="badge bg-label-primary">частично</span>
+            {% elif row.tz_status == "manual" %}<span class="badge bg-label-info">вручную</span>
+            {% else %}<span class="badge bg-label-secondary">этап 2</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% if integration_api_hints %}
+<div class="card mb-4">
+  <div class="card-header">Входящие API (webhook)</div>
+  <ul class="list-group list-group-flush small">
+    {% for h in integration_api_hints %}
+    <li class="list-group-item">
+      <strong>{{ h.title }}</strong> — <span class="badge bg-label-primary">{{ h.method }}</span>
+      <code class="d-block mt-1 user-select-all">{{ h.path }}</code>
+      <span class="text-muted">{{ h.auth }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between">
+        <span>Коннекторы</span>
+        <a href="{% url 'platform-integration-endpoints' %}" class="btn btn-sm btn-link">Все</a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for e in endpoints %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div><strong>{{ e.name }}</strong><div class="small text-muted">{{ e.get_endpoint_type_display }} · <code>{{ e.code }}</code></div></div>
+          {% if e.is_active %}<span class="badge bg-label-success">on</span>{% else %}<span class="badge bg-label-secondary">off</span>{% endif %}
+        </li>
+        {% empty %}<li class="list-group-item text-muted">Нет коннекторов</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between">
+        <span>Последние сообщения</span>
+        <a href="{% url 'platform-integrations-messages' %}" class="btn btn-sm btn-link">Журнал</a>
+      </div>
+      <ul class="list-group list-group-flush small">
+        {% for m in messages %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ m.endpoint.code }} · {{ m.get_direction_display }}</span>
+          <span class="badge bg-label-{% if m.status == 'failed' %}danger{% elif m.status == 'sent' %}success{% else %}warning{% endif %}">{{ m.get_status_display }}</span>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">Сообщений нет</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

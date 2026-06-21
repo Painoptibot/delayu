@@ -1,0 +1,35 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+scripts/cache/
+
+# Env
+.env
+.env.local
+.db-credentials
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Node (если позже добавим frontend)
+node_modules/

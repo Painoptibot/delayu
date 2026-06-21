@@ -1,0 +1,233 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Личный кабинет — ДелаЮ{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-xl-4 col-lg-5 col-md-5 order-1 order-md-0">
+    <div class="card mb-4">
+      <div class="card-body pt-10">
+        <div class="user-avatar-section text-center">
+          <div class="avatar avatar-xl mb-4">
+            <span class="avatar-initial rounded-circle bg-label-primary fs-2">
+              {{ request.user.first_name|slice:":1"|default:request.user.username|slice:":1"|upper }}
+            </span>
+          </div>
+          <h5 class="mb-1">{{ profile.full_name }}</h5>
+          <span class="badge bg-label-primary rounded-pill">{{ active_role }}</span>
+          {% if profile.position_title %}<p class="text-muted small mt-2 mb-0">{{ profile.position_title }}</p>{% endif %}
+        </div>
+        <div class="d-flex justify-content-around flex-wrap my-5 gap-3">
+          <div class="text-center">
+            <h5 class="mb-0">{{ stats.tasks_open }}</h5>
+            <span class="small text-muted">Задач</span>
+          </div>
+          <div class="text-center">
+            <h5 class="mb-0 text-danger">{{ stats.tasks_overdue }}</h5>
+            <span class="small text-muted">Просрочено</span>
+          </div>
+          <div class="text-center">
+            <h5 class="mb-0">{{ stats.notifications_unread }}</h5>
+            <span class="small text-muted">Уведомлений</span>
+          </div>
+        </div>
+        <h6 class="pb-3 border-bottom mb-3">Сведения</h6>
+        <ul class="list-unstyled mb-0">
+          <li class="mb-2"><span class="fw-medium text-heading me-2">Логин:</span>{{ request.user.username }}</li>
+          <li class="mb-2"><span class="fw-medium text-heading me-2">E-mail:</span>{{ request.user.email|default:"—" }}</li>
+          <li class="mb-2"><span class="fw-medium text-heading me-2">Телефон:</span>{{ profile.phone|default:"—" }}</li>
+          <li class="mb-2"><span class="fw-medium text-heading me-2">Мобильный:</span>{{ profile.phone_mobile|default:"—" }}</li>
+          <li class="mb-2"><span class="fw-medium text-heading me-2">Подразделение:</span>{{ profile.department_text|default:active_org|default:"—" }}</li>
+          <li class="mb-2"><span class="fw-medium text-heading me-2">Руководитель:</span>{{ profile.manager_name|default:"—" }}</li>
+          <li class="mb-2"><span class="fw-medium text-heading me-2">Часовой пояс:</span>{{ profile.timezone }}</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h6 class="mb-0">Подсистемы и роли</h6></div>
+      <ul class="list-group list-group-flush">
+        {% for mem in memberships %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span class="small">{{ mem.subsystem.name }}<br><span class="text-muted">{{ mem.role.name }}</span></span>
+          {% if mem.is_default %}<span class="badge bg-label-primary">по умолчанию</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-xl-8 col-lg-7 col-md-7 order-0 order-md-1">
+    <div class="nav-align-top mb-4">
+      <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+        <li class="nav-item"><a class="nav-link active" href="#"><i class="icon-base ri ri-user-line icon-sm me-2"></i>Профиль</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'platform-today' %}"><i class="icon-base ri ri-calendar-check-line icon-sm me-2"></i>Задачи</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'platform-notifications' %}"><i class="icon-base ri ri-notification-3-line icon-sm me-2"></i>Уведомления</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'platform-help-center' %}"><i class="icon-base ri ri-question-line icon-sm me-2"></i>Помощь</a></li>
+      </ul>
+    </div>
+
+    {% if can_change %}
+    <div class="card mb-4">
+      <div class="card-header"><h5 class="card-title mb-0">Редактирование профиля</h5></div>
+      <div class="card-body">
+        <form method="post" action="{% url 'platform-cabinet' %}">
+          {% csrf_token %}
+          <div class="row g-4">
+            <div class="col-md-4">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.last_name }}
+                <label for="{{ profile_form.last_name.id_for_label }}">{{ profile_form.last_name.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.first_name }}
+                <label for="{{ profile_form.first_name.id_for_label }}">{{ profile_form.first_name.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.middle_name }}
+                <label for="{{ profile_form.middle_name.id_for_label }}">{{ profile_form.middle_name.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.email }}
+                <label for="{{ profile_form.email.id_for_label }}">{{ profile_form.email.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.email_personal }}
+                <label for="{{ profile_form.email_personal.id_for_label }}">{{ profile_form.email_personal.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.phone }}
+                <label for="{{ profile_form.phone.id_for_label }}">{{ profile_form.phone.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.phone_mobile }}
+                <label for="{{ profile_form.phone_mobile.id_for_label }}">{{ profile_form.phone_mobile.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.phone_work }}
+                <label for="{{ profile_form.phone_work.id_for_label }}">{{ profile_form.phone_work.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.phone_internal }}
+                <label for="{{ profile_form.phone_internal.id_for_label }}">{{ profile_form.phone_internal.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.telegram }}
+                <label for="{{ profile_form.telegram.id_for_label }}">{{ profile_form.telegram.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.employee_number }}
+                <label for="{{ profile_form.employee_number.id_for_label }}">{{ profile_form.employee_number.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.position_title }}
+                <label for="{{ profile_form.position_title.id_for_label }}">{{ profile_form.position_title.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.department_text }}
+                <label for="{{ profile_form.department_text.id_for_label }}">{{ profile_form.department_text.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.manager_name }}
+                <label for="{{ profile_form.manager_name.id_for_label }}">{{ profile_form.manager_name.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="{{ profile_form.gender.id_for_label }}">{{ profile_form.gender.label }}</label>
+              {{ profile_form.gender }}
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.birth_date }}
+                <label for="{{ profile_form.birth_date.id_for_label }}">{{ profile_form.birth_date.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.hire_date }}
+                <label for="{{ profile_form.hire_date.id_for_label }}">{{ profile_form.hire_date.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.timezone }}
+                <label for="{{ profile_form.timezone.id_for_label }}">{{ profile_form.timezone.label }}</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating form-floating-outline">
+                {{ profile_form.locale }}
+                <label for="{{ profile_form.locale.id_for_label }}">{{ profile_form.locale.label }}</label>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="{{ profile_form.comment.id_for_label }}">{{ profile_form.comment.label }}</label>
+              {{ profile_form.comment }}
+            </div>
+          </div>
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-secondary">Редактирование профиля доступно при праве «изменение» модуля M07.</div>
+    {% endif %}
+
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between"><h6 class="mb-0">Открытые задачи</h6><a href="{% url 'platform-today' %}" class="small">Все</a></div>
+          <ul class="list-group list-group-flush">
+            {% for t in tasks_open %}
+            <li class="list-group-item d-flex justify-content-between">
+              <a href="{% url 'platform-task-edit' t.pk %}">{{ t.title }}</a>
+              <span class="small text-muted">{{ t.due_date|default:"—" }}</span>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-muted">Нет задач</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header"><h6 class="mb-0">Избранное</h6></div>
+          <div class="card-body d-flex flex-wrap gap-2">
+            {% for f in favorites %}
+            <a href="{{ f.url_path }}" class="btn btn-sm btn-outline-secondary"><i class="{{ f.icon_class }} me-1"></i>{{ f.label }}</a>
+            {% empty %}
+            <span class="text-muted small">Нет закладок</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

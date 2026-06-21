@@ -1,0 +1,100 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ai/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="btn-group btn-group-sm flex-wrap mb-4">
+  <a href="?tool=case" class="btn btn-outline-primary {% if tool == 'case' %}active{% endif %}">Дело (M52–M56)</a>
+  <a href="?tool=classify" class="btn btn-outline-primary {% if tool == 'classify' %}active{% endif %}">Классификация (M49)</a>
+  <a href="?tool=ner" class="btn btn-outline-primary {% if tool == 'ner' %}active{% endif %}">NER (M50)</a>
+  <a href="?tool=sentiment" class="btn btn-outline-primary {% if tool == 'sentiment' %}active{% endif %}">Тональность (M63)</a>
+  <a href="?tool=qa" class="btn btn-outline-primary {% if tool == 'qa' %}active{% endif %}">НПА (M59)</a>
+  <a href="{% url 'platform-ai-ocr' %}" class="btn btn-outline-secondary">OCR (M51)</a>
+</div>
+{% if tool_result %}<div class="alert alert-info">{{ tool_result }}</div>{% endif %}
+{% if classify_detail %}
+<div class="alert alert-success">
+  <strong>Класс:</strong> {{ classify_detail.theme }}
+  · <strong>Приоритет:</strong> {{ classify_detail.priority }}
+  · <strong>Уверенность:</strong> {{ classify_detail.confidence|floatformat:2 }}
+  <ul class="mb-0 mt-2 small">{% for r in classify_detail.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+</div>
+<form method="post" action="{% url 'platform-ai-feedback' %}" class="card mb-4">{% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <input type="hidden" name="module_code" value="M49">
+  <input type="hidden" name="prompt_excerpt" value="{{ classify_detail.subject|default:''|truncatechars:500 }}">
+  <div class="card-body py-3">
+    <h6 class="mb-2">Оцените результат (#45)</h6>
+    <div class="row g-2 align-items-end">
+      <div class="col-auto">
+        <select name="rating" class="form-select form-select-sm">
+          {% for i in "12345" %}<option value="{{ i }}" {% if i == "4" %}selected{% endif %}>{{ i }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6"><input name="comment" class="form-control form-control-sm" placeholder="Комментарий (необязательно)"></div>
+      <div class="col-auto"><button class="btn btn-sm btn-outline-primary">Отправить отзыв</button></div>
+    </div>
+  </div>
+</form>
+{% endif %}
+<div class="row g-4">
+  {% if tool == 'case' %}
+  <div class="col-lg-4">
+    <div class="card"><div class="card-body">
+      <form method="get">
+        <label class="form-label">Выберите дело</label>
+        {{ case_form.case }}
+        <input type="hidden" name="tool" value="case">
+        <button type="submit" class="btn btn-sm btn-primary mt-2 w-100">Анализ</button>
+      </form>
+    </div></div>
+  </div>
+  <div class="col-lg-8">
+    {% if selected_case %}
+    <div class="card mb-3"><div class="card-body">
+      <h6>{{ selected_case.number }}</h6>
+      <p class="small">{{ summary }}</p>
+      <p class="small text-{% if risk.risk == 'high' %}danger{% elif risk.risk == 'medium' %}warning{% else %}success{% endif %}">Риск: {{ risk.message }}</p>
+      <p class="small">{{ due_prediction }}</p>
+      <p class="small">{{ bpm_hint }}</p>
+    </div></div>
+    <div class="card"><div class="card-header">Полнота дела (M54)</div>
+      <ul class="list-group list-group-flush">
+        {% for c in completeness %}
+        <li class="list-group-item d-flex justify-content-between"><span>{{ c.label }}</span>{% if c.ok %}<i class="ri-check-line text-success"></i>{% else %}<i class="ri-close-line text-danger"></i>{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% else %}<p class="text-muted">Выберите дело для анализа.</p>{% endif %}
+  </div>
+  {% elif tool == 'classify' %}
+  <div class="col-lg-6"><div class="card"><div class="card-body">
+    <form method="post">{% csrf_token %}<input type="hidden" name="tool" value="classify">
+      {{ classify_form.subject.label_tag }}{{ classify_form.subject }}
+      <button class="btn btn-primary btn-sm mt-2">Классифицировать</button>
+    </form>
+  </div></div></div>
+  {% elif tool == 'ner' %}
+  <div class="col-lg-6"><div class="card"><div class="card-body">
+    <form method="post">{% csrf_token %}<input type="hidden" name="tool" value="ner">
+      {{ ner_form.text.label_tag }}{{ ner_form.text }}
+      <button class="btn btn-primary btn-sm mt-2">Извлечь</button>
+    </form>
+  </div></div></div>
+  {% elif tool == 'sentiment' %}
+  <div class="col-lg-6"><div class="card"><div class="card-body">
+    <form method="post">{% csrf_token %}<input type="hidden" name="tool" value="sentiment">
+      <textarea name="text" class="form-control mb-2" rows="4" placeholder="Текст обращения"></textarea>
+      <button class="btn btn-primary btn-sm">Оценить</button>
+    </form>
+  </div></div></div>
+  {% elif tool == 'qa' %}
+  <div class="col-lg-6"><div class="card"><div class="card-body">
+    <form method="post">{% csrf_token %}<input type="hidden" name="tool" value="qa">
+      <input name="question" class="form-control mb-2" placeholder="Вопрос по НПА">
+      <button class="btn btn-primary btn-sm">Спросить</button>
+    </form>
+  </div></div></div>
+  {% endif %}
+</div>
+{% endblock %}

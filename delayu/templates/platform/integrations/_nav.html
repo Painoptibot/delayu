@@ -1,0 +1,10 @@
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    <li class="nav-item"><a class="nav-link{% if integrations_tab == 'hub' %} active{% endif %}" href="{% url 'platform-integrations' %}"><i class="icon-base ri ri-dashboard-line icon-sm me-2"></i>Шлюз</a></li>
+    <li class="nav-item"><a class="nav-link{% if integrations_tab == 'endpoints' %} active{% endif %}" href="{% url 'platform-integration-endpoints' %}"><i class="icon-base ri ri-plug-line icon-sm me-2"></i>Коннекторы</a></li>
+    <li class="nav-item"><a class="nav-link{% if integrations_tab == 'messages' %} active{% endif %}" href="{% url 'platform-integrations-messages' %}"><i class="icon-base ri ri-file-list-3-line icon-sm me-2"></i>Журнал</a></li>
+    <li class="nav-item"><a class="nav-link{% if integrations_tab == 'api' %} active{% endif %}" href="{% url 'platform-api-docs' %}"><i class="icon-base ri ri-code-s-slash-line icon-sm me-2"></i>REST API</a></li>
+    <li class="nav-item"><a class="nav-link{% if integrations_tab == 'smev' %} active{% endif %}" href="{% url 'platform-smev' %}"><i class="icon-base ri ri-government-line icon-sm me-2"></i>СМЭВ</a></li>
+    <li class="nav-item"><a class="nav-link{% if integrations_tab == 'external' %} active{% endif %}" href="{% url 'platform-external' %}"><i class="icon-base ri ri-exchange-line icon-sm me-2"></i>Внешние ИС</a></li>
+  </ul>
+</div>

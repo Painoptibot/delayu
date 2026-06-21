@@ -1,0 +1,28 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/comms/_nav.html" %}
+<div class="d-flex justify-content-between mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-body-secondary small mb-0">Шлюз Telegram / MAX (демо-конфигурация, этап 2 — реальная отправка)</p>
+  </div>
+  {% if can_create %}<a href="{% url 'platform-messenger-create' %}" class="btn btn-sm btn-primary">Канал</a>{% endif %}
+</div>
+<div class="card">
+  <table class="table table-hover mb-0">
+    <thead><tr><th>Код</th><th>Название</th><th>Тип</th><th>Webhook</th><th>Статус</th></tr></thead>
+    <tbody>
+      {% for ch in channels %}
+      <tr>
+        <td><code>{{ ch.code }}</code></td>
+        <td>{{ ch.name }}</td>
+        <td>{{ ch.get_channel_type_display }}</td>
+        <td class="small text-muted">{{ ch.webhook_url|truncatechars:40|default:"—" }}</td>
+        <td>{% if ch.is_active %}<span class="badge bg-label-success">активен</span>{% else %}<span class="badge bg-label-secondary">выкл</span>{% endif %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Каналы не настроены</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

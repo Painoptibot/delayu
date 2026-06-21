@@ -1,0 +1,24 @@
+<dl class="row mb-3">
+  <dt class="col-sm-3">Номер</dt><dd class="col-sm-9"><code>{{ case.number }}</code></dd>
+  <dt class="col-sm-3">Статус</dt><dd class="col-sm-9">{{ case.get_status_display }}</dd>
+  <dt class="col-sm-3">Исполнитель</dt><dd class="col-sm-9">{{ case.assignee|default:"—" }}</dd>
+  <dt class="col-sm-3">Срок</dt><dd class="col-sm-9">{{ case.due_date|default:"—" }}</dd>
+  <dt class="col-sm-3">Приоритет</dt><dd class="col-sm-9">{{ case.priority }}</dd>
+</dl>
+<p>{{ case.title }}</p>
+{% if case.description %}<p class="text-muted small">{{ case.description|truncatechars:300 }}</p>{% endif %}
+{% include "platform/cases/_extra_fields.html" %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <span class="badge bg-label-primary">Док. {{ doc_count }}</span>
+  <span class="badge bg-label-info">Задач {{ task_count }}</span>
+  <span class="badge bg-label-secondary">Комм. {{ comment_count }}</span>
+  <span class="badge bg-label-dark">Корр. {{ corr_count }}</span>
+  <span class="badge bg-label-warning">BPM {{ bpm_pending }}</span>
+</div>
+<div class="alert alert-info small mb-3">ИИ: {{ ai_summary }}<br>{{ ai_risk.message }}</div>
+<div class="text-end">
+  <a href="{% url 'platform-case-detail' case.pk %}" class="btn btn-sm btn-primary">Открыть карточку</a>
+  {% if can_change and not case.is_archived %}
+  <a href="{% url 'platform-case-edit' case.pk %}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+  {% endif %}
+</div>

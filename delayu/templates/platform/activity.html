@@ -1,0 +1,5 @@
+{% extends "platform/_page.html" %}
+{% block title %}Лента активности{% endblock %}
+{% block card_body %}
+<ul>{% for e in events %}<li>{{ e.created_at|date:"d.m.Y H:i" }} — {{ e.actor }} {{ e.verb }}: {{ e.target_repr }}</li>{% endfor %}</ul>
+{% endblock %}

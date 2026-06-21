@@ -1,0 +1,6 @@
+{% extends "platform/_page.html" %}
+{% block title %}Лицензии{% endblock %}
+{% block card_body %}
+<table class="table table-sm"><thead><tr><th>Модуль</th><th>До</th></tr></thead>
+<tbody>{% for l in licenses %}<tr><td>{{ l.module.code }} — {{ l.module.name }}</td><td>{{ l.valid_until|default:"бессрочно" }}</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

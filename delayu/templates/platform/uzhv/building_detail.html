@@ -1,0 +1,89 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ building.address }}{% endblock %}
+{% block vendor_css %}{{ block.super }}
+{% include "platform/uzhv/_map_assets.html" %}
+{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap">
+  <a href="{% url 'uzhv-fund' %}" class="btn btn-outline-secondary btn-sm">← Жилфонд</a>
+  <a href="{% url 'uzhv-fund-map' %}" class="btn btn-outline-primary btn-sm"><i class="ri-map-2-line"></i> Карта</a>
+  {% if can_change %}
+  <a href="{% url 'uzhv-building-edit' building.pk %}" class="btn btn-primary btn-sm"><i class="ri-pencil-line"></i> Редактировать</a>
+  {% endif %}
+</div>
+{% endblock %}
+{% block card_body %}
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <dl class="row mb-0 small">
+      <dt class="col-sm-5">Кадастровый номер</dt><dd class="col-sm-7">{{ building.cadastral_number|default:"—" }}</dd>
+      <dt class="col-sm-5">Этажность / год</dt><dd class="col-sm-7">{{ building.floors|default:"—" }} / {{ building.year_built|default:"—" }}</dd>
+      <dt class="col-sm-5">Состояние</dt><dd class="col-sm-7">{{ building.get_condition_display }}</dd>
+      <dt class="col-sm-5">Площадь / жители</dt><dd class="col-sm-7">{{ building.total_area_sqm|default:"—" }} м² / {{ building.residents_count|default:"—" }}</dd>
+      <dt class="col-sm-5">Программа 4779</dt><dd class="col-sm-7">{% if building.in_resettlement_program %}Да{% else %}Нет{% endif %}</dd>
+      <dt class="col-sm-5">Зона реконструкции</dt><dd class="col-sm-7">{% if building.in_reconstruction_zone %}Да{% if building.reconstruction_program %} — {{ building.reconstruction_program }}{% endif %}{% else %}Нет{% endif %}</dd>
+      <dt class="col-sm-5">Координаты</dt>
+      <dd class="col-sm-7">
+        {% if building.has_coordinates %}{{ building.latitude }}, {{ building.longitude }}{% else %}<span class="text-muted">не заданы</span>{% endif %}
+      </dd>
+    </dl>
+    {% if building.notes %}<p class="small text-muted mt-2 mb-0">{{ building.notes }}</p>{% endif %}
+  </div>
+  <div class="col-lg-6">
+    {% include "platform/uzhv/_map_embed.html" with map_title="На карте" map_height=280 show_map_empty=True %}
+  </div>
+</div>
+
+<h6 class="mb-3">Помещения</h6>
+<div class="table-responsive mb-4">
+  <table class="table table-sm table-hover align-middle">
+    <thead><tr><th>№</th><th>Площадь</th><th>Комнат</th><th>Статус</th><th>ЛС</th><th>Неприг.</th><th></th></tr></thead>
+    <tbody>
+      {% for p in premises %}
+      <tr>
+        <td><strong>{{ p.number }}</strong></td>
+        <td>{{ p.area_sqm|default:"—" }}</td>
+        <td>{{ p.rooms|default:"—" }}</td>
+        <td>{{ p.get_status_display }}</td>
+        <td class="small">
+          {% if p.personal_account %}
+          <a href="{% url 'uzhv-personal-account-edit' p.pk %}">{{ p.personal_account.account_number }}</a>
+          {% elif can_change %}
+          <a href="{% url 'uzhv-personal-account-edit' p.pk %}" class="text-muted">Открыть ЛС</a>
+          {% else %}—{% endif %}
+        </td>
+        <td>{% if p.unfit_for_living %}<span class="badge bg-label-danger">Да</span>{% else %}—{% endif %}</td>
+        <td class="text-end">{% if can_change %}<a href="{% url 'uzhv-premise-edit' p.pk %}" class="btn btn-sm btn-link">Изменить</a>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-muted text-center py-3">Помещений нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if can_create %}
+<div class="card border">
+  <div class="card-body">
+    <h6 class="mb-3">Добавить помещение</h6>
+    <form method="post" class="row g-2 align-items-end">
+      {% csrf_token %}
+      {% for field in premise_form %}
+      <div class="col-md-3">
+        <label class="form-label small">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <div class="col-md-3"><button type="submit" class="btn btn-primary btn-sm">Добавить</button></div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block page_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.uzhvInitMapsIn) window.uzhvInitMapsIn(document);
+});
+</script>
+{% endblock %}

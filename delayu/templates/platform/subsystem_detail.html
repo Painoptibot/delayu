@@ -1,0 +1,10 @@
+{% extends layout_path %}
+{% block title %}{{ subsystem.name }}{% endblock %}
+{% block content %}
+<div class="card mb-4"><div class="card-body"><h4>{{ subsystem.name }}</h4><p class="text-muted mb-0"><code>{{ subsystem.code }}</code></p></div></div>
+<div class="card"><div class="card-header">Матрица модулей</div><div class="table-responsive"><table class="table table-sm mb-0">
+<thead><tr><th>Код</th><th>Модуль</th><th>Вкл.</th><th></th></tr></thead>
+<tbody>{% for link in module_links %}<tr><td>{{ link.module.code }}</td><td>{{ link.module.name }}</td>
+<td>{% if link.enabled %}<span class="badge bg-success">да</span>{% else %}<span class="badge bg-secondary">нет</span>{% endif %}</td>
+<td><form method="post" action="{% url 'platform-module-toggle' link.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Переключить</button></form></td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

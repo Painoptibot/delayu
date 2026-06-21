@@ -1,0 +1,13 @@
+<p class="text-muted small mb-2">Запись #{{ record.pk }} · {{ record.created_at|date:"d.m.Y H:i" }} · {{ record.created_by }}</p>
+<dl class="row mb-3">
+  {% for label, value in fields_display %}
+  <dt class="col-sm-4">{{ label }}</dt><dd class="col-sm-8">{{ value|default:"—" }}</dd>
+  {% empty %}<dd class="text-muted">Нет полей в схеме</dd>{% endfor %}
+</dl>
+{% if can_change %}
+<div class="text-end">
+  <button type="button" class="btn btn-sm btn-primary rec-form-open"
+    data-form-modal-url="{% url 'platform-registry-record-form-modal-edit' registry_type.pk record.pk %}"
+    data-form-modal-title="Редактировать запись #{{ record.pk }}">Редактировать</button>
+</div>
+{% endif %}

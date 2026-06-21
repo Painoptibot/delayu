@@ -1,0 +1,13 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ai/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card col-lg-8">
+  <div class="card-body">
+    <p>Распознавание сканов и формирование черновика карточки документа (M51) подключается на этапе 2.</p>
+    <p class="small text-muted mb-0">Сейчас используйте загрузку документов в M05 и инструменты NER (M50) в разделе «Инструменты».</p>
+    <a href="{% url 'platform-document-create' %}" class="btn btn-sm btn-primary mt-3">Загрузить документ</a>
+  </div>
+</div>
+{% endblock %}

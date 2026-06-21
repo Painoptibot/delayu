@@ -1,0 +1,49 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/comms/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="mb-0 text-body-secondary">Треды по делам и документам</p>
+  </div>
+  <div class="btn-group btn-group-sm">
+    <a href="{% url 'platform-comments' %}" class="btn btn-outline-primary {% if not filter_module %}active{% endif %}">Все</a>
+    <a href="{% url 'platform-comments' %}?module=case" class="btn btn-outline-primary {% if filter_module == 'case' %}active{% endif %}">Дела</a>
+    <a href="{% url 'platform-comments' %}?module=document" class="btn btn-outline-primary {% if filter_module == 'document' %}active{% endif %}">Документы</a>
+  </div>
+</div>
+{% if can_create %}
+<div class="card mb-4">
+  <div class="card-header">Новый комментарий</div>
+  <div class="card-body">
+    <form method="post">{% csrf_token %}
+      {% for field in form %}<div class="mb-3"><label class="form-label">{{ field.label }}</label>{{ field }}</div>{% endfor %}
+      <button type="submit" class="btn btn-sm btn-primary">Опубликовать</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+<div class="card">
+  <ul class="list-group list-group-flush">
+    {% for c in comments %}
+    <li class="list-group-item">
+      <div class="d-flex justify-content-between">
+        <strong>{{ c.author.get_full_name|default:c.author.username }}</strong>
+        <span class="small text-muted">{{ c.created_at|date:"d.m.Y H:i" }}</span>
+      </div>
+      <p class="mb-1">{{ c.body|linebreaksbr }}</p>
+      {% if c.case %}<a href="{% url 'platform-case-detail' c.case_id %}" class="small"><code>{{ c.case.number }}</code></a>{% endif %}
+      {% if c.document %}<span class="small text-muted"> · документ «{{ c.document.title }}»</span>{% endif %}
+      {% for r in c.replies.all %}
+      <div class="ms-4 mt-2 ps-3 border-start small">
+        <strong>{{ r.author.username }}</strong>: {{ r.body }}
+      </div>
+      {% endfor %}
+    </li>
+    {% empty %}
+    <li class="list-group-item text-muted text-center py-4">Комментариев нет</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

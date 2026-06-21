@@ -1,0 +1,12 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ops/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card col-lg-8"><div class="card-body">
+  <form method="post">{% csrf_token %}{{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+    <a href="{% url 'platform-directives' %}" class="btn btn-label-secondary">Отмена</a>
+  </form>
+</div></div>
+{% endblock %}

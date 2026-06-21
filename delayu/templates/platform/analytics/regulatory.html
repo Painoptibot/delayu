@@ -1,0 +1,46 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/analytics/_nav.html" %}
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">{{ page_title }}</h5></div>
+  <div class="card-body">
+    <table class="table table-sm table-hover">
+      <thead><tr><th>Форма</th><th>Период</th><th>v.</th><th>Статус</th><th>Сдан</th><th></th></tr></thead>
+      <tbody>
+        {% for s in submissions %}
+        <tr>
+          <td><code>{{ s.form_code }}</code> {{ s.form_name }}</td>
+          <td>{{ s.period_label }}</td>
+          <td>{{ s.version }}</td>
+          <td><span class="badge bg-label-{% if s.status == 'submitted' %}success{% elif s.status == 'approved' %}primary{% else %}secondary{% endif %}">{{ s.get_status_display }}</span></td>
+          <td class="small">{% if s.submitted_at %}{{ s.submitted_at|date:"d.m.Y" }} {{ s.submitted_by }}{% else %}—{% endif %}</td>
+          <td class="text-end">
+            {% if can_change and s.status == 'draft' %}
+            <form method="post" class="d-inline">{% csrf_token %}
+              <input type="hidden" name="action" value="submit">
+              <input type="hidden" name="pk" value="{{ s.pk }}">
+              <button type="submit" class="btn btn-sm btn-primary">Сдать</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-muted">Нет форм за период</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if can_create %}
+    <hr>
+    <h6>Новый черновик</h6>
+    <form method="post" class="row g-2">{% csrf_token %}
+      <input type="hidden" name="action" value="create">
+      {% for field in form %}
+      <div class="col-md-6"><label class="form-label small">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <div class="col-12"><button type="submit" class="btn btn-sm btn-primary">Сохранить черновик</button></div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

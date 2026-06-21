@@ -1,0 +1,30 @@
+# Деплой на VPS по push в main (GitHub Actions).
+#
+# Secrets в репозитории:
+#   DEPLOY_HOST     — dab7798018f1.vps.myjino.ru
+#   DEPLOY_USER     — root
+#   DEPLOY_SSH_KEY  — приватный ключ SSH
+#   DEPLOY_PATH     — /opt/delayu
+#
+name: Deploy production
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+            sudo -u delayu git pull --ff-only
+            sudo bash deploy/update-prod.sh

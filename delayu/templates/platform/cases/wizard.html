@@ -1,0 +1,61 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between">
+    <h5 class="mb-0">{{ page_title }}</h5>
+    <a href="{% url 'platform-cases' %}" class="btn btn-sm btn-outline-secondary">К реестру</a>
+  </div>
+  <div class="card-body">
+    <form method="post" id="caseWizardForm">{% csrf_token %}
+      <div class="bs-stepper wizard-numbered">
+        <div class="bs-stepper-header">
+          <div class="step" data-target="#cw1"><button type="button" class="step-trigger">
+            <span class="bs-stepper-circle">1</span><span class="bs-stepper-label"><span class="bs-stepper-title">Суть дела</span></span>
+          </button></div>
+          <div class="line"></div>
+          <div class="step" data-target="#cw2"><button type="button" class="step-trigger">
+            <span class="bs-stepper-circle">2</span><span class="bs-stepper-label"><span class="bs-stepper-title">Исполнение</span></span>
+          </button></div>
+        </div>
+        <div class="bs-stepper-content">
+          <div id="cw1" class="content">
+            <div class="row g-3">
+              <div class="col-12"><label class="form-label">{{ form.title.label }}</label>{{ form.title }}</div>
+              <div class="col-12"><label class="form-label">{{ form.description.label }}</label>{{ form.description }}</div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-outline-secondary btn-prev" disabled>Назад</button>
+              <button type="button" class="btn btn-primary btn-next">Далее</button>
+            </div>
+          </div>
+          <div id="cw2" class="content">
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label">{{ form.assignee.label }}</label>{{ form.assignee }}</div>
+              <div class="col-md-6"><label class="form-label">{{ form.due_date.label }}</label>{{ form.due_date }}</div>
+              <div class="col-md-6"><label class="form-label">{{ form.priority.label }}</label>{{ form.priority }}</div>
+              <div class="col-md-6"><label class="form-label">{{ form.status.label }}</label>{{ form.status }}</div>
+            </div>
+            {% if extra_form %}
+            <div class="mt-4 pt-3 border-top">
+              <p class="small text-primary mb-2">Дополнительные поля (M74)</p>
+              {% for field in extra_form %}
+              <div class="mb-3"><label class="form-label">{{ field.label }}</label>{{ field }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+              <button type="submit" class="btn btn-success btn-submit">Создать дело</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block vendor_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'vendor/libs/bs-stepper/bs-stepper.css' %}">{% endblock %}
+{% block vendor_js %}{{ block.super }}<script src="{% static 'vendor/libs/bs-stepper/bs-stepper.js' %}"></script>{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-case-wizard.js' %}"></script>{% endblock %}

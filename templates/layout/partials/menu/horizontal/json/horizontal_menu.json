@@ -1,0 +1,16 @@
+{
+  "menu": [
+    {
+      "url": "index",
+      "icon": "menu-icon icon-base ri ri-home-smile-line",
+      "name": "Page 1",
+      "slug": "index"
+    },
+    {
+      "url": "page-2",
+      "icon": "menu-icon icon-base ri ri-file-line",
+      "name": "Page 2",
+      "slug": "page-2"
+    }
+  ]
+}

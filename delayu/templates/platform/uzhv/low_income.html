@@ -1,0 +1,191 @@
+{% extends layout_path %}
+{% block title %}Расчёт малоимущих — {{ case.case_number }}{% endblock %}
+{% block content %}
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h5 class="mb-0">Дело {{ case.case_number }} — {{ case.citizen.full_name }}</h5>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'uzhv-case-zip' case.pk %}" class="btn btn-sm btn-outline-secondary">
+        <i class="ri-folder-zip-line"></i> Пакет ZIP
+      </a>
+      <a href="{% url 'uzhv-citizen-edit' case.citizen_id %}" class="btn btn-sm btn-outline-primary">Паспорт / гражданин</a>
+      <a href="{% url 'uzhv-cases' %}" class="btn btn-sm btn-outline-secondary">К списку</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <p class="text-muted mb-3">
+      Прожиточный минимум (НСИ): <strong>{{ subsistence_minimum }} ₽</strong> на душу.
+      Срок рассмотрения заявления: <strong>{{ review_days }} дн.</strong>
+      {% if case.assignee %}
+      Исполнитель: <strong>{{ case.assignee.get_full_name|default:case.assignee.username }}</strong>
+      {% endif %}
+      {% if citizen.passport_series or citizen.passport_number %}
+      Паспорт: <strong>{{ citizen.passport_series }} {{ citizen.passport_number }}</strong>
+      {% if citizen.passport_issued_at %} от {{ citizen.passport_issued_at|date:"d.m.Y" }}{% endif %}
+      {% else %}
+      <span class="text-warning">Паспортные данные не заполнены.</span>
+      {% endif %}
+    </p>
+
+    <form method="post" class="row g-2 align-items-end mb-3">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="assign">
+      <div class="col-md-4">
+        <label class="form-label">Ответственный специалист</label>
+        <select name="assignee" class="form-select form-select-sm">
+          <option value="">— не назначен —</option>
+          {% for u in assignee_users %}
+          <option value="{{ u.pk }}"{% if case.assignee_id == u.pk %} selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Назначить</button>
+      </div>
+    </form>
+
+    {% if case.low_income_review_due_at %}
+    <div class="alert {% if review_overdue %}alert-danger{% elif review_due_soon %}alert-warning{% else %}alert-info{% endif %} py-2">
+      Заявление от {{ case.low_income_application_at|date:"d.m.Y"|default:"—" }} —
+      срок рассмотрения до <strong>{{ case.low_income_review_due_at|date:"d.m.Y" }}</strong>
+      {% if review_overdue %}<span class="badge bg-danger ms-1">Просрочено</span>{% endif %}
+    </div>
+    {% endif %}
+
+    <h6 class="mb-2">Регистрация заявления</h6>
+    <form method="post" class="row g-2 align-items-end mb-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="application">
+      <div class="col-auto">
+        <label class="form-label">Дата заявления</label>
+        <input type="date" name="low_income_application_at" class="form-control"
+               value="{{ case.low_income_application_at|date:'Y-m-d' }}">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Зафиксировать срок</button>
+      </div>
+    </form>
+
+    <h6 class="mb-2">Состав семьи</h6>
+    <form method="post" class="mb-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="sync_applicant">
+      <button type="submit" class="btn btn-outline-secondary btn-sm">Добавить заявителя из карточки гражданина</button>
+    </form>
+    <form method="post" class="mb-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="members">
+      {{ member_formset.management_form }}
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>ФИО</th><th>Родство</th><th>Дата рожд.</th><th>СНИЛС</th><th>Паспорт</th><th>Доход, ₽</th><th></th></tr></thead>
+          <tbody>
+            {% for f in member_formset %}
+            <tr>
+              <td>{{ f.full_name }}{% for e in f.full_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+              <td>{{ f.relation }}</td>
+              <td>{{ f.birth_date }}</td>
+              <td>{{ f.snils }}</td>
+              <td>{{ f.passport_series }} {{ f.passport_number }}</td>
+              <td>{{ f.monthly_income }}</td>
+              <td>{% if f.DELETE %}{{ f.DELETE }}<label class="small">удал.</label>{% endif %}{{ f.id }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <button type="submit" class="btn btn-outline-primary btn-sm">Сохранить состав семьи</button>
+    </form>
+
+    <h6 class="mb-2">Расчёт дохода и имущества</h6>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="calculate">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Число членов семьи</label>
+          <input type="number" name="household_size" class="form-control" min="1"
+                 value="{{ case.household_size|default:case.household_members.count|default:1 }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Суммарный месячный доход семьи, ₽</label>
+          <input type="number" step="0.01" name="monthly_income" class="form-control"
+                 value="{{ case.monthly_income|default:'' }}">
+          <div class="form-text">Если указан состав семьи с доходами — суммируется автоматически.</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Стоимость имущества, ₽</label>
+          <input type="number" step="0.01" name="property_value" class="form-control"
+                 value="{{ case.property_value|default:'' }}">
+        </div>
+      </div>
+      <div class="mt-3 d-flex gap-2 flex-wrap">
+        <button type="submit" class="btn btn-primary">Рассчитать и сохранить заключение</button>
+        {% if case.low_income_eligible is not None and not case.low_income_eligible %}
+        <button type="submit" name="action" value="reject" class="btn btn-outline-danger"
+                onclick="return confirm('Зафиксировать отказ и снять дело с учёта?');">Отказ в признании</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header"><h6 class="mb-0">Вложения (сканы)</h6></div>
+  <div class="card-body">
+    {% if attachments %}
+    <ul class="list-group list-group-flush mb-3">
+      {% for att in attachments %}
+      <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+        <div>
+          <a href="{{ att.file.url }}" target="_blank">{{ att.title }}</a>
+          <span class="text-muted small"> — {{ att.get_doc_kind_display }}, {{ att.uploaded_at|date:"d.m.Y" }}</span>
+        </div>
+        <form method="post" class="d-inline" onsubmit="return confirm('Удалить вложение?');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete_attachment">
+          <input type="hidden" name="attachment_id" value="{{ att.pk }}">
+          <button type="submit" class="btn btn-sm btn-link text-danger">Удалить</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-muted small">Вложений пока нет.</p>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="upload">
+      <div class="col-md-4">{{ attachment_form.title.label_tag }}{{ attachment_form.title }}</div>
+      <div class="col-md-3">{{ attachment_form.doc_kind.label_tag }}{{ attachment_form.doc_kind }}</div>
+      <div class="col-md-3">{{ attachment_form.file.label_tag }}{{ attachment_form.file }}</div>
+      <div class="col-md-2"><button type="submit" class="btn btn-outline-primary w-100">Загрузить</button></div>
+    </form>
+  </div>
+</div>
+
+{% if last_result or case.low_income_conclusion %}
+<div class="alert {% if last_result.eligible or case.low_income_eligible %}alert-success{% else %}alert-warning{% endif %}">
+  {% if last_result %}
+  <strong>Среднедушевой доход:</strong> {{ last_result.per_capita_income }} ₽/мес.<br>
+  {{ last_result.conclusion }}
+  {% if last_result.queue_position %}
+  <div class="small mt-1">Очерёдность после пересчёта: <strong>{{ last_result.queue_position }}</strong></div>
+  {% endif %}
+  {% else %}
+  {{ case.low_income_conclusion }}
+  {% if case.low_income_calculated_at %}
+  <div class="small text-muted mt-1">Расчёт от {{ case.low_income_calculated_at|date:"d.m.Y H:i" }}</div>
+  {% endif %}
+  {% endif %}
+</div>
+<div class="d-flex gap-2 flex-wrap">
+  {% for code, label in document_codes %}
+  <a href="{% url 'uzhv-case-document' case.pk code %}?format=docx" class="btn btn-sm btn-outline-secondary">
+    <i class="ri-file-word-line"></i> {{ label }} (docx)
+  </a>
+  <a href="{% url 'uzhv-case-document' case.pk code %}?format=txt" class="btn btn-sm btn-link">{{ label }} (txt)</a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

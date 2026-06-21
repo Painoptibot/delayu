@@ -1,0 +1,7 @@
+{% load static %}
+<div id="uzhvPwaRoot" class="d-none" aria-hidden="true"
+  data-uzhv-alerts-url="{% url 'uzhv-mobile-alerts' %}"
+  data-uzhv-sw-url="{% url 'uzhv-service-worker' %}"
+  data-uzhv-push-url="{% url 'uzhv-push-subscribe' %}"
+  data-uzhv-vapid="{{ uzhv_vapid_public_key|default:'' }}"></div>
+<script src="{% static 'js/delayu-uzhv-pwa.js' %}"></script>

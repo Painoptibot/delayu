@@ -1,0 +1,9 @@
+{% extends layout_path %}
+{% block title %}Подсистемы{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-4"><h4 class="mb-0">Подсистемы</h4><a href="{% url 'platform-subsystem-create' %}" class="btn btn-primary btn-sm">Создать</a></div>
+<div class="card"><div class="table-responsive"><table class="table table-hover mb-0">
+<thead><tr><th>Код</th><th>Наименование</th><th>Статус</th><th>Модулей</th><th></th></tr></thead>
+<tbody>{% for s in subsystems %}<tr><td><code>{{ s.code }}</code></td><td>{{ s.name }}</td><td>{{ s.get_status_display }}</td><td>{{ s.enabled_module_count }}</td>
+<td><a href="{% url 'platform-subsystem-detail' s.pk %}" class="btn btn-sm btn-primary">Матрица</a></td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

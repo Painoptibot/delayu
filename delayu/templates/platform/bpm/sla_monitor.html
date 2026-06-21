@@ -1,0 +1,69 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/bpm/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="mb-0 text-body-secondary">{% if metrics.rule %}{{ metrics.rule.name }} · норматив {{ metrics.hours_limit }} ч.{% else %}Правило SLA не задано{% endif %}</p>
+  </div>
+  <a href="{% url 'platform-bpm-sla' %}" class="btn btn-sm btn-outline-primary">Правила SLA</a>
+</div>
+<div class="row g-4 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-danger h-100">
+      <div class="card-body">
+        <p class="mb-1 text-body-secondary">Просроченные дела</p>
+        <h3 class="mb-0">{{ metrics.overdue_cases }}</h3>
+        <a href="{% url 'platform-overdue' %}" class="small">Монитор просрочек →</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-warning h-100">
+      <div class="card-body">
+        <p class="mb-1 text-body-secondary">В зоне риска (3 дн.)</p>
+        <h3 class="mb-0">{{ metrics.at_risk_cases }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-info h-100">
+      <div class="card-body">
+        <p class="mb-1 text-body-secondary">Без движения (SLA)</p>
+        <h3 class="mb-0">{{ metrics.stale_cases }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-border-shadow-primary h-100">
+      <div class="card-body">
+        <p class="mb-1 text-body-secondary">BPM в ожидании</p>
+        <h3 class="mb-0">{{ metrics.bpm_pending }}</h3>
+        <a href="{% url 'platform-bpm-approvals' %}" class="small">Согласования →</a>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header">Кандидаты на эскалацию</div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Дело</th><th>Исполнитель</th><th>Срок</th></tr></thead>
+      <tbody>
+        {% for c in escalation_cases %}
+        <tr>
+          <td><a href="{% url 'platform-case-detail' c.pk %}"><code>{{ c.number }}</code></a></td>
+          <td>{{ c.assignee|default:"—" }}</td>
+          <td class="text-danger">{{ c.due_date }}</td>
+        </tr>
+        {% empty %}<tr><td colspan="3" class="text-muted text-center py-3">Нет просроченных дел</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

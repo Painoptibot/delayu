@@ -1,0 +1,76 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Структура{% endblock %}
+{% block header_actions %}
+{% if can_create and active_org %}
+<a href="{% url 'platform-department-create' %}?org={{ active_org.pk }}" class="btn btn-primary btn-sm">
+  <i class="ri-building-line me-1"></i>Подразделение
+</a>
+{% endif %}
+{% endblock %}
+{% block card_body %}
+{% if organizations.count > 1 %}
+<form method="get" class="mb-3 d-flex align-items-center gap-2">
+  <label class="form-label mb-0">Организация:</label>
+  <select name="org" class="form-select form-select-sm" style="max-width:320px" onchange="this.form.submit()">
+    {% for o in organizations %}
+    <option value="{{ o.pk }}" {% if active_org.pk == o.pk %}selected{% endif %}>{{ o.name }}</option>
+    {% endfor %}
+  </select>
+</form>
+{% endif %}
+{% if not active_org %}
+<p class="text-muted">Нет организаций в подсистеме.</p>
+{% else %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead><tr><th>Подразделение</th><th>Код</th><th>Руководитель</th><th>Должн.</th><th>Назнач.</th><th class="text-end">Действия</th></tr></thead>
+    <tbody>
+      {% for row in tree_rows %}
+      {% with d=row.department %}
+      <tr{% if request.GET.open_dept == d.pk|stringformat:"s" %} data-auto-open-dept data-modal-url="{% url 'platform-department-modal' d.pk %}"{% endif %}>
+        <td style="padding-left:{{ row.level|add:1 }}rem">
+          {% if row.level %}└ {% endif %}<strong>{{ d.name }}</strong>
+        </td>
+        <td><code>{{ d.code }}</code></td>
+        <td>{% if d.manager %}{{ d.manager.get_full_name|default:d.manager.username }}{% else %}—{% endif %}</td>
+        <td>{{ row.positions_count }}</td>
+        <td>{{ row.assignments_count }}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary struct-open-dept"
+                  data-modal-url="{% url 'platform-department-modal' d.pk %}"><i class="ri-eye-line"></i></button>
+          {% if can_change %}
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary struct-open-dept-edit"
+                  data-modal-url="{% url 'platform-department-modal' d.pk %}?mode=edit"><i class="ri-pencil-line"></i></button>
+          {% endif %}
+          {% if can_delete %}
+          <form method="post" action="{% url 'platform-department-delete' d.pk %}" class="d-inline"
+                onsubmit="return confirm('Удалить «{{ d.name }}»?');">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-icon btn-text-danger"><i class="ri-delete-bin-line"></i></button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endwith %}
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-4">Подразделения не созданы</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="modal fade" id="deptModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable">
+  <div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Подразделение</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="deptModalBody"></div>
+  </div>
+</div></div>
+<div class="modal fade" id="posModal" tabindex="-1"><div class="modal-dialog">
+  <div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Должность</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="posModalBody"></div>
+  </div>
+</div></div>
+{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-structure.js' %}"></script>{% endblock %}

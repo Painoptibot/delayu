@@ -1,0 +1,46 @@
+{% extends "platform/_page.html" %}
+{% block title %}Планы внеплановых проверок{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap">
+  <a href="{% url 'uzhv-inspections' %}" class="btn btn-outline-secondary btn-sm">Проверки</a>
+  {% if can_create %}
+  <a href="{% url 'uzhv-inspection-plan-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> План</a>
+  {% endif %}
+</div>
+{% endblock %}
+{% block card_body %}
+<p class="text-muted small">Формирование планов внеплановых проверок (ТЗ п. 321).</p>
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-4"><input type="search" name="q" class="form-control form-control-sm" placeholder="№ или название" value="{{ request.GET.q }}"></div>
+  <div class="col-md-3">
+    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все статусы</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}"{% if request.GET.status == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr><th>№</th><th>Наименование</th><th>Период</th><th>Проверок</th><th>Статус</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in plans %}
+      <tr>
+        <td><a href="{% url 'uzhv-inspection-plan-detail' p.pk %}"><code>{{ p.plan_number }}</code></a></td>
+        <td>{{ p.title }}</td>
+        <td>{{ p.period_from|date:"d.m.Y" }} — {{ p.period_to|date:"d.m.Y" }}</td>
+        <td>{{ p.inspection_count }}</td>
+        <td>{{ p.get_status_display }}</td>
+        <td class="text-end">{% if can_change %}<a href="{% url 'uzhv-inspection-plan-edit' p.pk %}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ri-pencil-line"></i></a>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted text-center py-4">Планов нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% endblock %}

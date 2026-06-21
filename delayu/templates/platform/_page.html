@@ -1,0 +1,9 @@
+{% extends layout_path %}
+{% block title %}{{ page_title|default:"Раздел" }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header d-flex justify-content-between align-items-center">
+  <h5 class="mb-0">{{ page_title|default:"Раздел" }}</h5>
+  {% block header_actions %}{% endblock %}
+</div><div class="card-body">{% block card_body %}{% endblock %}</div></div>
+{% if uzhv_pwa_enabled %}{% include "platform/uzhv/_pwa.html" %}{% endif %}
+{% endblock %}

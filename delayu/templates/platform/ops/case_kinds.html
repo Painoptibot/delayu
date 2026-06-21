@@ -1,0 +1,29 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if classifier and can_change %}
+  <a href="{% url 'platform-nsi-detail' classifier.pk %}" class="btn btn-sm btn-outline-primary">Редактировать в НСИ</a>
+  {% endif %}
+</div>
+<div class="card">
+  <div class="card-body">
+    {% if classifier %}
+    <p class="text-muted small mb-3">Справочник <code>{{ classifier.code }}</code> — классификация дел при регистрации и SLA.</p>
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Код</th><th>Наименование</th><th>Порядок</th></tr></thead>
+      <tbody>
+        {% for v in values %}
+        <tr><td><code>{{ v.code }}</code></td><td>{{ v.name }}</td><td>{{ v.sort_order }}</td></tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-muted">Значений нет — выполните seed_demo или добавьте в НСИ</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted mb-0">Справочник <code>case_kind</code> не найден. Запустите <code>manage.bat seed_demo</code>.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

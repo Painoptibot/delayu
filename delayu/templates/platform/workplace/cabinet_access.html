@@ -1,0 +1,190 @@
+{% extends layout_path %}
+
+{% load static %}
+
+{% block title %}Личный кабинет — доступ{% endblock %}
+
+{% block content %}
+
+{% include "platform/workplace/_cabinet_nav.html" %}
+
+<div class="card mb-6">
+
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+
+    <h5 class="mb-0">Права и доступные модули</h5>
+
+    <span class="badge bg-label-primary">только просмотр</span>
+
+  </div>
+
+  <div class="card-body">
+
+    <p class="text-muted">Отмечены действия, разрешённые вашей роли в текущей подсистеме. Изменить права может только администратор.</p>
+
+    {% if active_membership %}
+
+    <p class="mb-4"><strong>{{ active_membership.subsystem.name }}</strong> · роль <span class="badge bg-label-info">{{ active_membership.role.name }}</span></p>
+
+    {% endif %}
+
+    <div class="table-responsive">
+
+      <table class="table table-sm table-bordered align-middle mb-0">
+
+        <thead class="table-light">
+
+          <tr>
+
+            <th>Код</th>
+
+            <th>Модуль</th>
+
+            <th class="text-center" style="width:7rem">Просмотр</th>
+
+            <th class="text-center" style="width:7rem">Создание</th>
+
+            <th class="text-center" style="width:7rem">Изменение</th>
+
+            <th class="text-center" style="width:7rem">Удаление</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          {% for p in module_permissions %}
+
+          <tr>
+
+            <td><code>{{ p.code }}</code></td>
+
+            <td>{{ p.name }}</td>
+
+            <td class="text-center"><input class="form-check-input" type="checkbox" disabled {% if p.view %}checked{% endif %} /></td>
+
+            <td class="text-center"><input class="form-check-input" type="checkbox" disabled {% if p.create %}checked{% endif %} /></td>
+
+            <td class="text-center"><input class="form-check-input" type="checkbox" disabled {% if p.change %}checked{% endif %} /></td>
+
+            <td class="text-center"><input class="form-check-input" type="checkbox" disabled {% if p.delete %}checked{% endif %} /></td>
+
+          </tr>
+
+          {% empty %}
+
+          <tr><td colspan="6" class="text-center text-muted py-4">Нет включённых модулей или прав для роли</td></tr>
+
+          {% endfor %}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="card mb-6">
+
+  <div class="card-header"><h5 class="mb-0">Делегирование полномочий</h5></div>
+
+  <div class="card-body">
+
+    <p class="text-muted small">Передайте доступ к своим делам другому сотруднику на период отпуска или командировки.</p>
+
+    <form method="post" action="{% url 'platform-cabinet-delegation-create' %}" class="row g-2 align-items-end mb-4">{% csrf_token %}
+
+      <div class="col-md-4">
+
+        <label class="form-label small">Кому</label>
+
+        <select name="to_user" class="form-select form-select-sm" required>
+
+          <option value="">—</option>
+
+          {% for u in delegation_candidates %}<option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+
+        </select>
+
+      </div>
+
+      <div class="col-md-2">
+
+        <label class="form-label small">С</label>
+
+        <input type="date" name="start_at" class="form-control form-control-sm" required>
+
+      </div>
+
+      <div class="col-md-2">
+
+        <label class="form-label small">По</label>
+
+        <input type="date" name="end_at" class="form-control form-control-sm" required>
+
+      </div>
+
+      <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary">Делегировать</button></div>
+
+    </form>
+
+    <div class="row g-4">
+
+      <div class="col-md-6">
+
+        <h6 class="small text-muted">Вы делегировали</h6>
+
+        <ul class="list-group list-group-flush">
+
+          {% for d in delegations_given %}
+
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+
+            <span>{{ d.to_user.username }} · {{ d.start_at|date:"d.m.Y" }}–{{ d.end_at|date:"d.m.Y" }}</span>
+
+            <form method="post" action="{% url 'platform-cabinet-delegation-revoke' %}">{% csrf_token %}
+
+              <input type="hidden" name="delegation_id" value="{{ d.pk }}">
+
+              <button class="btn btn-sm btn-link text-danger">Отозвать</button>
+
+            </form>
+
+          </li>
+
+          {% empty %}<li class="list-group-item text-muted px-0">Нет активных</li>{% endfor %}
+
+        </ul>
+
+      </div>
+
+      <div class="col-md-6">
+
+        <h6 class="small text-muted">Вам делегировали</h6>
+
+        <ul class="list-group list-group-flush">
+
+          {% for d in delegations_received %}
+
+          <li class="list-group-item px-0">{{ d.from_user.username }} · {{ d.start_at|date:"d.m.Y" }}–{{ d.end_at|date:"d.m.Y" }}</li>
+
+          {% empty %}<li class="list-group-item text-muted px-0">Нет активных</li>{% endfor %}
+
+        </ul>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+

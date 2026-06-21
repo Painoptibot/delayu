@@ -1,0 +1,42 @@
+# Production vhost — подставьте __DOMAIN__ и путь /opt/delayu при деплое.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name __DOMAIN__;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name __DOMAIN__;
+
+    # certbot заполнит ssl_certificate после: certbot --nginx -d __DOMAIN__
+    ssl_certificate     /etc/letsencrypt/live/__DOMAIN__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__DOMAIN__/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    client_max_body_size 50M;
+
+    location /static/ {
+        alias /opt/delayu/staticfiles/;
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+
+    location /media/ {
+        alias /opt/delayu/media/;
+        expires 1d;
+        add_header Cache-Control "private";
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 120s;
+    }
+}

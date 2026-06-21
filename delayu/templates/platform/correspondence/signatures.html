@@ -1,0 +1,61 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<h4 class="mb-3">{{ page_title }}</h4>
+<p class="text-muted small">КЭП/УКЭП (M30, #37): локальная подпись или запрос во внешний сервис (mock-адаптер).</p>
+{% if can_sign and unsigned %}
+<form method="post">{% csrf_token %}
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between flex-wrap gap-2">
+      <span>Ожидают подписи</span>
+      <div class="d-flex gap-2">
+        <button type="submit" name="action" value="sign_local" class="btn btn-sm btn-primary">Подписать локально</button>
+        <button type="submit" name="action" value="kep_request" class="btn btn-sm btn-outline-primary">Отправить в КЭП</button>
+      </div>
+    </div>
+    <ul class="list-group list-group-flush">
+      {% for d in unsigned %}
+      <li class="list-group-item">
+        <label class="d-flex gap-2 align-items-center mb-0">
+          <input type="checkbox" name="doc_ids" value="{{ d.pk }}">
+          <span>{{ d.title }} {% if d.case %}<span class="text-muted">({{ d.case.number }})</span>{% endif %}</span>
+          <form method="post" action="{% url 'platform-document-sign' d.pk %}" class="ms-auto d-inline">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary">Один</button></form>
+        </label>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</form>
+{% elif not unsigned %}<div class="alert alert-success">Все текущие документы подписаны.</div>{% endif %}
+<div class="card mb-3">
+  <div class="card-header">Запросы КЭП (#37)</div>
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Документ</th><th>Статус</th><th>Провайдер</th><th>Ext ID</th><th></th></tr></thead>
+    <tbody>
+      {% for r in signature_requests %}
+      <tr>
+        <td>{{ r.document.title|truncatechars:40 }}</td>
+        <td><span class="badge bg-label-{% if r.status == 'signed' %}success{% elif r.status == 'failed' or r.status == 'rejected' %}danger{% else %}warning{% endif %}">{{ r.get_status_display }}</span></td>
+        <td>{{ r.provider }}</td>
+        <td class="small"><code>{{ r.external_id|default:"—" }}</code></td>
+        <td class="text-end">
+          {% if can_sign and r.status == 'sent' %}
+          <form method="post" action="{% url 'platform-signature-complete' r.pk %}" class="d-inline">{% csrf_token %}
+            <button class="btn btn-sm btn-primary">Завершить</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="text-muted text-center py-3">Запросов нет</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="card">
+  <div class="card-header">Недавно подписанные</div>
+  <ul class="list-group list-group-flush small">
+    {% for d in signed_recent %}
+    <li class="list-group-item">{{ d.title }} · {{ d.created_at|date:"d.m.Y" }}</li>
+    {% empty %}<li class="list-group-item text-muted">—</li>{% endfor %}
+  </ul>
+</div>
+{% endblock %}

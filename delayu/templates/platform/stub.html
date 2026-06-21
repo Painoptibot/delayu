@@ -1,0 +1,13 @@
+{% extends layout_path %}
+
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body text-center py-6">
+    <h4>{{ page_title }}</h4>
+    <p class="text-body-secondary mb-4">Раздел в разработке (этап 2+). Модуль будет подключён по матрице подсистемы.</p>
+    <a href="{% url 'platform-home' %}" class="btn btn-primary">На главную</a>
+  </div>
+</div>
+{% endblock %}

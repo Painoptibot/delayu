@@ -1,0 +1,63 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/infra/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-etl-create' %}" class="btn btn-primary btn-sm">Задание</a>{% endif %}
+</div>
+{% if failed_runs %}
+<div class="alert alert-warning py-2">Последние сбои импорта: {% for r in failed_runs %}{{ r.job.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+{% endif %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header">Задания</div>
+      <ul class="list-group list-group-flush">
+        {% for job in jobs %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ job.name }}</strong>
+            <div class="small text-muted">{{ job.get_source_type_display }}{% if job.schedule_cron %} · {{ job.schedule_cron }}{% endif %}</div>
+          </div>
+          <form method="post" action="{% url 'platform-etl-run' job.pk %}">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-primary">Запуск</button>
+          </form>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">Нет заданий</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header">Журнал запусков</div>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Задание</th><th>Статус</th><th>Строки</th><th>Когда</th><th></th></tr></thead>
+        <tbody>
+          {% for run in runs %}
+          <tr>
+            <td>{{ run.job.name }}</td>
+            <td><span class="badge bg-label-{% if run.status == 'success' %}success{% elif run.status == 'failed' %}danger{% else %}warning{% endif %}">{{ run.get_status_display }}</span></td>
+            <td class="small">+{{ run.rows_ok }} / −{{ run.rows_err }}</td>
+            <td class="small">{{ run.started_at|date:"d.m.Y H:i" }}</td>
+            <td class="text-end">
+              <button type="button" class="btn btn-sm btn-icon btn-text-secondary etl-run-open" data-modal-url="{% url 'platform-etl-run-modal' run.pk %}" title="Протокол ошибок"><i class="ri-file-list-line"></i></button>
+            </td>
+          </tr>
+          {% empty %}<tr><td colspan="5" class="text-muted text-center py-3">Пусто</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="etlRunModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Запуск ETL</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button></div>
+    <div class="modal-body" id="etlRunModalBody"></div>
+  </div></div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}
+<script src="{% static 'js/delayu-etl-list.js' %}"></script>
+{% endblock %}

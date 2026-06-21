@@ -1,0 +1,41 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/integrations/_nav.html" %}
+<h4 class="mb-1">{{ page_title }}</h4>
+<p class="text-body-secondary small mb-4">1С, ГИС ЖКХ, почта — адаптеры и маппинг полей</p>
+<div class="row g-4">
+  {% for e in endpoints %}
+  <div class="col-md-6">
+    <div class="card card-border-shadow-info h-100">
+      <div class="card-body">
+        <h6 class="mb-1">{{ e.name }}</h6>
+        <p class="small text-muted mb-2">{{ e.get_endpoint_type_display }} · <code>{{ e.code }}</code></p>
+        {% if e.config.field_mapping %}
+        <p class="small mb-2"><strong>Маппинг:</strong></p>
+        <ul class="small mb-0">
+          {% for src, dst in e.config.field_mapping.items %}
+          <li><code>{{ src }}</code> → <code>{{ dst }}</code></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="small text-muted">Маппинг не задан в config.field_mapping</p>
+        {% endif %}
+        {% if can_create %}
+        <form method="post" class="mt-2">{% csrf_token %}
+          <input type="hidden" name="endpoint_id" value="{{ e.pk }}">
+          <div class="row g-2">
+            <div class="col-6">{{ form.entity }}</div>
+            <div class="col-6">{{ form.external_id }}</div>
+          </div>
+          <button type="submit" class="btn btn-sm btn-primary mt-2">Синхронизировать</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="alert alert-secondary">Внешние коннекторы не настроены. Создайте тип 1С / ГИС / Почта в разделе коннекторов.</div></div>
+  {% endfor %}
+</div>
+{% endblock %}

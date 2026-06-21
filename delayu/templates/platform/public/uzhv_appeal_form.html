@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Обращение — {{ subsystem.name }}</title>
+  <link rel="stylesheet" href="/static/vendor/css/core.css">
+</head>
+<body class="bg-light">
+  <div class="container py-5" style="max-width: 640px;">
+    <h1 class="h4 mb-3">{{ page_title }}</h1>
+    <p class="text-muted small">Бесплатный канал приёма обращений (без входа в систему). Ответ — по указанным контактам.</p>
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+    <form method="post" class="card card-body">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-4"><label class="form-label">Фамилия</label><input name="last_name" class="form-control" required value="{{ form_data.last_name }}"></div>
+        <div class="col-md-4"><label class="form-label">Имя</label><input name="first_name" class="form-control" required value="{{ form_data.first_name }}"></div>
+        <div class="col-md-4"><label class="form-label">Отчество</label><input name="middle_name" class="form-control" value="{{ form_data.middle_name }}"></div>
+        <div class="col-md-6"><label class="form-label">Телефон</label><input name="phone" class="form-control" value="{{ form_data.phone }}"></div>
+        <div class="col-md-6"><label class="form-label">E-mail</label><input name="email" type="email" class="form-control" value="{{ form_data.email }}"></div>
+        <div class="col-12"><label class="form-label">Тема</label><input name="subject" class="form-control" required value="{{ form_data.subject }}"></div>
+        <div class="col-12"><label class="form-label">Текст</label><textarea name="body" class="form-control" rows="4">{{ form_data.body }}</textarea></div>
+      </div>
+      <button type="submit" class="btn btn-primary mt-3">Отправить</button>
+    </form>
+  </div>
+</body>
+</html>

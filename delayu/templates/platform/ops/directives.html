@@ -1,0 +1,42 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ops/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-directive-create' %}" class="btn btn-primary btn-sm">Поручение</a>{% endif %}
+</div>
+<div class="card">
+  <table class="table table-hover mb-0">
+    <thead><tr><th>№</th><th>Тема</th><th>Исполнитель</th><th>Срок</th><th>Статус</th><th></th></tr></thead>
+    <tbody>
+      {% for d in directives %}
+      <tr>
+        <td><code>{{ d.number }}</code></td>
+        <td>{{ d.title|truncatechars:50 }}</td>
+        <td>{{ d.assignee.get_username }}</td>
+        <td class="small">{{ d.due_date|date:"d.m.Y" }}</td>
+        <td><span class="badge bg-label-primary">{{ d.get_status_display }}</span></td>
+        <td class="text-nowrap">
+          {% if d.status != 'done' %}<a href="{% url 'platform-directive-report' d.pk %}" class="btn btn-sm btn-outline-success">Отчёт</a>{% endif %}
+          <a href="{% url 'platform-directive-modal' d.pk %}" class="btn btn-sm btn-icon btn-text-secondary" data-bs-toggle="modal" data-bs-target="#directiveModal" data-modal-url="{% url 'platform-directive-modal' d.pk %}"><i class="ri-eye-line"></i></a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="text-muted text-center py-4">Нет поручений</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="modal fade" id="directiveModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content" id="directiveModalBody"></div></div></div>
+{% endblock %}
+{% block page_js %}
+<script>
+document.querySelectorAll('[data-modal-url]').forEach(function (el) {
+  el.addEventListener('click', function (e) {
+    e.preventDefault();
+    fetch(el.getAttribute('data-modal-url')).then(function (r) { return r.text(); }).then(function (html) {
+      document.getElementById('directiveModalBody').innerHTML = html;
+    });
+  });
+});
+</script>
+{% endblock %}

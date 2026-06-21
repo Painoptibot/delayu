@@ -1,0 +1,21 @@
+{% if map_points %}
+<div class="uzhv-modal-section">
+  <div class="uzhv-modal-section-title"><i class="ri-map-pin-line"></i> {{ map_title|default:"На карте" }}</div>
+  <div
+    class="uzhv-map-embed rounded overflow-hidden border"
+    data-uzhv-map
+    data-points="{{ map_points_json }}"
+    data-center="{{ map_center_json }}"
+    data-height="{{ map_height|default:220 }}"
+    data-single-zoom="16"
+  ></div>
+  {% if map_footer %}
+  <p class="small text-muted mt-2 mb-0">{{ map_footer }}</p>
+  {% endif %}
+</div>
+{% elif show_map_empty %}
+<div class="uzhv-modal-section">
+  <div class="uzhv-modal-section-title"><i class="ri-map-pin-line"></i> Расположение</div>
+  <p class="small text-muted mb-0">Координаты не заданы. Укажите широту и долготу в карточке МКД или включите «Определить координаты по адресу» (Яндекс.Геокодер при наличии ключа API).</p>
+</div>
+{% endif %}

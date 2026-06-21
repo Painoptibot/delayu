@@ -1,0 +1,90 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/analytics/_nav.html" %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">{{ page_title }}</h5>
+    {% if can_create %}<a href="{% url 'platform-report-create' %}" class="btn btn-sm btn-primary"><i class="ri-add-line"></i> Шаблон</a>{% endif %}
+  </div>
+  <div class="card-body">
+<table class="table table-sm table-hover align-middle">
+  <thead><tr><th>Код</th><th>Название</th><th>Запрос</th><th>Тип</th><th></th></tr></thead>
+  <tbody>
+    {% for t in templates %}
+    <tr>
+      <td><code>{{ t.code }}</code></td>
+      <td>{{ t.name }}</td>
+      <td class="small">{{ t.query_key }}</td>
+      <td>{{ t.get_report_kind_display }}</td>
+      <td class="text-end text-nowrap">
+        <button type="button" class="btn btn-sm btn-icon btn-text-secondary report-open" data-modal-url="{% url 'platform-report-modal' t.pk %}"><i class="ri-eye-line"></i></button>
+        <a href="{% url 'platform-reports' %}?run={{ t.query_key }}&period={{ t.default_period_days }}" class="btn btn-sm btn-primary">Запуск</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-muted">Нет шаблонов — создайте или выполните seed_demo</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if result %}
+<hr>
+<h6>Результат: {{ ran_name|default:result.title }}</h6>
+{% if result.total is not None %}<p>Всего: <strong>{{ result.total }}</strong>, просрочено: <strong class="text-danger">{{ result.overdue }}</strong></p>{% endif %}
+{% if result.rows %}
+<table class="table table-sm">
+<tbody>{% for row in result.rows %}<tr>{% for k,v in row.items %}<td><span class="text-muted small">{{ k }}</span><br>{{ v }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+</table>
+{% endif %}
+{% endif %}
+
+<h6 class="mt-4">Расписания (#31)</h6>
+<table class="table table-sm">
+  <thead><tr><th>Шаблон</th><th>Частота</th><th>Час</th><th>Активно</th><th>Последний запуск</th><th></th></tr></thead>
+  <tbody>
+    {% for s in schedules %}
+    <tr>
+      <td>{{ s.template.name }}</td>
+      <td>{{ s.get_frequency_display }}</td>
+      <td>{{ s.run_hour }}:00</td>
+      <td>{% if s.is_active %}<i class="ri-check-line text-success"></i>{% else %}—{% endif %}</td>
+      <td class="small">{% if s.last_run_at %}{{ s.last_run_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+      <td class="text-end">
+        {% if can_create %}
+        <form method="post" class="d-inline">{% csrf_token %}
+          <input type="hidden" name="action" value="run_schedule">
+          <input type="hidden" name="pk" value="{{ s.pk }}">
+          <button class="btn btn-sm btn-outline-primary">Запустить</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="text-muted">Расписаний нет</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if can_create %}
+<form method="post" class="row g-2 border rounded p-3 bg-light">{% csrf_token %}
+  {% for field in schedule_form %}
+  <div class="col-md-4"><label class="form-label small">{{ field.label }}</label>{{ field }}</div>
+  {% endfor %}
+  <div class="col-12"><button type="submit" class="btn btn-sm btn-primary">Добавить расписание</button></div>
+</form>
+{% endif %}
+
+<h6 class="mt-4">Последние запуски</h6>
+<ul class="small">{% for r in runs %}<li>{{ r.created_at|date:"d.m.Y H:i" }} — {{ r.template.name }} ({{ r.user.username }})</li>{% empty %}<li class="text-muted">Нет</li>{% endfor %}</ul>
+
+<div class="modal fade" id="reportModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Шаблон отчёта</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="reportModalBody"></div>
+  </div></div>
+</div>
+
+  </div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}{% load static %}
+<script src="{% static 'js/delayu-analytics-reports.js' %}"></script>
+{% endblock %}

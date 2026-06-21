@@ -1,0 +1,37 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/analytics/_nav.html" %}
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">{{ page_title }}</h5></div>
+  <div class="card-body">
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="border rounded p-3">
+          <div class="text-muted small">Заполненность исполнителя</div>
+          <h3>{{ metrics.assignee_fill_pct }}%</h3>
+          <span class="small text-muted">без исполнителя: {{ metrics.without_assignee }}</span>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="border rounded p-3">
+          <div class="text-muted small">Риск SLA (просрочка)</div>
+          <h3 class="text-warning">{{ metrics.sla_risk_pct }}%</h3>
+          <span class="small">норматив {{ metrics.sla_hours }} ч.</span>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="border rounded p-3">
+          <div class="text-muted small">Просроченных дел</div>
+          <h3 class="text-danger">{{ metrics.overdue_cases }}</h3>
+        </div>
+      </div>
+    </div>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item px-0 d-flex justify-content-between"><span>Входящие без привязки к делу</span><strong>{{ metrics.corr_no_case }}</strong></li>
+      <li class="list-group-item px-0 d-flex justify-content-between"><span>Документы без ЭП</span><strong>{{ metrics.unsigned_docs }}</strong></li>
+      <li class="list-group-item px-0 d-flex justify-content-between"><span>Повторные обращения (по теме)</span><strong>{{ metrics.repeat_corr }}</strong></li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

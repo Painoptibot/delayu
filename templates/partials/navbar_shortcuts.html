@@ -1,0 +1,78 @@
+<li class="nav-item dropdown-shortcuts navbar-dropdown dropdown me-sm-2 me-xl-0">
+  <a class="nav-link dropdown-toggle hide-arrow btn btn-icon btn-text-secondary rounded-pill" href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+    <i class="icon-base ri ri-star-smile-line icon-22px"></i>
+  </a>
+  <div class="dropdown-menu dropdown-menu-end p-0">
+    <div class="dropdown-menu-header border-bottom">
+      <div class="dropdown-header d-flex align-items-center py-3">
+        <h6 class="mb-0 me-auto">Быстрые ссылки</h6>
+      </div>
+    </div>
+    <div class="dropdown-shortcuts-list scrollable-container">
+      <div class="row row-bordered overflow-visible g-0">
+        <div class="dropdown-shortcuts-item col">
+          <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+            <i class="icon-base ri ri-calendar-line icon-26px text-heading"></i>
+          </span>
+          <a href="{% url 'platform-calendar' %}" class="stretched-link">Календарь</a>
+          <small>Сроки задач</small>
+        </div>
+        <div class="dropdown-shortcuts-item col">
+          <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+            <i class="icon-base ri ri-folder-line icon-26px text-heading"></i>
+          </span>
+          <a href="{% url 'platform-cases' %}" class="stretched-link">Реестр дел</a>
+          <small>Дела M22</small>
+        </div>
+      </div>
+      <div class="row row-bordered overflow-visible g-0">
+        <div class="dropdown-shortcuts-item col">
+          <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+            <i class="icon-base ri ri-mail-line icon-26px text-heading"></i>
+          </span>
+          <a href="{% url 'platform-inbox' %}" class="stretched-link">Входящие</a>
+          <small>Корреспонденция</small>
+        </div>
+        <div class="dropdown-shortcuts-item col">
+          <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+            <i class="icon-base ri ri-calendar-check-line icon-26px text-heading"></i>
+          </span>
+          <a href="{% url 'platform-today' %}" class="stretched-link">На сегодня</a>
+          <small>Мои задачи</small>
+        </div>
+      </div>
+      <div class="row row-bordered overflow-visible g-0">
+        <div class="dropdown-shortcuts-item col">
+          <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+            <i class="icon-base ri ri-pie-chart-2-line icon-26px text-heading"></i>
+          </span>
+          <a href="{% url 'platform-dashboard' %}" class="stretched-link">Дашборд</a>
+          <small>KPI M15</small>
+        </div>
+        <div class="dropdown-shortcuts-item col">
+          <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+            <i class="icon-base ri ri-user-line icon-26px text-heading"></i>
+          </span>
+          <a href="{% url 'platform-cabinet' %}" class="stretched-link">Кабинет</a>
+          <small>Профиль</small>
+        </div>
+      </div>
+      <div class="row row-bordered overflow-visible g-0">
+        <div class="dropdown-shortcuts-item col">
+          <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+            <i class="icon-base ri ri-question-line icon-26px text-heading"></i>
+          </span>
+          <a href="{% url 'platform-help-center' %}" class="stretched-link">Помощь</a>
+          <small>Центр помощи</small>
+        </div>
+        <div class="dropdown-shortcuts-item col">
+          <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+            <i class="icon-base ri ri-wechat-line icon-26px text-heading"></i>
+          </span>
+          <a href="{% url 'platform-chat' %}" class="stretched-link">Чат</a>
+          <small>Сообщения</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</li>

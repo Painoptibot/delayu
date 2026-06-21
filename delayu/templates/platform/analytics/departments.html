@@ -1,0 +1,31 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/analytics/_nav.html" %}
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">{{ page_title }}</h5></div>
+  <div class="card-body">
+    <table class="table table-hover table-sm">
+      <thead><tr><th>Подразделение</th><th>Руководитель</th><th>Открыто</th><th>Просрочено</th><th>Исполнено</th><th>Рейтинг</th></tr></thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.department.name }} <span class="text-muted small">({{ r.department.code }})</span></td>
+          <td class="small">{{ r.department.manager|default:"—" }}</td>
+          <td>{{ r.open_cases }}</td>
+          <td class="{% if r.overdue %}text-danger fw-medium{% endif %}">{{ r.overdue }}</td>
+          <td>{{ r.done }}</td>
+          <td>
+            <div class="progress" style="height:1.25rem">
+              <div class="progress-bar bg-{% if r.score >= 80 %}success{% elif r.score >= 50 %}warning{% else %}danger{% endif %}" style="width:{{ r.score }}%">{{ r.score }}</div>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-muted">Нет подразделений или назначений в ШР (M04)</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

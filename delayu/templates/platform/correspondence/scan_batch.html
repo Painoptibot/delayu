@@ -1,0 +1,20 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<h4 class="mb-3">{{ page_title }}</h4>
+<div class="card col-lg-7">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}
+      {% for field in form %}
+      <div class="mb-3">
+        <label class="form-label">{{ field.label }}</label>
+        {% if field.name == 'files' %}
+        <input type="file" name="files" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff">
+        {% else %}{{ field }}{% endif %}
+      </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary">Загрузить комплект</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

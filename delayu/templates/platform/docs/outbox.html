@@ -1,0 +1,6 @@
+{% extends "platform/_page.html" %}
+{% block title %}Исходящие{% endblock %}
+{% block card_body %}
+<table class="table table-sm"><thead><tr><th>№</th><th>Дата</th><th>Тема</th></tr></thead>
+<tbody>{% for i in items %}<tr><td>{{ i.reg_number }}</td><td>{{ i.reg_date }}</td><td>{{ i.subject }}</td></tr>{% empty %}<tr><td colspan="3" class="text-muted">Пусто</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

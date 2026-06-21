@@ -1,0 +1,79 @@
+{% extends layout_path %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}Verify Email{% endblock %}
+
+{% block page_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/page-auth.css' %}" />
+{% endblock page_css %}
+
+{% block page_js %}
+{{ block.super }}
+<script src="{% static 'js/auth-click-loader.js' %}"></script>
+{% endblock page_js %}
+
+
+{% block content %}
+<div class="authentication-wrapper authentication-cover">
+  <!-- Logo -->
+  <a href="{% url 'index' %}" class="auth-cover-brand d-flex align-items-center gap-2">
+    <span class="app-brand-logo demo">{% include 'partials/logo.html' %}</span>
+    <span class="app-brand-text demo text-heading fw-semibold">{% get_theme_variables 'template_name' %}</span>
+  </a>
+  <!-- /Logo -->
+  <div class="authentication-inner row m-0">
+    <!-- /Left Section -->
+    <div class="d-none d-lg-flex col-lg-7 col-xl-8 align-items-center justify-content-center p-12 pb-2">
+      <img src="{% static 'img/illustrations/auth-verify-email-illustration-' %}{{ COOKIES.theme|default:theme }}.png" class="auth-cover-illustration w-100" alt="auth-illustration" data-app-light-img="illustrations/auth-verify-email-illustration-light.png" data-app-dark-img="illustrations/auth-verify-email-illustration-dark.png" />
+      <img alt="mask" src="{% static 'img/illustrations/auth-basic-login-mask-' %}{{ COOKIES.theme|default:theme }}.png" class="authentication-image d-none d-lg-block" data-app-light-img="illustrations/auth-basic-login-mask-light.png" data-app-dark-img="illustrations/auth-basic-login-mask-dark.png" />
+    </div>
+    <!-- /Left Section -->
+
+    <!--  Verify email -->
+    <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg position-relative py-sm-12 px-12 py-6">
+      <div class="w-px-400 mx-auto pt-5 pt-lg-0">
+        <h4 class="mb-1">Verify your email ✉️</h4>
+        {% if request.user.is_authenticated %}
+        <p class="text-start">
+          Verification link will be send to this email: {{request.user.email}}.
+        </p>
+        {% else %}
+        <p class="text-start mb-5">
+          Verification link send to your email address.
+        </p>
+        {% endif %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-warning{% endif %}" role="alert">
+          {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% if request.user.is_authenticated %}
+        <a id="btnSubmit" class="btn btn-primary w-100 mb-4" href="{% url 'send-verification' %}">
+          <span id="btnText" class="me-1">Verify Email</span>
+          <span id="btnLoader" class="spinner-border spinner-border-sm visually-hidden" role="status" aria-hidden="true"></span>
+        </a>
+        <a class="btn btn-primary w-100" href="{% url 'index' %}">
+          Back
+        </a>
+        {% else %}
+        <a class="btn btn-primary w-100 mb-5" href="{% url 'login' %}">
+          Skip for now & Login
+        </a>
+        <p class="text-center">Didn't get the mail?
+          <a id="btnSubmit" class="text-center" href="{% url 'send-verification' %}">
+            <span id="btnText" class="me-1">Resend</span>
+            <span id="btnLoader" class="spinner-border spinner-border-sm visually-hidden" role="status" aria-hidden="true"></span>
+          </a>
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    <!-- / Verify email -->
+  </div>
+</div>
+{% endblock %}

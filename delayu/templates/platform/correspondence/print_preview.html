@@ -1,0 +1,8 @@
+{% extends layout_path %}
+{% block title %}Предпросмотр — {{ template.name }}{% endblock %}
+{% block content %}
+<h4 class="mb-3">{{ template.name }}</h4>
+{% if not corr %}<p class="alert alert-info small">Добавьте <code>?correspondence=ID</code> в URL для подстановки полей.</p>{% endif %}
+<div class="card"><pre class="card-body mb-0" style="white-space:pre-wrap">{{ rendered }}</pre></div>
+<button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="window.print()">Печать</button>
+{% endblock %}

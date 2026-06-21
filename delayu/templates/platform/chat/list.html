@@ -1,0 +1,313 @@
+{% extends layout_path %}
+
+{% load static %}
+
+{% block title %}Внутренний чат — ДелаЮ{% endblock %}
+
+{% block vendor_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/maxLength/maxLength.css' %}" />
+{% endblock vendor_css %}
+
+{% block page_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/app-chat.css' %}" />
+{% endblock page_css %}
+
+{% block page_js %}
+{{ block.super }}
+<script src="{% static 'js/app-chat.js' %}"></script>
+<script src="{% static 'js/delayu-chat-list.js' %}"></script>
+{% endblock page_js %}
+
+{% block content %}
+{% include "platform/comms/_nav.html" %}
+<div class="app-chat card overflow-hidden">
+  <div class="row g-0">
+    <!-- Sidebar Left -->
+    <div class="col app-chat-sidebar-left app-sidebar overflow-hidden" id="app-chat-sidebar-left">
+      <div class="chat-sidebar-left-user sidebar-header d-flex flex-column justify-content-center align-items-center flex-wrap px-5 pt-12">
+        <div class="avatar avatar-xl avatar-online chat-sidebar-avatar">
+          <img src="{% static 'img/avatars/1.png' %}" alt="Avatar" class="rounded-circle" />
+        </div>
+        <h5 class="mt-4 mb-0">{{ request.user.get_full_name|default:request.user.username }}</h5>
+        <span>{{ active_role|default:'Сотрудник' }}</span>
+        <i class="icon-base ri ri-close-line icon-24px cursor-pointer close-sidebar" data-bs-toggle="sidebar" data-overlay data-target="#app-chat-sidebar-left"></i>
+      </div>
+      <div class="sidebar-body px-5 pb-6">
+        <div class="my-6 pt-2">
+          <div class="maxLength-wrapper">
+            <label for="chat-sidebar-left-user-about" class="text-uppercase text-body-secondary mb-1">О себе</label>
+            <textarea id="chat-sidebar-left-user-about" class="form-control chat-sidebar-left-user-about maxLength-example" rows="3" maxlength="120">Hey there, we’re just writing to let you know that you’ve been subscribed to a repository on GitHub.</textarea>
+            <small id="textarea-maxlength-info"></small>
+          </div>
+        </div>
+        <div class="my-6">
+          <p class="text-uppercase text-body-secondary mb-1">Статус</p>
+          <div class="d-grid gap-2 pt-2 text-heading">
+            <div class="form-check form-check-success">
+              <input name="chat-user-status" class="form-check-input" type="radio" value="active" id="user-active" checked />
+              <label class="form-check-label" for="user-active">В сети</label>
+            </div>
+            <div class="form-check form-check-warning">
+              <input name="chat-user-status" class="form-check-input" type="radio" value="away" id="user-away" />
+              <label class="form-check-label" for="user-away">Отошёл</label>
+            </div>
+            <div class="form-check form-check-danger">
+              <input name="chat-user-status" class="form-check-input" type="radio" value="busy" id="user-busy" />
+              <label class="form-check-label" for="user-busy">Не беспокоить</label>
+            </div>
+            <div class="form-check form-check-secondary">
+              <input name="chat-user-status" class="form-check-input" type="radio" value="offline" id="user-offline" />
+              <label class="form-check-label" for="user-offline">Не в сети</label>
+            </div>
+          </div>
+        </div>
+        <div class="my-6">
+          <p class="text-uppercase text-body-secondary mb-1">Настройки</p>
+          <ul class="list-unstyled d-grid gap-4 ms-2 pt-2 text-heading">
+            <li class="d-flex justify-content-between align-items-center">
+              <div>
+                <i class="icon-base ri ri-lock-password-line me-1 icon-22px"></i>
+                <span class="align-middle">Two-step Verification</span>
+              </div>
+              <div class="form-check form-switch mb-0 me-1">
+                <input type="checkbox" class="form-check-input" checked />
+              </div>
+            </li>
+            <li class="d-flex justify-content-between align-items-center">
+              <div>
+                <i class="icon-base ri ri-notification-line me-1 icon-22px"></i>
+                <span class="align-middle">Notification</span>
+              </div>
+              <div class="form-check form-switch mb-0 me-1">
+                <input type="checkbox" class="form-check-input" />
+              </div>
+            </li>
+            <li>
+              <i class="icon-base ri ri-user-add-line me-1 icon-22px"></i>
+              <span class="align-middle">Invite Friends</span>
+            </li>
+            <li>
+              <i class="icon-base ri ri-delete-bin-7-line me-1 icon-22px"></i>
+              <span class="align-middle">Delete Account</span>
+            </li>
+          </ul>
+        </div>
+        <div class="d-flex mt-6">
+          <button class="btn btn-primary w-100" data-bs-toggle="sidebar" data-overlay data-target="#app-chat-sidebar-left">Выход<i class="icon-base ri ri-logout-box-r-line icon-xs ms-1"></i></button>
+        </div>
+      </div>
+    </div>
+    <!-- /Sidebar Left-->
+
+    <!-- Chat & Участники -->
+    <div class="col app-chat-contacts app-sidebar flex-grow-0 overflow-hidden border-end" id="app-chat-contacts">
+      <div class="sidebar-header h-px-75 px-5 border-bottom d-flex align-items-center">
+        <div class="d-flex align-items-center me-6 me-lg-0">
+          <div class="flex-shrink-0 avatar avatar-online me-4" data-bs-toggle="sidebar" data-overlay="app-overlay-ex" data-target="#app-chat-sidebar-left">
+            <img class="user-avatar rounded-circle cursor-pointer" src="{% static 'img/avatars/1.png' %}" alt="Avatar" />
+          </div>
+          <div class="flex-grow-1 input-group input-group-sm input-group-merge rounded-pill">
+            <span class="input-group-text" id="basic-addon-search31"><i class="icon-base ri ri-search-line icon-20px"></i></span>
+            <input type="text" class="form-control chat-search-input" placeholder="Поиск чатов…" aria-label="Поиск чатов…" aria-describedby="basic-addon-search31" />
+          </div>
+        </div>
+        <i class="icon-base ri ri-close-line icon-lg cursor-pointer position-absolute top-50 end-0 translate-middle d-lg-none d-block" data-overlay data-bs-toggle="sidebar" data-target="#app-chat-contacts"></i>
+      </div>
+      <div class="sidebar-body">
+        <!-- Чаты -->
+        <ul class="list-unstyled chat-contact-list py-2 mb-0" id="chat-list">
+          <li class="chat-contact-list-item chat-contact-list-item-title mt-0">
+            <h5 class="text-primary mb-0">Чаты</h5>
+          </li>
+          {% if can_create %}
+          <li class="px-4 pb-2"><a href="{% url 'platform-chat-create' %}" class="btn btn-sm btn-primary w-100"><i class="ri-add-line"></i> Новый чат</a></li>
+          {% endif %}
+          {% for room in rooms %}
+          <li class="chat-contact-list-item mb-1">
+            <a href="{% url 'platform-chat' %}?room={{ room.pk }}" class="d-flex align-items-center delayu-chat-room-link{% if active_room and active_room.pk == room.pk %} active{% endif %}">
+              <div class="flex-shrink-0 avatar">
+                <span class="avatar-initial rounded-circle bg-label-secondary">{{ room.name|slice:":1"|upper }}</span>
+              </div>
+              <div class="chat-contact-info flex-grow-1 ms-4">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h6 class="chat-contact-name text-truncate m-0 fw-normal">{{ room.name }}</h6>
+                </div>
+                <small class="chat-contact-status text-truncate">{% if room.case %}Дело {{ room.case.number }}{% else %}Общий чат{% endif %}</small>
+              </div>
+            </a>
+          </li>
+          {% empty %}
+          <li class="chat-contact-list-item px-4 py-3 text-muted small">Нет чатов</li>
+          {% endfor %}
+        </ul>
+        <!-- Участники -->
+        <ul class="list-unstyled chat-contact-list mb-0 py-2 d-none" id="contact-list"></ul>
+      </div>
+    </div>
+    <!-- /Chat contacts -->
+
+    <!-- Chat conversation -->
+    <div class="col app-chat-conversation d-flex align-items-center justify-content-center flex-column" id="app-chat-conversation"{% if active_room %} style="display:none!important"{% endif %}>
+      <div class="bg-label-primary p-8 rounded-circle">
+        <i class="icon-base ri ri-wechat-line icon-48px"></i>
+      </div>
+      <p class="my-4">Выберите чат в списке слева.</p>
+      <button class="btn btn-primary app-chat-conversation-btn" id="app-chat-conversation-btn">Открыть чаты</button>
+    </div>
+    <!-- /Chat conversation -->
+
+    <!-- Chat History -->
+    <div class="col app-chat-history{% if not active_room %} d-none{% endif %}" id="app-chat-history">
+      <div class="chat-history-wrapper">
+        <div class="chat-history-header border-bottom">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex overflow-hidden align-items-center">
+              <i class="icon-base ri ri-menu-line icon-lg cursor-pointer d-lg-none d-block me-4" data-bs-toggle="sidebar" data-overlay data-target="#app-chat-contacts"></i>
+              <div class="flex-shrink-0 avatar avatar-online">
+                <img src="{% static 'img/avatars/4.png' %}" alt="Avatar" class="rounded-circle" data-bs-toggle="sidebar" data-overlay data-target="#app-chat-sidebar-right" />
+              </div>
+              <div class="chat-contact-info flex-grow-1 ms-4">
+                {% if active_room %}<h6 class="m-0 fw-normal">{{ active_room.name }}</h6>{% else %}<h6 class="m-0 fw-normal">Чат</h6>{% endif %}
+                {% if active_room.case %}<small class="user-status text-body">Дело {{ active_room.case.number }}</small>{% else %}<small class="user-status text-body">Внутренний чат</small>{% endif %}
+              </div>
+            </div>
+            <div class="d-flex align-items-center">
+              <span class="btn btn-text-heading cursor-pointer d-sm-inline-flex d-none me-1 btn-icon rounded-pill">
+                <i class="icon-base ri ri-phone-line"></i>
+              </span>
+              <span class="btn btn-text-heading cursor-pointer d-sm-inline-flex d-none me-1 btn-icon rounded-pill">
+                <i class="icon-base ri ri-video-add-line"></i>
+              </span>
+              <span class="btn btn-text-heading cursor-pointer d-sm-inline-flex d-none me-1 btn-icon rounded-pill">
+                <i class="icon-base ri ri-search-line"></i>
+              </span>
+              <div class="dropdown">
+                <button class="btn btn-icon btn-text-secondary rounded-pill dropdown-toggle hide-arrow" data-bs-toggle="dropdown" aria-expanded="true" id="chat-header-actions"><i class="icon-base ri ri-more-2-line"></i></button>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="chat-header-actions">
+                  {% if active_room %}
+                  <form method="post" action="{% url 'platform-chat-delete' active_room.pk %}" class="px-3 py-1" onsubmit="return confirm('Удалить этот чат и все сообщения?');">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item text-danger px-0"><i class="ri-delete-bin-7-line me-2"></i>Удалить чат</button>
+                  </form>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-history-body">
+          <ul class="list-unstyled chat-history" id="delayuChatMessages">
+            {% for msg in messages %}
+            <li class="chat-message{% if msg.author_id == request.user.id %} chat-message-right{% endif %}">
+              <div class="d-flex overflow-hidden">
+                {% if msg.author_id != request.user.id %}
+                <div class="user-avatar flex-shrink-0 me-4">
+                  <div class="avatar avatar-sm"><span class="avatar-initial rounded-circle bg-label-secondary">{{ msg.author.username|slice:":1"|upper }}</span></div>
+                </div>
+                {% endif %}
+                <div class="chat-message-wrapper flex-grow-1">
+                  <div class="chat-message-text"><p class="mb-0">{{ msg.body|linebreaksbr }}</p></div>
+                  <div class="{% if msg.author_id == request.user.id %}text-end{% endif %} text-body-secondary mt-1">
+                    {% if msg.author_id == request.user.id %}<i class="icon-base ri ri-check-double-line icon-16px text-success me-1"></i>{% endif %}
+                    <small>{{ msg.created_at|date:"d.m.Y H:i" }}</small>
+                  </div>
+                </div>
+                {% if msg.author_id == request.user.id %}
+                <div class="user-avatar flex-shrink-0 ms-4">
+                  <div class="avatar avatar-sm"><img src="{{ avatar_url }}" alt="" class="rounded-circle" /></div>
+                </div>
+                {% endif %}
+              </div>
+            </li>
+            {% empty %}
+            <li class="text-center text-muted py-4">Нет сообщений</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <!-- Chat message form -->
+        <div class="chat-history-footer shadow-xs">
+          {% if active_room %}<form class="delayu-chat-send-form d-flex justify-content-between align-items-center" method="post" action="{% url 'platform-chat-send' active_room.pk %}">
+          {% csrf_token %}
+            <input type="text" name="body" class="form-control message-input border-0 me-4 shadow-none" placeholder="Введите сообщение…" required maxlength="4000" autocomplete="off" />
+            <div class="message-actions d-flex align-items-center">
+              <button type="submit" class="btn btn-primary d-flex send-msg-btn">
+                <i class="icon-base ri ri-send-plane-fill icon-16px me-2"></i>
+                <span class="d-none d-md-inline-block">Отправить</span>
+              </button>
+            </div>
+        </form>{% endif %}
+        </div>
+      </div>
+    </div>
+    <!-- /Chat History -->
+
+    <!-- Sidebar Right -->
+    <div class="col app-chat-sidebar-right app-sidebar overflow-hidden" id="app-chat-sidebar-right">
+      <div class="sidebar-header d-flex flex-column justify-content-center align-items-center flex-wrap px-6 pt-12">
+        <div class="avatar avatar-xl avatar-online chat-sidebar-avatar">
+          <img src="{% static 'img/avatars/4.png' %}" alt="Avatar" class="rounded-circle" />
+        </div>
+        <h5 class="mt-4 mb-0">Felecia Rower</h5>
+        <span>NextJS Developer</span>
+        <i class="icon-base ri ri-close-line icon-24px cursor-pointer close-sidebar d-block" data-bs-toggle="sidebar" data-overlay data-target="#app-chat-sidebar-right"></i>
+      </div>
+      <div class="sidebar-body p-6 pt-0">
+        <div class="my-6">
+          <p class="text-uppercase mb-1 text-body-secondary">О себе</p>
+          <p class="mb-0">A Next. js developer is a software developer who uses the Next. js framework alongside ReactJS to build web applications.</p>
+        </div>
+        <div class="my-6">
+          <p class="text-uppercase mb-1 text-body-secondary">Personal Information</p>
+          <ul class="list-unstyled d-grid gap-3 mb-0 ms-2 py-2 text-heading">
+            <li class="d-flex align-items-center">
+              <i class="icon-base ri ri-mail-line icon-22px"></i>
+              <span class="align-middle ms-2">josephGreen@email.com</span>
+            </li>
+            <li class="d-flex align-items-center">
+              <i class="icon-base ri ri-phone-line icon-22px"></i>
+              <span class="align-middle ms-2">+1(123) 456 - 7890</span>
+            </li>
+            <li class="d-flex align-items-center">
+              <i class="icon-base ri ri-time-line icon-22px "></i>
+              <span class="align-middle ms-2">Mon - Fri 10AM - 8PM</span>
+            </li>
+          </ul>
+        </div>
+        <div class="my-6">
+          <p class="text-uppercase text-body-secondary mb-1">Options</p>
+          <ul class="list-unstyled d-grid gap-3 ms-2 py-2 text-heading">
+            <li class="cursor-pointer d-flex align-items-center">
+              <i class="icon-base ri ri-bookmark-line icon-22px"></i>
+              <span class="align-middle ms-2">Add Tag</span>
+            </li>
+            <li class="cursor-pointer d-flex align-items-center">
+              <i class="icon-base ri ri-user-star-line icon-22px"></i>
+              <span class="align-middle ms-2">Important Contact</span>
+            </li>
+            <li class="cursor-pointer d-flex align-items-center">
+              <i class="icon-base ri ri-image-2-line icon-22px"></i>
+              <span class="align-middle ms-2">Shared Media</span>
+            </li>
+            <li class="cursor-pointer d-flex align-items-center">
+              <i class="icon-base ri ri-delete-bin-7-line icon-22px"></i>
+              <span class="align-middle ms-2">Delete Contact</span>
+            </li>
+            <li class="cursor-pointer d-flex align-items-center">
+              <i class="icon-base ri ri-forbid-2-line icon-22px"></i>
+              <span class="align-middle ms-2">Заблокировать</span>
+            </li>
+          </ul>
+        </div>
+        <div class="d-flex mt-6">
+          <button class="btn btn-danger w-100" data-bs-toggle="sidebar" data-overlay data-target="#app-chat-sidebar-right">Delete Contact<i class="icon-base ri ri-delete-bin-7-line icon-16px ms-1_5"></i></button>
+        </div>
+      </div>
+    </div>
+    <!-- /Sidebar Right -->
+
+    <div class="app-overlay"></div>
+  </div>
+</div>
+{% endblock %}

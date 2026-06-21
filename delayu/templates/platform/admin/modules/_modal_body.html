@@ -1,0 +1,11 @@
+<h4><code>{{ module.code }}</code> — {{ module.name }}</h4>
+<p class="text-muted">{{ module.get_group_display }}{% if module.is_core %} · модуль ядра{% endif %}</p>
+{% if module.description %}<p>{{ module.description }}</p>{% else %}<p class="text-muted small">Описание не задано в каталоге.</p>{% endif %}
+<h6 class="mt-3">Включён в подсистемах</h6>
+<ul class="small mb-0">
+  {% for s in subsystems %}
+  <li>{{ s.name }} (<code>{{ s.code }}</code>)</li>
+  {% empty %}
+  <li class="text-muted">Ни в одной подсистеме не включён</li>
+  {% endfor %}
+</ul>

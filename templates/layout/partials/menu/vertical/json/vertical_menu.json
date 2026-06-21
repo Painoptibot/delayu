@@ -1,0 +1,10 @@
+{
+  "menu": [
+    {
+      "url": "platform-home",
+      "icon": "menu-icon icon-base ri ri-home-smile-line",
+      "name": "Главная",
+      "slug": "platform-home"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ux/_nav.html" %}
+<div class="d-flex justify-content-between mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-onboarding-create' %}" class="btn btn-primary btn-sm">Материал</a>{% endif %}
+</div>
+<div class="row g-3">
+  {% for a in articles %}
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <span class="badge bg-label-primary mb-2">{{ a.get_kind_display }}</span>
+        <h6>{{ a.title }}</h6>
+        <p class="small text-muted mb-0">{{ a.body|truncatechars:120 }}</p>
+      </div>
+    </div>
+  </div>
+  {% empty %}<div class="col-12 text-muted">Нет материалов</div>{% endfor %}
+</div>
+{% endblock %}

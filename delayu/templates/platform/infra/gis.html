@@ -1,0 +1,81 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/leaflet/leaflet.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/infra/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="mb-0 text-body-secondary">Слои, объекты и привязка к делам</p>
+  </div>
+  {% if can_create %}
+  <div class="d-flex gap-2">
+    <a href="{% url 'platform-geo-layer-create' %}" class="btn btn-outline-primary btn-sm">Слой</a>
+    <a href="{% url 'platform-geo-object-create' %}" class="btn btn-primary btn-sm">Объект</a>
+  </div>
+  {% endif %}
+</div>
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body p-0">
+        <div id="gis-map" class="leaflet-map" style="height: 420px; min-height: 320px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card mb-4">
+      <div class="card-header">Слои</div>
+      <ul class="list-group list-group-flush">
+        {% for layer in layers %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span><span class="badge rounded-pill me-1" style="background:{{ layer.color }}">&nbsp;</span>{{ layer.name }}</span>
+          <code class="small">{{ layer.code }}</code>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">Нет слоёв</li>{% endfor %}
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-header">Объекты</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for o in objects %}
+            <tr>
+              <td>{{ o.title }}<br><span class="small text-muted">{{ o.address|truncatechars:40 }}</span></td>
+              <td class="text-end">{% if o.case_id %}<a href="{% url 'platform-case-detail' o.case_id %}">Дело</a>{% endif %}</td>
+            </tr>
+            {% empty %}<tr><td class="text-muted text-center py-3">Нет объектов</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block page_js %}
+<script src="{% static 'vendor/libs/leaflet/leaflet.js' %}"></script>
+<script>
+(function () {
+  var points = {{ map_points_json|safe }};
+  var map = L.map('gis-map').setView([55.75, 37.62], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+  points.forEach(function (p) {
+    L.circleMarker([p.lat, p.lng], { radius: 8, color: p.color || '#666cff' })
+      .bindPopup('<strong>' + p.title + '</strong><br>' + (p.address || '') + (p.case_id ? '<br><a href="/cases/' + p.case_id + '/">Дело #' + p.case_id + '</a>' : ''))
+      .addTo(map);
+  });
+  if (points.length) {
+    var bounds = L.latLngBounds(points.map(function (p) { return [p.lat, p.lng]; }));
+    map.fitBounds(bounds, { padding: [30, 30] });
+  }
+})();
+</script>
+{% endblock %}

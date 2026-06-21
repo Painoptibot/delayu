@@ -1,0 +1,29 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/integrations/_nav.html" %}
+<div class="d-flex justify-content-between mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-integration-endpoint-create' %}" class="btn btn-sm btn-primary">Добавить</a>{% endif %}
+</div>
+<div class="card">
+  <table class="table table-hover mb-0 align-middle">
+    <thead><tr><th>Код</th><th>Название</th><th>Тип</th><th>Ретраи</th><th></th></tr></thead>
+    <tbody>
+      {% for e in endpoints %}
+      <tr>
+        <td><code>{{ e.code }}</code></td>
+        <td>{{ e.name }}{% if e.description %}<div class="small text-muted">{{ e.description|truncatechars:50 }}</div>{% endif %}</td>
+        <td>{{ e.get_endpoint_type_display }}</td>
+        <td>{{ e.max_retries }}</td>
+        <td class="text-end text-nowrap">
+          <form method="post" action="{% url 'platform-integration-send' e.pk %}" class="d-inline">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-primary">Тест</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Коннекторов нет</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

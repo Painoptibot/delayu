@@ -1,0 +1,50 @@
+{% extends layout_path %}
+{% block title %}Первые шаги — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h5 class="mb-0">Онбординг платформы (#50)</h5>
+    {% if not onboarding_dismissed %}
+    <form method="post" class="mb-0">{% csrf_token %}
+      <input type="hidden" name="action" value="dismiss">
+      <button type="submit" class="btn btn-sm btn-label-secondary">Скрыть</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <div class="mb-4">
+      <div class="d-flex justify-content-between small mb-1"><span>Прогресс</span><span>{{ onboarding_progress }}%</span></div>
+      <div class="progress" style="height:8px" role="progressbar" aria-valuenow="{{ onboarding_progress }}" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar" style="width:{{ onboarding_progress }}%"></div>
+      </div>
+    </div>
+    {% if current_step and not current_step.done %}
+    <div class="alert alert-primary">
+      <strong>Шаг {{ current_step.index }}:</strong> {{ current_step.title }}
+      <p class="small mb-2 mt-1">{{ current_step.hint }}</p>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ current_step.url }}" class="btn btn-sm btn-primary">Перейти</a>
+        <form method="post" class="d-inline">{% csrf_token %}
+          <input type="hidden" name="step_id" value="{{ current_step.id }}">
+          <button type="submit" class="btn btn-sm btn-outline-primary">Отметить выполненным</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+    <ul class="list-group list-group-flush">
+      {% for step in onboarding_steps %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>
+          {% if step.done %}<i class="ri-checkbox-circle-fill text-success me-2" aria-hidden="true"></i>{% else %}<i class="ri-checkbox-blank-circle-line text-muted me-2" aria-hidden="true"></i>{% endif %}
+          {{ step.title }}
+        </span>
+        <a href="{{ step.url }}" class="btn btn-sm btn-outline-primary">Открыть</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if onboarding_done %}
+    <div class="alert alert-success mt-4 mb-0">Все базовые шаги выполнены. Добро пожаловать в «ДелаЮ»!</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

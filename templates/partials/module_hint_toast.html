@@ -1,0 +1,13 @@
+{% if module_hint %}
+<div class="delayu-module-hint toast show align-items-center border-0 shadow-lg" role="alert" id="delayuModuleHint" data-hint-code="{{ module_hint_code }}">
+  <div class="d-flex w-100">
+    <div class="toast-body flex-grow-1 pe-2">
+      <h6 class="mb-1 fw-semibold">{{ module_hint.title }}</h6>
+      <p class="mb-0 small text-body-secondary">{{ module_hint.body }}</p>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill delayu-module-hint-close" aria-label="Закрыть">
+      <i class="ri-close-line icon-18px"></i>
+    </button>
+  </div>
+</div>
+{% endif %}

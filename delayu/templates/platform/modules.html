@@ -1,0 +1,26 @@
+{% extends layout_path %}
+
+{% block title %}Каталог модулей — ДелаЮ{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">Каталог M01–M86</h5></div>
+  <div class="table-responsive">
+    <table class="table table-hover table-sm">
+      <thead>
+        <tr><th>Код</th><th>Наименование</th><th>Группа</th><th>Ядро</th></tr>
+      </thead>
+      <tbody>
+        {% for m in modules %}
+        <tr>
+          <td><code>{{ m.code }}</code></td>
+          <td>{{ m.name }}</td>
+          <td>{{ m.get_group_display }}</td>
+          <td>{% if m.is_core %}<span class="badge bg-label-primary">ядро</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

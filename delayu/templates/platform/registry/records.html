@@ -1,0 +1,75 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+  <div>
+    <a href="{% url 'platform-registries' %}" class="small text-muted">← Реестры</a>
+    <h4 class="mb-0 mt-1">{{ registry_type.name }}</h4>
+    <code class="small">{{ registry_type.code }}</code>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    {% if can_create %}
+    <button type="button" class="btn btn-sm btn-primary rec-form-open"
+      data-form-modal-url="{% url 'platform-registry-record-form-modal' registry_type.pk %}"
+      data-form-modal-title="Новая запись">+ Запись</button>
+    <a href="{% url 'platform-registry-import' registry_type.pk %}" class="btn btn-sm btn-outline-primary">Импорт JSON</a>
+    {% endif %}
+  </div>
+</div>
+<form method="get" class="mb-3">
+  <div class="input-group input-group-sm" style="max-width:24rem">
+    <input name="q" class="form-control" value="{{ search_q }}" placeholder="Поиск в данных">
+    <button class="btn btn-primary" type="submit">Найти</button>
+  </div>
+</form>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          {% for f in schema %}<th>{{ f.label }}</th>{% endfor %}
+          <th>Создан</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td>{{ r.pk }}</td>
+          {% for cell in r.row_cells %}<td>{{ cell|default:"—" }}</td>{% endfor %}
+          <td class="small text-muted">{{ r.created_at|date:"d.m.Y" }}</td>
+          <td class="text-end text-nowrap">
+            <button type="button" class="btn btn-sm btn-icon btn-text-secondary rec-open" data-modal-url="{% url 'platform-registry-record-modal' registry_type.pk r.pk %}"><i class="ri-eye-line"></i></button>
+            {% if can_change %}<a href="{% url 'platform-registry-record-edit' registry_type.pk r.pk %}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ri-pencil-line"></i></a>{% endif %}
+            {% if can_delete %}
+            <form method="post" action="{% url 'platform-registry-record-delete' registry_type.pk r.pk %}" class="d-inline" onsubmit="return confirm('Удалить?');">{% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-icon btn-text-danger"><i class="ri-delete-bin-line"></i></button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="20" class="text-muted text-center py-4">Записей нет</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="modal fade" id="recordModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Запись</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="recordModalBody"></div>
+  </div></div>
+</div>
+<div class="modal fade" id="recordFormModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Запись реестра</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="recordFormModalBody"></div>
+  </div></div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}
+<script src="{% static 'js/delayu-registries-list.js' %}"></script>
+<script src="{% static 'js/delayu-form-modal.js' %}"></script>
+{% endblock %}

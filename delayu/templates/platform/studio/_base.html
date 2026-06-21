@@ -1,0 +1,34 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — Студия{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/delayu-studio.css' %}" />
+{% endblock %}
+{% block vendor_js %}{{ block.super }}
+<script src="{% static 'vendor/libs/sortablejs/sortable.js' %}"></script>
+{% endblock %}
+{% block page_js %}{{ block.super }}
+<script src="{% static 'js/delayu-studio.js' %}"></script>
+{% block studio_js %}{% endblock %}
+{% endblock %}
+{% block content %}
+{% csrf_token %}
+<div class="row g-4">
+  <div class="col-12 col-lg-3">
+    <div class="card">
+      <div class="card-header"><h6 class="mb-0"><i class="ri-palette-2-line me-2"></i>Студия ДелаЮ</h6></div>
+      <div class="list-group list-group-flush">
+        <a href="{% url 'platform-studio' %}" class="list-group-item list-group-item-action{% if studio_active == 'hub' %} active{% endif %}">Обзор</a>
+        {% for ed in studio_editors %}
+        <a href="{{ ed.url }}" class="list-group-item list-group-item-action d-flex align-items-center{% if studio_active == ed.slug %} active{% endif %}">
+          <i class="icon-base ri {{ ed.icon }} me-2"></i>{{ ed.title }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-9">
+    {% block studio_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

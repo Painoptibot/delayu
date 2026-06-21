@@ -1,0 +1,49 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ room.name }} — Чат{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/app-chat.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/comms/_nav.html" %}
+<div class="app-chat card overflow-hidden">
+  <div class="row g-0">
+    <div class="col-lg-4 col-md-5 border-end d-none d-md-block bg-lighter">
+      <div class="p-4">
+        <a href="{% url 'platform-chat' %}" class="btn btn-sm btn-text-secondary mb-3"><i class="ri-arrow-left-line"></i> Все чаты</a>
+        <h5 class="mb-1">{{ room.name }}</h5>
+        {% if room.case %}<p class="small mb-2"><a href="{% url 'platform-case-detail' room.case_id %}">{{ room.case.number }}</a></p>{% endif %}
+        <p class="small text-muted mb-2">Участники</p>
+        <ul class="list-unstyled small mb-0">
+          {% for m in members %}<li class="mb-1"><i class="ri-user-line me-1"></i>{{ m.get_full_name|default:m.username }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="col-lg-8 col-md-7 d-flex flex-column" style="min-height:28rem">
+      <div class="flex-grow-1 p-4 overflow-auto" id="chatMessages">
+        {% for msg in messages %}
+        <div class="d-flex mb-3 {% if msg.author_id == request.user.id %}justify-content-end{% endif %}">
+          <div class="{% if msg.author_id == request.user.id %}bg-primary text-white{% else %}bg-lighter{% endif %} rounded px-3 py-2" style="max-width:85%">
+            <div class="small fw-medium mb-1">{% if msg.author_id != request.user.id %}{{ msg.author.get_full_name|default:msg.author.username }}{% else %}Вы{% endif %}</div>
+            <div>{{ msg.body|linebreaksbr }}</div>
+            <div class="small opacity-75 mt-1">{{ msg.created_at|date:"d.m.Y H:i" }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-center text-muted py-5">Начните переписку</p>
+        {% endfor %}
+      </div>
+      <div class="border-top p-3 bg-body">
+        <form method="post" action="{% url 'platform-chat-send' room.pk %}">{% csrf_token %}
+          <div class="input-group">
+            {{ form.body }}
+            <button type="submit" class="btn btn-primary"><i class="ri-send-plane-fill"></i></button>
+          </div>
+          <div class="form-text">Используйте @username для упоминания</div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-chat-room.js' %}"></script>{% endblock %}

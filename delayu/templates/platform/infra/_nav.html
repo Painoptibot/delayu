@@ -1,0 +1,11 @@
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    <li class="nav-item"><a class="nav-link{% if infra_tab == 'hub' %} active{% endif %}" href="{% url 'platform-infra' %}"><i class="icon-base ri ri-dashboard-line icon-sm me-2"></i>Обзор</a></li>
+    <li class="nav-item"><a class="nav-link{% if infra_tab == 'gis' %} active{% endif %}" href="{% url 'platform-gis' %}"><i class="icon-base ri ri-map-2-line icon-sm me-2"></i>Геопортал</a></li>
+    <li class="nav-item"><a class="nav-link{% if infra_tab == 'pwa' %} active{% endif %}" href="{% url 'platform-pwa' %}"><i class="icon-base ri ri-smartphone-line icon-sm me-2"></i>PWA</a></li>
+    <li class="nav-item"><a class="nav-link{% if infra_tab == 'sso' %} active{% endif %}" href="{% url 'platform-sso' %}"><i class="icon-base ri ri-shield-keyhole-line icon-sm me-2"></i>SSO</a></li>
+    <li class="nav-item"><a class="nav-link{% if infra_tab == 'etl' %} active{% endif %}" href="{% url 'platform-etl' %}"><i class="icon-base ri ri-upload-cloud-2-line icon-sm me-2"></i>ETL</a></li>
+    <li class="nav-item"><a class="nav-link{% if infra_tab == 'data' %} active{% endif %}" href="{% url 'platform-data-hub' %}"><i class="icon-base ri ri-database-line icon-sm me-2"></i>Data Hub</a></li>
+    <li class="nav-item"><a class="nav-link{% if infra_tab == 'citizen' %} active{% endif %}" href="{% url 'platform-citizen' %}"><i class="icon-base ri ri-user-community-line icon-sm me-2"></i>Граждане</a></li>
+  </ul>
+</div>

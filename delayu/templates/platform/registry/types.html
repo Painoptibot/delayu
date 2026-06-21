@@ -1,0 +1,41 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-registry-type-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> Тип реестра</a>{% endif %}
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead><tr><th>Код</th><th>Название</th><th>Записей</th><th></th><th></th></tr></thead>
+      <tbody>
+        {% for t in types %}
+        <tr>
+          <td><code>{{ t.code }}</code>{% if not t.is_active %} <span class="badge bg-label-secondary">выкл</span>{% endif %}</td>
+          <td>{{ t.name }}{% if t.description %}<div class="small text-muted">{{ t.description|truncatechars:60 }}</div>{% endif %}</td>
+          <td>{{ t.record_count }}</td>
+          <td>
+            <button type="button" class="btn btn-sm btn-icon btn-text-secondary type-open" data-modal-url="{% url 'platform-registry-type-modal' t.pk %}"><i class="ri-eye-line"></i></button>
+          </td>
+          <td class="text-end">
+            <a href="{% url 'platform-registry-records' t.pk %}" class="btn btn-sm btn-primary">Записи</a>
+            {% if can_change %}<a href="{% url 'platform-registry-type-edit' t.pk %}" class="btn btn-sm btn-outline-secondary">Схема</a>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted text-center py-4">Нет типов реестров</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="modal fade" id="typeModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Тип реестра</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="typeModalBody"></div>
+  </div></div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-registries-list.js' %}"></script>{% endblock %}

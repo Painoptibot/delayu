@@ -1,0 +1,41 @@
+<div class="card email-card-last mx-sm-6 mx-3 mt-2">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap border-bottom">
+    <div class="d-flex align-items-center mb-sm-0 mb-3">
+      <div class="avatar avatar-sm flex-shrink-0 me-3">
+        <span class="avatar-initial rounded-circle bg-label-secondary">{{ corr.counterparty|slice:":2"|upper|default:"?" }}</span>
+      </div>
+      <div class="flex-grow-1 ms-1">
+        <h6 class="m-0 fw-normal delayu-pii">{{ corr.counterparty|default:"Контрагент не указан" }}</h6>
+        <small class="text-body">{{ corr.reg_number }}</small>
+      </div>
+    </div>
+    <div class="d-flex align-items-center">
+      <p class="mb-0 me-2 text-body-secondary">{{ corr.reg_date|date:"d.m.Y" }}</p>
+    </div>
+  </div>
+  <div class="card-body pt-4">
+    <p class="fw-medium mb-2 delayu-pii">{{ corr.subject }}</p>
+    <dl class="row small mb-3">
+      <dt class="col-sm-4">Статус</dt><dd class="col-sm-8">{{ corr.get_status_display }}</dd>
+      <dt class="col-sm-4">Исполнитель</dt><dd class="col-sm-8 delayu-pii">{{ corr.assignee|default:"—" }}</dd>
+      {% if corr.case %}
+      <dt class="col-sm-4">Дело</dt><dd class="col-sm-8"><a href="{% url 'platform-case-detail' corr.case_id %}">{{ corr.case.number }}</a></dd>
+      {% endif %}
+    </dl>
+    {% if can_route and route_form %}
+    <form method="post" action="{% url 'platform-correspondence-route' corr.pk %}" class="border rounded p-3 mb-3">
+      {% csrf_token %}
+      <p class="small fw-medium mb-2">Передать исполнителю</p>
+      <div class="mb-2">{{ route_form.to_user }}</div>
+      <div class="mb-2">{{ route_form.comment }}</div>
+      <button type="submit" class="btn btn-sm btn-primary">Передать</button>
+    </form>
+    {% endif %}
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'platform-correspondence-detail' corr.pk %}" class="btn btn-sm btn-outline-primary">Полная карточка</a>
+      {% if corr.case %}
+      <a href="{% url 'platform-case-detail' corr.case_id %}" class="btn btn-sm btn-outline-secondary">Открыть дело</a>
+      {% endif %}
+    </div>
+  </div>
+</div>

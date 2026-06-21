@@ -1,0 +1,51 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/ai/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card card-border-shadow-primary h-100">
+      <div class="card-body">
+        <p class="text-muted small mb-1">Запросов сегодня</p>
+        <h3>{{ logs_today }} / {{ policy.max_requests_per_day }}</h3>
+        <p class="small mb-0">Модель: {{ policy.model_name }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="row g-3">
+      <div class="col-sm-6"><a href="{% url 'platform-ai-assistant' %}" class="card card-hover h-100 text-body"><div class="card-body"><h6>ИИ-ассистент</h6><p class="small text-muted mb-0">M47 · чат по базе знаний</p></div></a></div>
+      <div class="col-sm-6"><a href="{% url 'platform-ai-search' %}" class="card card-hover h-100 text-body"><div class="card-body"><h6>Поиск</h6><p class="small text-muted mb-0">M48 · дела и регламенты</p></div></a></div>
+      <div class="col-sm-6"><a href="{% url 'platform-ai-tools' %}" class="card card-hover h-100 text-body"><div class="card-body"><h6>Инструменты</h6><p class="small text-muted mb-0">M49–M56, M59–M65</p></div></a></div>
+      <div class="col-sm-6"><a href="{% url 'platform-audio' %}" class="card card-hover h-100 text-body"><div class="card-body"><h6>Транскрибация</h6><p class="small text-muted mb-0">M62 · аудиоархив M46</p></div></a></div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header">Последние запросы</div>
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Модуль</th><th>Промпт</th><th>Когда</th></tr></thead>
+    <tbody>
+      {% for log in recent_logs %}
+      <tr><td><code>{{ log.module_code }}</code></td><td>{{ log.prompt|truncatechars:60 }}</td><td class="small">{{ log.created_at|date:"d.m.Y H:i" }}</td></tr>
+      {% empty %}<tr><td colspan="3" class="text-muted text-center py-3">Пусто</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="card mt-4">
+  <div class="card-header">Отзывы об ИИ (#45)</div>
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Модуль</th><th>Оценка</th><th>Комментарий</th><th>Когда</th></tr></thead>
+    <tbody>
+      {% for fb in recent_feedback %}
+      <tr><td><code>{{ fb.module_code }}</code></td><td>{{ fb.rating }}/5</td><td>{{ fb.comment|truncatechars:40|default:"—" }}</td><td class="small">{{ fb.created_at|date:"d.m.Y H:i" }}</td></tr>
+      {% empty %}<tr><td colspan="4" class="text-muted text-center py-3">Отзывов пока нет</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Календарь — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card mb-4">
+  <div class="card-header"><h5 class="mb-0">Календарь задач (M09)</h5></div>
+  <div class="card-body">
+    <div id="calendar" class="app-calendar"></div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header">Список по срокам</div>
+  <ul class="list-group list-group-flush" id="calendar-list"></ul>
+</div>
+{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/fullcalendar/fullcalendar.css' %}">
+{% endblock %}
+{% block vendor_js %}{{ block.super }}
+<script src="{% static 'vendor/libs/fullcalendar/fullcalendar.js' %}"></script>
+{% endblock %}
+{% block page_js %}{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var events = {{ events_json|safe }};
+  var list = document.getElementById('calendar-list');
+  events.forEach(function (e) {
+    var li = document.createElement('li');
+    li.className = 'list-group-item';
+    li.innerHTML = '<a href="' + (e.url || '#') + '">' + e.title + '</a> — ' + e.start;
+    list.appendChild(li);
+  });
+  var el = document.getElementById('calendar');
+  if (el && typeof Calendar !== 'undefined') {
+    var cal = new Calendar(el, { initialView: 'dayGridMonth', locale: 'ru', events: events, height: 500 });
+    cal.render();
+  } else if (el && window.FullCalendar) {
+    new FullCalendar.Calendar(el, { initialView: 'dayGridMonth', locale: 'ru', events: events, height: 500 }).render();
+  }
+});
+</script>
+{% endblock %}

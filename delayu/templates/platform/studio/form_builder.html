@@ -1,0 +1,39 @@
+{% extends "platform/studio/_base.html" %}
+{% block studio_content %}
+<div class="card mb-3">
+  <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
+    <h5 class="mb-0">Конструктор форм</h5>
+    {% if schemas %}
+    <select class="form-select form-select-sm w-auto" id="studioSchemaSelect" onchange="if(this.value) location.href='/studio/forms/'+this.value+'/'">
+      {% for s in schemas %}
+      <option value="{{ s.pk }}" {% if schema and schema.pk == s.pk %}selected{% endif %}>{{ s.get_target_display }} — {{ s.name|default:s.code }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <div class="row g-3" data-studio="forms" data-save-url="{% url 'platform-studio-save' 'forms' %}" data-schema-id="{{ schema.pk|default:'' }}">
+      <div class="col-md-4">
+        <p class="small text-muted mb-2">Перетащите поле на форму</p>
+        <div id="studioFieldPalette" class="studio-palette">
+          {% for ft in field_types %}
+          <div class="studio-palette-item" draggable="true" data-field-type="{{ ft.type }}">
+            <i class="ri {{ ft.icon }} me-2"></i>{{ ft.label }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-md-8">
+        <div id="studioFormCanvas" class="studio-canvas border rounded p-3 min-h-300">
+          <p class="text-muted small mb-0 studio-canvas-empty">Перетащите поля сюда</p>
+        </div>
+        <script type="application/json" id="studioFormSchemaJson">{{ schema_json|safe }}</script>
+        <script type="application/json" id="studioNsiJson">[{% for c in nsi_classifiers %}{"code":"{{ c.code }}","name":"{{ c.name }}"}{% if not forloop.last %},{% endif %}{% endfor %}]</script>
+        <div class="mt-3 text-end">
+          <button type="button" class="btn btn-primary" id="studioFormSave">Сохранить схему</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

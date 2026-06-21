@@ -1,0 +1,10 @@
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    <li class="nav-item"><a class="nav-link{% if comms_tab == 'chat' %} active{% endif %}" href="{% url 'platform-chat' %}"><i class="icon-base ri ri-wechat-line icon-sm me-2"></i>Чат</a></li>
+    <li class="nav-item"><a class="nav-link{% if comms_tab == 'comments' %} active{% endif %}" href="{% url 'platform-comments' %}"><i class="icon-base ri ri-chat-3-line icon-sm me-2"></i>Комментарии</a></li>
+    <li class="nav-item"><a class="nav-link{% if comms_tab == 'mentions' %} active{% endif %}" href="{% url 'platform-mentions' %}"><i class="icon-base ri ri-at-line icon-sm me-2"></i>Упоминания</a></li>
+    <li class="nav-item"><a class="nav-link{% if comms_tab == 'subscriptions' %} active{% endif %}" href="{% url 'platform-subscriptions' %}"><i class="icon-base ri ri-bookmark-line icon-sm me-2"></i>Подписки</a></li>
+    <li class="nav-item"><a class="nav-link{% if comms_tab == 'meetings' %} active{% endif %}" href="{% url 'platform-meetings' %}"><i class="icon-base ri ri-vidicon-line icon-sm me-2"></i>ВКС</a></li>
+    <li class="nav-item"><a class="nav-link{% if comms_tab == 'messengers' %} active{% endif %}" href="{% url 'platform-messengers' %}"><i class="icon-base ri ri-telegram-line icon-sm me-2"></i>Мессенджеры</a></li>
+  </ul>
+</div>

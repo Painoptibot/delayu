@@ -1,0 +1,114 @@
+<div class="uzhv-modal-card">
+  <div class="uzhv-modal-hero uzhv-modal-hero--appeal">
+    <div class="uzhv-modal-avatar uzhv-modal-avatar--appeal" aria-hidden="true"><i class="ri-mail-line fs-4"></i></div>
+    <div class="uzhv-modal-hero-body">
+      <h6 class="uzhv-modal-hero-title"><code>{{ appeal.appeal_number }}</code></h6>
+      <p class="uzhv-modal-hero-sub mb-0">{{ appeal.subject|truncatechars:120 }}</p>
+      <div class="uzhv-modal-badges">
+        {% if appeal.status == "answered" or appeal.status == "closed" %}
+        <span class="badge bg-label-success">{{ appeal.get_status_display }}</span>
+        {% elif appeal.status == "in_work" %}
+        <span class="badge bg-label-primary">{{ appeal.get_status_display }}</span>
+        {% else %}
+        <span class="badge bg-label-secondary">{{ appeal.get_status_display }}</span>
+        {% endif %}
+        {% if appeal.is_overdue %}
+        <span class="badge bg-danger"><i class="ri-alarm-warning-line"></i> Просрочено</span>
+        {% elif appeal.days_left <= 5 %}
+        <span class="badge bg-warning text-dark"><i class="ri-timer-line"></i> {{ appeal.days_left }} дн.</span>
+        {% else %}
+        <span class="badge bg-label-info">SLA 30 дн.</span>
+        {% endif %}
+        {% if appeal.conclusion_kind %}
+        <span class="badge bg-label-info">{{ appeal.get_conclusion_kind_display }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-2 uzhv-modal-stats">
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Поступило</span>
+        <span class="uzhv-modal-stat-value">{{ appeal.received_at|date:"d.m.Y" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Срок ответа</span>
+        <span class="uzhv-modal-stat-value {% if appeal.is_overdue %}text-danger{% endif %}">{{ appeal.due_date|date:"d.m.Y" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Исполнитель</span>
+        <span class="uzhv-modal-stat-value">{{ appeal.assignee.get_full_name|default:appeal.assignee.username|default:"—" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">M24</span>
+        <span class="uzhv-modal-stat-value">
+          {% if appeal.correspondence %}<span class="badge bg-label-secondary">Вх.</span>{% endif %}
+          {% if appeal.outgoing_correspondence %}<span class="badge bg-label-success">Исх.</span>{% endif %}
+          {% if not appeal.correspondence and not appeal.outgoing_correspondence %}—{% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="uzhv-modal-actions">
+    {% if can_change %}
+    <a href="{% url 'uzhv-appeal-edit' appeal.pk %}" class="btn btn-sm btn-primary"><i class="ri-pencil-line"></i> Редактировать</a>
+    <a href="{% url 'uzhv-appeal-response-docx' appeal.pk %}" class="btn btn-sm btn-outline-secondary"><i class="ri-file-word-line"></i> Ответ docx</a>
+    {% endif %}
+    {% if appeal.citizen %}
+    <a href="#" class="btn btn-sm btn-outline-secondary uzhv-modal-link" data-modal-url="{% url 'uzhv-citizen-modal' appeal.citizen_id %}" data-modal-title="{{ appeal.citizen.full_name }}"><i class="ri-user-line"></i> Заявитель</a>
+    {% endif %}
+    {% if appeal.housing_case %}
+    <a href="#" class="btn btn-sm btn-outline-secondary uzhv-modal-link" data-modal-url="{% url 'uzhv-case-modal' appeal.housing_case_id %}" data-modal-title="Дело {{ appeal.housing_case.case_number }}"><i class="ri-folder-line"></i> Дело</a>
+    {% endif %}
+    <a href="{% url 'uzhv-deadlines' %}" class="btn btn-sm btn-outline-secondary"><i class="ri-calendar-line"></i> Сроки</a>
+    {% include "platform/uzhv/_modal_qr_btn.html" with qr_entity="appeals" qr_pk=appeal.pk qr_hint="Откроет обращение в списке" %}
+  </div>
+
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-links-line"></i> Связи</div>
+    <div class="uzhv-modal-section-body">
+      <dl class="uzhv-modal-kv">
+        <dt>Заявитель</dt>
+        <dd>
+          {% if appeal.citizen %}
+          <a href="#" class="uzhv-modal-link" data-modal-url="{% url 'uzhv-citizen-modal' appeal.citizen_id %}" data-modal-title="{{ appeal.citizen.full_name }}">{{ appeal.citizen.full_name }}</a>
+          {% else %}—{% endif %}
+        </dd>
+        <dt>Учётное дело</dt>
+        <dd>
+          {% if appeal.housing_case %}
+          <a href="#" class="uzhv-modal-link" data-modal-url="{% url 'uzhv-case-modal' appeal.housing_case_id %}" data-modal-title="Дело {{ appeal.housing_case.case_number }}"><code>{{ appeal.housing_case.case_number }}</code></a>
+          {% else %}—{% endif %}
+        </dd>
+        {% if appeal.correspondence %}
+        <dt>Входящее M24</dt><dd><code>{{ appeal.correspondence.reg_number }}</code></dd>
+        {% endif %}
+        {% if appeal.outgoing_correspondence %}
+        <dt>Исходящий ответ</dt><dd><code>{{ appeal.outgoing_correspondence.reg_number }}</code></dd>
+        {% endif %}
+      </dl>
+    </div>
+  </div>
+
+  {% if appeal.body %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-chat-quote-line"></i> Содержание</div>
+    <blockquote class="uzhv-modal-quote">{{ appeal.body|truncatechars:500 }}</blockquote>
+  </div>
+  {% endif %}
+
+  {% if appeal.answer_text %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-reply-line"></i> Ответ{% if appeal.answered_at %} от {{ appeal.answered_at|date:"d.m.Y" }}{% endif %}</div>
+    <div class="uzhv-modal-answer">{{ appeal.answer_text|truncatechars:600 }}</div>
+  </div>
+  {% endif %}
+</div>

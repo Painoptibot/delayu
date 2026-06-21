@@ -1,0 +1,117 @@
+<div class="uzhv-modal-card">
+  <div class="uzhv-modal-hero">
+    <div class="uzhv-modal-avatar" aria-hidden="true"><i class="ri-folder-user-line fs-4"></i></div>
+    <div class="uzhv-modal-hero-body">
+      <h6 class="uzhv-modal-hero-title"><code>{{ case.case_number }}</code></h6>
+      <p class="uzhv-modal-hero-sub">
+        <a href="#" class="uzhv-modal-link text-body" data-modal-url="{% url 'uzhv-citizen-modal' case.citizen_id %}" data-modal-title="{{ case.citizen.full_name }}">{{ case.citizen.full_name }}</a>
+      </p>
+      <div class="uzhv-modal-badges">
+        <span class="badge bg-label-primary">{{ case.get_category_display }}</span>
+        {% if case.status == "queued" %}
+        <span class="badge bg-label-primary">{{ case.get_status_display }}</span>
+        {% elif case.status == "registered" %}
+        <span class="badge bg-label-info">{{ case.get_status_display }}</span>
+        {% elif case.status == "provided" %}
+        <span class="badge bg-label-success">{{ case.get_status_display }}</span>
+        {% elif case.status == "rejected" or case.status == "removed" %}
+        <span class="badge bg-label-danger">{{ case.get_status_display }}</span>
+        {% else %}
+        <span class="badge bg-label-secondary">{{ case.get_status_display }}</span>
+        {% endif %}
+        {% if case.low_income_eligible %}
+        <span class="badge bg-label-success"><i class="ri-shield-check-line"></i> Малоимущий</span>
+        {% elif case.low_income_eligible is False %}
+        <span class="badge bg-label-warning">Не малоимущий</span>
+        {% endif %}
+        {% if case.income_verified %}
+        <span class="badge bg-label-info">Доход проверен</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-2 uzhv-modal-stats">
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Очерёдность</span>
+        <span class="uzhv-modal-stat-value uzhv-modal-stat-value--accent">{{ case.queue_position|default:"—" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">На учёте с</span>
+        <span class="uzhv-modal-stat-value">{{ case.registered_at|date:"d.m.Y" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Исполнитель</span>
+        <span class="uzhv-modal-stat-value">{{ case.assignee.get_full_name|default:case.assignee.username|default:"—" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Связи</span>
+        <span class="uzhv-modal-stat-value">
+          {% if appeals_count %}<span class="badge bg-label-warning">{{ appeals_count }} обр.</span>{% endif %}
+          {% if attachments_count %}<span class="badge bg-label-secondary">{{ attachments_count }} файл.</span>{% endif %}
+          {% if not appeals_count and not attachments_count %}—{% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="uzhv-modal-actions">
+    {% if can_change %}
+    <a href="{% url 'uzhv-case-edit' case.pk %}" class="btn btn-sm btn-primary"><i class="ri-pencil-line"></i> Редактировать</a>
+    {% endif %}
+    <a href="{% url 'uzhv-case-low-income' case.pk %}" class="btn btn-sm btn-outline-info"><i class="ri-calculator-line"></i> Малоимущие</a>
+    <a href="{% url 'uzhv-case-zip' case.pk %}" class="btn btn-sm btn-outline-secondary"><i class="ri-folder-zip-line"></i> ZIP</a>
+    <a href="#" class="btn btn-sm btn-outline-secondary uzhv-modal-link" data-modal-url="{% url 'uzhv-citizen-modal' case.citizen_id %}" data-modal-title="{{ case.citizen.full_name }}"><i class="ri-user-line"></i> Гражданин</a>
+    <a href="{% url 'uzhv-deadlines' %}" class="btn btn-sm btn-outline-secondary"><i class="ri-calendar-line"></i> Сроки</a>
+    {% include "platform/uzhv/_modal_qr_btn.html" with qr_entity="cases" qr_pk=case.pk qr_hint="Откроет учётное дело в списке" %}
+  </div>
+
+  {% if case.removed_at or case.category == "low_income" or case.income_verified %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-file-list-3-line"></i> Учёт и расчёт</div>
+    <div class="uzhv-modal-section-body">
+      <dl class="uzhv-modal-kv">
+        {% if case.removed_at %}
+        <dt>Снят с учёта</dt>
+        <dd>{{ case.removed_at|date:"d.m.Y" }}{% if case.removal_reason %} — {{ case.get_removal_reason_display }}{% endif %}</dd>
+        {% endif %}
+        {% if case.category == "low_income" or case.household_size %}
+        <dt>Членов семьи</dt><dd>{{ case.household_size|default:"—" }}</dd>
+        <dt>Доход семьи</dt><dd>{% if case.monthly_income %}{{ case.monthly_income }} ₽/мес.{% else %}—{% endif %}</dd>
+        <dt>Имущество</dt><dd>{% if case.property_value %}{{ case.property_value }} ₽{% else %}—{% endif %}</dd>
+        {% endif %}
+        {% if case.income_verified %}
+        <dt>Среднедушевой</dt><dd>{% if case.per_capita_income %}{{ case.per_capita_income }} ₽/мес.{% else %}—{% endif %}</dd>
+        {% endif %}
+        {% if case.low_income_review_due_at %}
+        <dt>Срок рассмотрения</dt>
+        <dd>{{ case.low_income_review_due_at|date:"d.m.Y" }}</dd>
+        {% endif %}
+      </dl>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if case.low_income_conclusion %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-article-line"></i> Заключение</div>
+    <div class="uzhv-modal-conclusion">{{ case.low_income_conclusion|truncatechars:400 }}</div>
+  </div>
+  {% endif %}
+
+  {% if case.notes %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-sticky-note-line"></i> Примечание</div>
+    <p class="uzhv-modal-quote mb-0">{{ case.notes|truncatechars:300 }}</p>
+  </div>
+  {% endif %}
+
+  {% include "platform/uzhv/_case_timeline.html" %}
+</div>

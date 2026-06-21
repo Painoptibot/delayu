@@ -1,0 +1,65 @@
+<div class="uzhv-modal-card">
+  <div class="uzhv-modal-hero uzhv-modal-hero--young">
+    <div class="uzhv-modal-avatar uzhv-modal-avatar--young" aria-hidden="true"><i class="ri-heart-2-line fs-4"></i></div>
+    <div class="uzhv-modal-hero-body">
+      <h6 class="uzhv-modal-hero-title">Молодая семья</h6>
+      <p class="uzhv-modal-hero-sub mb-0">
+        <a href="#" class="uzhv-modal-link text-body" data-modal-url="{% url 'uzhv-case-modal' record.case_id %}" data-modal-title="Дело {{ record.case.case_number }}"><code>{{ record.case.case_number }}</code></a>
+        — {{ record.case.citizen.full_name }}
+      </p>
+      <div class="uzhv-modal-badges">
+        <span class="badge bg-label-primary">{{ record.get_program_display }}</span>
+        {% if record.meets_criteria %}
+        <span class="badge bg-label-success"><i class="ri-checkbox-circle-line"></i> Соответствует критериям</span>
+        {% else %}
+        <span class="badge bg-label-secondary">Не соответствует</span>
+        {% endif %}
+        <span class="badge bg-label-info">{{ record.case.get_status_display }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-2 uzhv-modal-stats">
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Супруг(а)</span>
+        <span class="uzhv-modal-stat-value">{{ record.spouse_full_name|default:"—"|truncatechars:20 }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Дата брака</span>
+        <span class="uzhv-modal-stat-value">{{ record.marriage_date|date:"d.m.Y"|default:"—" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Детей</span>
+        <span class="uzhv-modal-stat-value uzhv-modal-stat-value--accent">{{ record.children_count }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Очерёдность</span>
+        <span class="uzhv-modal-stat-value">{{ record.case.queue_position|default:"—" }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="uzhv-modal-actions">
+    {% if can_change %}
+    <a href="{% url 'uzhv-young-family-edit' record.case.pk %}" class="btn btn-sm btn-primary"><i class="ri-pencil-line"></i> Редактировать</a>
+    {% endif %}
+    <a href="#" class="btn btn-sm btn-outline-secondary uzhv-modal-link" data-modal-url="{% url 'uzhv-case-modal' record.case_id %}" data-modal-title="Дело {{ record.case.case_number }}"><i class="ri-folder-line"></i> Учётное дело</a>
+    <a href="#" class="btn btn-sm btn-outline-secondary uzhv-modal-link" data-modal-url="{% url 'uzhv-citizen-modal' record.case.citizen_id %}" data-modal-title="{{ record.case.citizen.full_name }}"><i class="ri-user-line"></i> Заявитель</a>
+    <a href="{% url 'uzhv-case-low-income' record.case.pk %}" class="btn btn-sm btn-outline-info"><i class="ri-calculator-line"></i> Малоимущие</a>
+    {% include "platform/uzhv/_modal_qr_btn.html" with qr_entity="young-families" qr_pk=record.case.pk qr_hint="Откроет карточку в реестре молодых семей" %}
+  </div>
+
+  {% if record.notes %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-sticky-note-line"></i> Примечание</div>
+    <p class="uzhv-modal-quote mb-0">{{ record.notes|truncatechars:400 }}</p>
+  </div>
+  {% endif %}
+</div>

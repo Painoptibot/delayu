@@ -1,0 +1,27 @@
+{% load query_utils %}
+{% if page_obj.has_other_pages %}
+<nav class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3" aria-label="Страницы">
+  <span class="small text-muted">
+    Показано {{ page_obj.start_index }}–{{ page_obj.end_index }} из {{ page_obj.paginator.count }}
+  </span>
+  <ul class="pagination pagination-sm mb-0">
+    {% if page_obj.has_previous %}
+    <li class="page-item">
+      <a class="page-link" href="?{% url_replace request page=page_obj.previous_page_number %}">←</a>
+    </li>
+    {% else %}
+    <li class="page-item disabled"><span class="page-link">←</span></li>
+    {% endif %}
+    <li class="page-item disabled">
+      <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    </li>
+    {% if page_obj.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?{% url_replace request page=page_obj.next_page_number %}">→</a>
+    </li>
+    {% else %}
+    <li class="page-item disabled"><span class="page-link">→</span></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}

@@ -1,0 +1,8 @@
+{% if timeline %}
+<div class="uzhv-modal-section">
+  <div class="uzhv-modal-section-title"><i class="ri-time-line"></i> Хронология</div>
+  {% include "platform/uzhv/_timeline.html" %}
+</div>
+{% else %}
+<p class="small text-muted mb-0">Событий по делу пока нет.</p>
+{% endif %}

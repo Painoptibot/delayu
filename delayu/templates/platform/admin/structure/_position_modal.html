@@ -1,0 +1,22 @@
+{% if not edit_mode %}
+<h5>{{ position.name }}</h5>
+<p class="text-muted"><code>{{ position.code }}</code> · {{ department.name }} · ставок: {{ position.headcount }}</p>
+<p class="small">Назначено сотрудников: {{ assignments_count }}</p>
+{% if can_change %}
+<button type="button" class="btn btn-sm btn-primary"
+  onclick="fetch('{% url 'platform-position-modal' position.pk %}?mode=edit').then(r=>r.text()).then(h=>document.getElementById('posModalBody').innerHTML=h);">Редактировать</button>
+{% endif %}
+{% if can_delete %}
+<form method="post" action="{% url 'platform-position-delete' position.pk %}" class="d-inline"
+      onsubmit="return confirm('Удалить должность?');">{% csrf_token %}
+  <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+</form>
+{% endif %}
+{% else %}
+<form method="post" action="{% url 'platform-position-edit' position.pk %}">{% csrf_token %}
+  {% for field in edit_form %}
+  <div class="mb-3"><label class="form-label">{{ field.label }}</label>{{ field }}</div>
+  {% endfor %}
+  <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>
+{% endif %}

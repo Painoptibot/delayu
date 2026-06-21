@@ -1,0 +1,35 @@
+{% extends "platform/studio/_base.html" %}
+{% block studio_content %}
+<div class="card" data-studio="integration" data-save-url="{% url 'platform-studio-save' 'integration' %}" data-endpoint-id="{{ endpoint.pk|default:'' }}">
+  <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <h5 class="mb-0">Pipeline интеграций</h5>
+    {% if endpoints %}
+    <select class="form-select form-select-sm w-auto" onchange="if(this.value) location.href='/studio/integration/'+this.value+'/'">
+      {% for e in endpoints %}
+      <option value="{{ e.pk }}" {% if endpoint and endpoint.pk == e.pk %}selected{% endif %}>{{ e.code }} — {{ e.name }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <div id="studioPipePalette" class="studio-palette">
+          {% for n in node_types %}
+          <div class="studio-palette-item" draggable="true" data-pipe-type="{{ n.type }}">
+            <i class="ri {{ n.icon }} me-2"></i>{{ n.label }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-md-9">
+        <div id="studioPipeCanvas" class="studio-flow-canvas border rounded position-relative min-h-300">
+          <div id="studioPipeNodes" class="studio-pipe-nodes d-flex flex-wrap gap-2 p-3"></div>
+        </div>
+        <script type="application/json" id="studioPipeJson">{{ pipeline_json|safe }}</script>
+        <div class="text-end mt-3"><button type="button" class="btn btn-primary" id="studioPipeSave">Сохранить pipeline</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Подтверждение — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'vendor/css/pages/page-auth.css' %}" />{% endblock %}
+{% block content %}
+<div class="authentication-wrapper authentication-cover">
+  <div class="authentication-inner row m-0">
+    <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg position-relative py-sm-12 px-12 py-6 mx-auto">
+      <div class="w-px-400 mx-auto">
+        <h4 class="mb-2">Подтверждение действия</h4>
+        <p class="text-muted mb-4">Повторно введите пароль для доступа к критичным операциям (экспорт, удаление, массовые изменения).</p>
+        {% if messages %}{% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}{% endif %}
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="next" value="{{ next_url }}">
+          <div class="mb-3">
+            <label class="form-label" for="password">Пароль</label>
+            <input class="form-control" id="password" name="password" type="password" autofocus required>
+          </div>
+          {% if needs_totp %}
+          <div class="mb-4">
+            <label class="form-label" for="totp_code">Код 2FA</label>
+            <input class="form-control" id="totp_code" name="totp_code" inputmode="numeric" maxlength="6">
+          </div>
+          {% endif %}
+          <button type="submit" class="btn btn-primary w-100">Подтвердить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

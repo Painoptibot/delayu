@@ -1,0 +1,32 @@
+{% extends layout_path %}
+{% block title %}История {{ corr.reg_number }} — ДелаЮ{% endblock %}
+{% block content %}
+<h4 class="mb-1">История документа</h4>
+<p class="text-muted small"><a href="{% url 'platform-correspondence-detail' corr.pk %}">{{ corr.reg_number }}</a> — {{ corr.subject }}</p>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">События корреспонденции (M28)</div>
+      <ul class="list-group list-group-flush">
+        {% for e in events %}
+        <li class="list-group-item small">
+          <strong>{{ e.get_event_type_display }}</strong> · {{ e.created_at|date:"d.m.Y H:i" }}
+          {% if e.actor %} · {{ e.actor }}{% endif %}
+          <div class="text-muted">{{ e.description }}</div>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">Событий нет</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Версии документов дела</div>
+      <ul class="list-group list-group-flush">
+        {% for d in doc_versions %}
+        <li class="list-group-item small">v{{ d.version }} · {{ d.title }} · {{ d.uploaded_by }} · {{ d.created_at|date:"d.m.Y" }}{% if d.is_signed %} <span class="badge bg-success">ЭП</span>{% endif %}</li>
+        {% empty %}<li class="list-group-item text-muted">Нет привязанного дела или документов</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Лента активности — ДелаЮ{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-6 gap-4">
+  <div class="d-flex flex-column justify-content-center">
+    <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+      <h4 class="mb-0">Лента активности</h4>
+      <span class="badge bg-label-primary rounded-pill">{{ stats.total }} событий</span>
+      {% if filter_mine %}<span class="badge bg-label-info rounded-pill">Только мои</span>{% endif %}
+      {% if filter_module %}<span class="badge bg-label-secondary rounded-pill">Модуль {{ filter_module }}</span>{% endif %}
+    </div>
+    <p class="mb-0 text-body-secondary">
+      {% if active_membership %}{{ active_membership.subsystem.name }}{% endif %}
+      · сегодня {{ stats.today }} · ваших действий {{ stats.mine }}
+    </p>
+  </div>
+  <form method="get" class="d-flex flex-wrap align-content-center gap-2">
+    <input type="text" name="module" class="form-control form-control-sm" style="width:5rem" value="{{ filter_module }}" placeholder="M08" title="Код модуля">
+    <input type="text" name="q" class="form-control form-control-sm" style="width:10rem" value="{{ search_q }}" placeholder="Поиск">
+    <div class="form-check form-check-inline mb-0 align-self-center">
+      <input class="form-check-input" type="checkbox" name="mine" value="1" id="mineChk" {% if filter_mine %}checked{% endif %}>
+      <label class="form-check-label small" for="mineChk">Мои</label>
+    </div>
+    <button type="submit" class="btn btn-sm btn-primary">Найти</button>
+    <a href="{% url 'platform-activity' %}" class="btn btn-sm btn-outline-secondary">Сброс</a>
+  </form>
+</div>
+
+<div class="row">
+  <div class="col-12 col-lg-8">
+    <div class="card mb-6">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title m-0">Журнал событий</h5>
+        <span class="text-muted small">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Модуль</th>
+              <th>Участник</th>
+              <th>Событие</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in events %}
+            <tr>
+              <td class="text-nowrap small text-muted">{{ e.created_at|date:"d.m.Y H:i" }}</td>
+              <td>{% if e.module_code %}<span class="badge bg-label-primary">{{ e.module_code }}</span>{% else %}—{% endif %}</td>
+              <td class="small">{{ e.actor.get_full_name|default:e.actor.username|default:"Система" }}</td>
+              <td><span class="fw-medium">{{ e.verb }}</span> — {{ e.target_repr|truncatechars:60 }}</td>
+              <td class="text-end">{% if e.link_path %}<a href="{{ e.link_path }}" class="btn btn-sm btn-outline-primary">Открыть</a>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-5">Событий не найдено</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if page_obj.has_other_pages %}
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        {% if page_obj.has_previous %}
+        <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.previous_page_number }}{% if filter_module %}&module={{ filter_module }}{% endif %}{% if filter_mine %}&mine=1{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">Назад</a>
+        {% else %}<span></span>{% endif %}
+        {% if page_obj.has_next %}
+        <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.next_page_number }}{% if filter_module %}&module={{ filter_module }}{% endif %}{% if filter_mine %}&mine=1{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">Далее</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card mb-6">
+      <div class="card-header">
+        <h5 class="card-title m-0">Хронология</h5>
+      </div>
+      <div class="card-body mt-2">
+        <ul class="timeline pb-0 mb-0">
+          {% for e in events|slice:":15" %}
+          <li class="timeline-item timeline-item-transparent {% if not forloop.last %}border-primary{% else %}border-transparent pb-0{% endif %}">
+            <span class="timeline-point timeline-point-primary"></span>
+            <div class="timeline-event{% if forloop.last %} pb-0{% endif %}">
+              <div class="timeline-header mb-2">
+                <h6 class="mb-0">{{ e.verb }}: {{ e.target_repr|truncatechars:50 }}</h6>
+                <small class="text-body-secondary">{{ e.created_at|date:"d.m.Y H:i" }}</small>
+              </div>
+              <p class="mt-1 mb-2 small text-muted">
+                {{ e.actor.get_full_name|default:e.actor.username|default:"Система" }}
+                {% if e.module_code %} · {{ e.module_code }}{% endif %}
+                {% if e.link_path %} · <a href="{{ e.link_path }}">перейти</a>{% endif %}
+              </p>
+            </div>
+          </li>
+          {% empty %}
+          <li class="text-muted small">Нет событий для отображения</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card mb-6">
+      <div class="card-body">
+        <h5 class="card-title mb-4">Сводка</h5>
+        <div class="d-flex justify-content-start align-items-center mb-4">
+          <span class="avatar rounded-circle bg-label-primary me-3 d-flex align-items-center justify-content-center">
+            <i class="icon-base ri ri-pulse-line icon-24px"></i>
+          </span>
+          <div>
+            <h6 class="mb-0">{{ stats.total }}</h6>
+            <span class="text-muted small">всего в подсистеме</span>
+          </div>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-heading">За сегодня</span>
+          <h6 class="mb-0">{{ stats.today }}</h6>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-heading">Ваши действия</span>
+          <h6 class="mb-0">{{ stats.mine }}</h6>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span class="text-heading">На странице</span>
+          <h6 class="mb-0">{{ events|length }}</h6>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-6">
+      <div class="card-header"><h5 class="card-title mb-1">По модулям</h5></div>
+      <div class="card-body">
+        {% for row in module_stats %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="badge bg-label-secondary">{{ row.module_code }}</span>
+          <span class="fw-medium">{{ row.cnt }}</span>
+        </div>
+        {% empty %}
+        <p class="text-muted small mb-0">Нет данных по модулям</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card mb-6">
+      <div class="card-header"><h5 class="card-title mb-1">Быстрые ссылки</h5></div>
+      <div class="card-body d-flex flex-wrap gap-2">
+        <a href="{% url 'platform-today' %}" class="btn btn-outline-primary btn-sm">Задачи</a>
+        <a href="{% url 'platform-inbox' %}" class="btn btn-outline-primary btn-sm">Почта СЭД</a>
+        <a href="{% url 'platform-cases' %}" class="btn btn-outline-primary btn-sm">Дела</a>
+        <a href="{% url 'platform-audit' %}" class="btn btn-outline-secondary btn-sm">Журнал аудита</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

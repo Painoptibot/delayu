@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: newsystem
+          POSTGRES_PASSWORD: newsystem
+          POSTGRES_DB: newsystem
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: newsystem
+      POSTGRES_PASSWORD: newsystem
+      POSTGRES_DB: newsystem
+      SECRET_KEY: ci-test-secret
+      DEBUG: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: python manage.py migrate --noinput
+      - run: ruff check delayu config --ignore E501
+      - run: python manage.py check
+      - run: pytest delayu/tests/

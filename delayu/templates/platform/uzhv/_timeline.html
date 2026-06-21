@@ -1,0 +1,13 @@
+{% if timeline %}
+<ul class="list-unstyled uzhv-timeline mb-0">
+  {% for e in timeline %}
+  <li class="mb-2 ps-3 border-start border-2 {% if e.kind == 'warning' %}border-warning{% elif e.kind == 'appeal' %}border-info{% elif e.kind == 'contract' %}border-success{% else %}border-primary{% endif %}">
+    <div class="small text-muted">{{ e.date|date:"d.m.Y" }}</div>
+    <div class="small">{{ e.title }}</div>
+    {% if e.modal_url %}
+    <a href="#" class="uzhv-modal-link small" data-modal-url="{{ e.modal_url }}" data-modal-title="{{ e.modal_title }}">{{ e.link_label }}</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

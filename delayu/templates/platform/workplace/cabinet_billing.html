@@ -1,0 +1,43 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Личный кабинет — работа{% endblock %}
+{% block content %}
+{% include "platform/workplace/_cabinet_nav.html" %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card mb-6">
+      <h5 class="card-header">Текущая занятость</h5>
+      <div class="card-body">
+        <div class="row g-5">
+          <div class="col-md-6">
+            <h6 class="mb-1">{{ profile.position_title|default:"Должность не указана" }}</h6>
+            <p class="text-muted mb-4">{{ profile.department_text|default:"Подразделение не указано" }}</p>
+            <p class="mb-1"><span class="text-muted">Руководитель:</span> {{ profile.manager_name|default:"—" }}</p>
+            <p class="mb-0"><span class="text-muted">Тип занятости:</span> {{ profile.get_employment_type_display }}</p>
+          </div>
+          <div class="col-md-6">
+            <p class="mb-1"><span class="text-muted">Дата приёма:</span> {{ profile.hire_date|date:"d.m.Y"|default:"—" }}</p>
+            <p class="mb-1"><span class="text-muted">Табельный №:</span> {{ profile.tab_number|default:profile.employee_number|default:"—" }}</p>
+            <p class="mb-0"><span class="text-muted">Роль:</span> <span class="badge bg-label-primary">{{ active_role }}</span>{% if active_org %} · {{ active_org }}{% endif %}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h5 class="card-header">Членство в подсистемах</h5>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Подсистема</th><th>Роль</th><th>Организация</th></tr></thead>
+          <tbody>
+            {% for mem in memberships %}
+            <tr><td>{{ mem.subsystem.name }}</td><td>{{ mem.role.name }}</td><td>{{ mem.organization.name|default:"—" }}</td></tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-muted">Нет данных</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

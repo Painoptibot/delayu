@@ -1,0 +1,47 @@
+/* #48 — базовая доступность: focus, skip link, контраст ссылок */
+
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 9999;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  color: #111;
+  border: 2px solid #666cff;
+  border-radius: 0.25rem;
+}
+
+.skip-to-content:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+:focus-visible {
+  outline: 2px solid #666cff;
+  outline-offset: 2px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  box-shadow: 0 0 0 0.2rem rgba(102, 108, 255, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+  }
+}

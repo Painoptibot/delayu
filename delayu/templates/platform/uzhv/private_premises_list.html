@@ -1,0 +1,32 @@
+{% extends "platform/_page.html" %}
+{% block title %}Частный фонд{% endblock %}
+{% block header_actions %}
+<a href="{% url 'uzhv-fund' %}" class="btn btn-outline-secondary btn-sm">← Жилфонд</a>
+{% if can_create %}<a href="{% url 'uzhv-private-premise-create' %}" class="btn btn-primary btn-sm">Добавить</a>{% endif %}
+{% endblock %}
+{% block card_body %}
+<p class="text-muted small">Помещения частного фонда с непосредственным управлением (ТЗ п. 314).</p>
+<form method="get" class="mb-3"><input type="search" name="q" class="form-control form-control-sm" style="max-width:320px" placeholder="Адрес, собственник, кадастр" value="{{ request.GET.q }}"></form>
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr><th>Адрес</th><th>№</th><th>Собственник</th><th>Площадь</th><th>Управление с</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in premises %}
+      <tr>
+        <td>{{ p.address }}</td>
+        <td>{{ p.premise_number|default:"—" }}</td>
+        <td>{{ p.owner_name }}</td>
+        <td>{{ p.area_sqm|default:"—" }}</td>
+        <td>{{ p.management_since|date:"d.m.Y"|default:"—" }}</td>
+        <td class="text-end">{% if can_change %}<a href="{% url 'uzhv-private-premise-edit' p.pk %}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ri-pencil-line"></i></a>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted text-center py-4">Записей нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% endblock %}

@@ -1,0 +1,105 @@
+<div class="uzhv-modal-card">
+  <div class="uzhv-modal-hero uzhv-modal-hero--court">
+    <div class="uzhv-modal-avatar uzhv-modal-avatar--court" aria-hidden="true"><i class="ri-scales-3-line fs-4"></i></div>
+    <div class="uzhv-modal-hero-body">
+      <h6 class="uzhv-modal-hero-title"><code>{{ court_case.case_number }}</code></h6>
+      <p class="uzhv-modal-hero-sub mb-0">{{ court_case.court_name|truncatechars:80 }}</p>
+      <div class="uzhv-modal-badges">
+        {% if court_case.status == "closed" %}
+        <span class="badge bg-label-success">{{ court_case.get_status_display }}</span>
+        {% elif court_case.status == "enforcement" %}
+        <span class="badge bg-label-warning">{{ court_case.get_status_display }}</span>
+        {% elif court_case.status == "cancelled" %}
+        <span class="badge bg-label-secondary">{{ court_case.get_status_display }}</span>
+        {% else %}
+        <span class="badge bg-label-primary">{{ court_case.get_status_display }}</span>
+        {% endif %}
+        {% if enforcements %}<span class="badge bg-label-danger">{{ enforcements|length }} ИП</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-2 uzhv-modal-stats">
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Ответчик</span>
+        <span class="uzhv-modal-stat-value">{{ court_case.defendant_name|default:"—"|truncatechars:24 }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Заседание</span>
+        <span class="uzhv-modal-stat-value">{{ court_case.next_hearing_date|date:"d.m.Y"|default:"—" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">ИП (УФССП)</span>
+        <span class="uzhv-modal-stat-value">{{ court_case.ufssp_reference|default:"—"|truncatechars:16 }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Адрес проверки</span>
+        <span class="uzhv-modal-stat-value">{{ court_case.check_address|default:"—"|truncatechars:20 }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="uzhv-modal-actions">
+    <a href="{% url 'uzhv-enforcement-create' %}?court_case={{ court_case.pk }}" class="btn btn-sm btn-outline-primary"><i class="ri-add-line"></i> ИП</a>
+    {% if can_change %}
+    <a href="{% url 'uzhv-court-case-edit' court_case.pk %}" class="btn btn-sm btn-primary"><i class="ri-pencil-line"></i> Редактировать</a>
+    {% endif %}
+    {% if court_case.inspection %}
+    <a href="#" class="btn btn-sm btn-outline-secondary uzhv-modal-link" data-modal-url="{% url 'uzhv-inspection-modal' court_case.inspection_id %}" data-modal-title="Проверка {{ court_case.inspection.inspection_number }}"><i class="ri-search-eye-line"></i> Проверка</a>
+    {% endif %}
+    {% if court_case.prescription %}
+    <a href="#" class="btn btn-sm btn-outline-warning uzhv-modal-link" data-modal-url="{% url 'uzhv-prescription-modal' court_case.prescription_id %}" data-modal-title="Предписание {{ court_case.prescription.prescription_number }}"><i class="ri-file-warning-line"></i> Предписание</a>
+    {% endif %}
+    {% include "platform/uzhv/_modal_qr_btn.html" with qr_entity="court-cases" qr_pk=court_case.pk qr_hint="Откроет судебное дело" %}
+  </div>
+
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-links-line"></i> Связи жилконтроля</div>
+    <div class="uzhv-modal-section-body">
+      <dl class="uzhv-modal-kv">
+        <dt>Проверка</dt>
+        <dd>
+          {% if court_case.inspection %}
+          <a href="#" class="uzhv-modal-link" data-modal-url="{% url 'uzhv-inspection-modal' court_case.inspection_id %}" data-modal-title="Проверка {{ court_case.inspection.inspection_number }}">{{ court_case.inspection.inspection_number }}</a>
+          {% else %}—{% endif %}
+        </dd>
+        <dt>Предписание</dt>
+        <dd>
+          {% if court_case.prescription %}
+          <a href="#" class="uzhv-modal-link" data-modal-url="{% url 'uzhv-prescription-modal' court_case.prescription_id %}" data-modal-title="Предписание {{ court_case.prescription.prescription_number }}">{{ court_case.prescription.prescription_number }}</a>
+          {% else %}—{% endif %}
+        </dd>
+      </dl>
+    </div>
+  </div>
+
+  {% if enforcements %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-auction-line"></i> Исполнительные производства</div>
+    <ul class="uzhv-modal-related">
+      {% for e in enforcements %}
+      <li>
+        <span class="d-flex align-items-center justify-content-between gap-2 px-2 py-1">
+          <span>{{ e.initiated_at|date:"d.m.Y" }} — ИП <code>{{ e.proceeding_number }}</code></span>
+          <span class="badge bg-label-primary">{{ e.get_status_display }}</span>
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if court_case.notes %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-sticky-note-line"></i> Примечание</div>
+    <p class="uzhv-modal-quote mb-0">{{ court_case.notes|truncatechars:400 }}</p>
+  </div>
+  {% endif %}
+</div>

@@ -1,0 +1,33 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/comms/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  <div>
+    <a href="{% url 'platform-meetings' %}?upcoming=1" class="btn btn-sm btn-outline-primary {% if upcoming_only %}active{% endif %}">Предстоящие</a>
+    {% if can_create %}<a href="{% url 'platform-meeting-create' %}" class="btn btn-sm btn-primary ms-1"><i class="ri-add-line"></i> Совещание</a>{% endif %}
+  </div>
+</div>
+<div class="row g-3">
+  {% for mt in meetings %}
+  <div class="col-md-6">
+    <div class="card card-border-shadow-primary h-100">
+      <div class="card-body">
+        <h6 class="mb-2">{{ mt.title }}</h6>
+        <p class="small text-muted mb-2"><i class="ri-calendar-line me-1"></i>{{ mt.scheduled_at|date:"d.m.Y H:i" }}</p>
+        {% if mt.case %}<p class="small mb-2"><a href="{% url 'platform-case-detail' mt.case_id %}">{{ mt.case.number }}</a></p>{% endif %}
+        {% if mt.meeting_url %}<a href="{{ mt.meeting_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-primary mb-2">Подключиться к ВКС</a>{% endif %}
+        {% if mt.protocol_notes %}<p class="small mb-0">{{ mt.protocol_notes|truncatechars:100 }}</p>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="alert alert-secondary">Совещаний нет</div></div>
+  {% endfor %}
+</div>
+{% endblock %}

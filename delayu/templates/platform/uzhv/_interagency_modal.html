@@ -1,0 +1,89 @@
+<div class="uzhv-modal-card">
+  <div class="uzhv-modal-hero uzhv-modal-hero--interagency">
+    <div class="uzhv-modal-avatar uzhv-modal-avatar--interagency" aria-hidden="true"><i class="ri-share-forward-line fs-4"></i></div>
+    <div class="uzhv-modal-hero-body">
+      <h6 class="uzhv-modal-hero-title"><code>{{ interagency.request_number }}</code></h6>
+      <p class="uzhv-modal-hero-sub mb-0">{{ interagency.subject|truncatechars:100 }}</p>
+      <div class="uzhv-modal-badges">
+        <span class="badge bg-label-primary">{{ interagency.get_request_type_display }}</span>
+        <span class="badge bg-label-secondary">{{ interagency.get_channel_display }}</span>
+        {% if interagency.is_overdue %}
+        <span class="badge bg-danger"><i class="ri-alarm-warning-line"></i> Просрочен</span>
+        {% elif interagency.status == "answered" %}
+        <span class="badge bg-label-success">{{ interagency.get_status_display }}</span>
+        {% else %}
+        <span class="badge bg-label-info">{{ interagency.get_status_display }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-2 uzhv-modal-stats">
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Отправлен</span>
+        <span class="uzhv-modal-stat-value">{{ interagency.sent_at|date:"d.m.Y" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Срок ответа</span>
+        <span class="uzhv-modal-stat-value {% if interagency.is_overdue %}text-danger{% endif %}">{{ interagency.due_date|date:"d.m.Y" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Адресат</span>
+        <span class="uzhv-modal-stat-value">{{ interagency.recipient_name|truncatechars:22 }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Ответ</span>
+        <span class="uzhv-modal-stat-value">{% if interagency.answered_at %}{{ interagency.answered_at|date:"d.m.Y" }}{% else %}—{% endif %}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="uzhv-modal-actions">
+    {% if can_change %}
+    <a href="{% url 'uzhv-interagency-edit' interagency.pk %}" class="btn btn-sm btn-primary"><i class="ri-pencil-line"></i> Редактировать</a>
+    {% endif %}
+    {% if interagency.citizen %}
+    <a href="#" class="btn btn-sm btn-outline-secondary uzhv-modal-link" data-modal-url="{% url 'uzhv-citizen-modal' interagency.citizen_id %}" data-modal-title="{{ interagency.citizen.full_name }}"><i class="ri-user-line"></i> Гражданин</a>
+    {% endif %}
+    {% if interagency.housing_case %}
+    <a href="#" class="btn btn-sm btn-outline-secondary uzhv-modal-link" data-modal-url="{% url 'uzhv-case-modal' interagency.housing_case_id %}" data-modal-title="Дело {{ interagency.housing_case.case_number }}"><i class="ri-folder-line"></i> Дело</a>
+    {% endif %}
+    {% include "platform/uzhv/_modal_qr_btn.html" with qr_entity="interagency" qr_pk=interagency.pk qr_hint="Откроет межвед. запрос" %}
+  </div>
+
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-links-line"></i> Связи</div>
+    <div class="uzhv-modal-section-body">
+      <dl class="uzhv-modal-kv">
+        <dt>Гражданин</dt>
+        <dd>
+          {% if interagency.citizen %}
+          <a href="#" class="uzhv-modal-link" data-modal-url="{% url 'uzhv-citizen-modal' interagency.citizen_id %}" data-modal-title="{{ interagency.citizen.full_name }}">{{ interagency.citizen.full_name }}</a>
+          {% else %}—{% endif %}
+        </dd>
+        <dt>Учётное дело</dt>
+        <dd>
+          {% if interagency.housing_case %}
+          <a href="#" class="uzhv-modal-link" data-modal-url="{% url 'uzhv-case-modal' interagency.housing_case_id %}" data-modal-title="Дело {{ interagency.housing_case.case_number }}"><code>{{ interagency.housing_case.case_number }}</code></a>
+          {% else %}—{% endif %}
+        </dd>
+      </dl>
+    </div>
+  </div>
+
+  {% if interagency.response_summary %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-reply-line"></i> Ответ{% if interagency.answered_at %} от {{ interagency.answered_at|date:"d.m.Y" }}{% endif %}</div>
+    <div class="uzhv-modal-answer">{{ interagency.response_summary|truncatechars:400 }}</div>
+  </div>
+  {% elif interagency.is_overdue %}
+  <div class="uzhv-modal-warning"><i class="ri-alarm-warning-line"></i> Ответ от {{ interagency.recipient_name }} просрочен (срок {{ interagency.due_date|date:"d.m.Y" }})</div>
+  {% endif %}
+</div>

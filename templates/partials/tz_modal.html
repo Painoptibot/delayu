@@ -1,0 +1,23 @@
+{% load static %}
+<div class="modal fade" id="tzModal" tabindex="-1" aria-labelledby="tzModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tzModalLabel">{{ tz_title|default:"Техническое задание — ДелаЮ" }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body tz-doc-content">
+        {% if tz_html %}
+        {{ tz_html|safe }}
+        {% else %}
+        <p class="text-muted">Документ ТЗ не найден.</p>
+        {% endif %}
+      </div>
+      <div class="modal-footer flex-wrap gap-2">
+        <span class="text-muted small me-auto">{{ tz_meta }}</span>
+        <a href="{% url 'platform-tz-download' %}" class="btn btn-outline-primary btn-sm" download>Скачать TZ-PLATFORM-2.2.md</a>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>

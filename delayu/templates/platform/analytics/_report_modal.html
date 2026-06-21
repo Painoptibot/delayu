@@ -1,0 +1,10 @@
+<dl class="row mb-0">
+  <dt class="col-4">Код</dt><dd class="col-8"><code>{{ tpl.code }}</code></dd>
+  <dt class="col-4">Запрос</dt><dd class="col-8">{{ tpl.query_key }}</dd>
+  <dt class="col-4">Тип</dt><dd class="col-8">{{ tpl.get_report_kind_display }}</dd>
+  <dt class="col-4">Период</dt><dd class="col-8">{{ tpl.default_period_days }} дн.</dd>
+</dl>
+{% if tpl.description %}<p class="mt-3 small text-muted">{{ tpl.description }}</p>{% endif %}
+<div class="text-end mt-3">
+  <a href="{% url 'platform-reports' %}?run={{ tpl.query_key }}&period={{ tpl.default_period_days }}" class="btn btn-sm btn-primary">Запустить</a>
+</div>

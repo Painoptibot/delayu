@@ -1,0 +1,10 @@
+{% if qr_entity and qr_pk %}{% url 'uzhv-qr' qr_entity qr_pk as qr_img_url %}{% endif %}
+<details class="uzhv-qr-details">
+  <summary class="btn btn-sm btn-outline-secondary uzhv-qr-summary" title="{{ qr_title|default:'QR-код' }}">
+    <i class="ri-qr-code-line"></i> QR
+  </summary>
+  <div class="uzhv-qr-panel">
+    <img src="{{ qr_img_url }}" width="168" height="168" alt="QR-код" class="uzhv-qr-img" loading="lazy">
+    <p class="small text-muted mb-0 mt-2">{{ qr_hint|default:"Сканируйте для открытия в системе" }}</p>
+  </div>
+</details>

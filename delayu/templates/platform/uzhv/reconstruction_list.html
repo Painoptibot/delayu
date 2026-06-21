@@ -1,0 +1,27 @@
+{% extends "platform/_page.html" %}
+{% block title %}Зоны реконструкции{% endblock %}
+{% block header_actions %}
+<a href="{% url 'uzhv-fund' %}" class="btn btn-outline-secondary btn-sm">← Жилфонд</a>
+{% endblock %}
+{% block card_body %}
+<p class="text-muted small">МКД и помещения в зонах реконструкции (ТЗ п. 316).</p>
+<form method="get" class="mb-3"><input type="search" name="q" class="form-control form-control-sm" style="max-width:320px" placeholder="Адрес, программа" value="{{ request.GET.q }}"></form>
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle">
+    <thead><tr><th>Адрес</th><th>Программа</th><th>В зоне с</th><th></th></tr></thead>
+    <tbody>
+      {% for b in buildings %}
+      <tr>
+        <td><a href="{% url 'uzhv-building-detail' b.pk %}">{{ b.address }}</a></td>
+        <td>{{ b.reconstruction_program|default:"—" }}</td>
+        <td>{{ b.reconstruction_since|date:"d.m.Y"|default:"—" }}</td>
+        <td class="text-end">{% if can_change %}<a href="{% url 'uzhv-building-edit' b.pk %}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ri-pencil-line"></i></a>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="text-muted text-center py-4">Объектов в зонах реконструкции нет — отметьте флаг в карточке МКД</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% endblock %}

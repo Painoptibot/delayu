@@ -1,0 +1,6 @@
+{% extends "platform/_page.html" %}
+{% block title %}Пользователи{% endblock %}
+{% block card_body %}
+<table class="table table-sm"><thead><tr><th>Пользователь</th><th>Роль</th><th>Организация</th></tr></thead>
+<tbody>{% for m in memberships %}<tr><td>{{ m.user.username }}</td><td>{{ m.role.name }}</td><td>{{ m.organization.name }}</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

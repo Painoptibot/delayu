@@ -1,0 +1,86 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Календарь сроков{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/fullcalendar/fullcalendar.css' %}" />
+{% endblock %}
+{% block page_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/app-calendar.css' %}" />
+{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap align-items-center">
+  <div class="btn-group">
+    <a href="?view=week" class="btn btn-sm {% if view_mode == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}">Неделя</a>
+    <a href="?view=month{% if view_mode == 'month' %}&amp;month={{ month_value }}{% endif %}" class="btn btn-sm {% if view_mode == 'month' %}btn-primary{% else %}btn-outline-primary{% endif %}">Месяц</a>
+  </div>
+  <a href="{% url 'uzhv-deadlines-export' %}?days=30" class="btn btn-outline-primary btn-sm"><i class="ri-download-2-line"></i> CSV</a>
+  <a href="{% url 'uzhv-deadlines-export' %}?format=ical&amp;days=60" class="btn btn-outline-secondary btn-sm"><i class="ri-calendar-line"></i> iCal</a>
+  <a href="{% url 'uzhv-hub' %}" class="btn btn-outline-secondary btn-sm">Обзор</a>
+  {% if view_mode == 'week' %}
+  <div class="btn-group">
+    <a href="?view=week&amp;start={{ prev_week }}" class="btn btn-outline-secondary btn-sm">←</a>
+    <a href="?view=week&amp;start={{ today|date:'Y-m-d' }}" class="btn btn-outline-secondary btn-sm">Сегодня</a>
+    <a href="?view=week&amp;start={{ next_week }}" class="btn btn-outline-secondary btn-sm">→</a>
+  </div>
+  {% else %}
+  <div class="btn-group">
+    <a href="?view=month&amp;month={{ prev_month }}" class="btn btn-outline-secondary btn-sm">←</a>
+    <a href="?view=month&amp;month={{ today|date:'Y-m' }}" class="btn btn-outline-secondary btn-sm">Сегодня</a>
+    <a href="?view=month&amp;month={{ next_month }}" class="btn btn-outline-secondary btn-sm">→</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block card_body %}
+<div class="d-flex flex-wrap gap-3 mb-3 small">
+  {% for kind, label in kind_legend %}
+  <span><span class="uzhv-deadline-dot uzhv-deadline-dot-{{ kind }}"></span> {{ label }}</span>
+  {% endfor %}
+</div>
+
+{% if view_mode == 'month' %}
+<p class="text-muted small mb-3">Клик по событию открывает карточку · {{ month_day|date:"F Y" }}</p>
+<div id="uzhvDeadlineCalendar"></div>
+{% else %}
+<p class="text-muted small mb-3">
+  {{ week_start|date:"d.m.Y" }} — {{ week_end|date:"d.m.Y" }}
+  · клик по событию открывает карточку
+</p>
+<div class="row g-2 uzhv-deadline-week">
+  {% for day, items in deadline_groups %}
+  <div class="col-6 col-md-4 col-lg">
+    <div class="border rounded h-100 p-2 uzhv-deadline-day{% if day == today %} border-primary bg-label-primary{% endif %}">
+      <div class="small fw-semibold mb-2{% if day == today %} text-primary{% endif %}">
+        {{ day|date:"D" }}<br>{{ day|date:"d.m" }}
+      </div>
+      {% for d in items %}
+      <button type="button"
+        class="btn btn-sm w-100 mb-1 text-start uzhv-deadline-chip uzhv-deadline-chip-{{ d.kind }}{% if d.is_overdue %} uzhv-deadline-overdue{% endif %} uzhv-open"
+        data-modal-url="{{ d.modal_url }}"
+        data-modal-title="{{ d.modal_title }}">
+        <span class="d-block text-truncate">{{ d.type_label }}</span>
+        <span class="d-block text-truncate small opacity-75">{{ d.title|truncatechars:28 }}</span>
+      </button>
+      {% empty %}
+      <p class="small text-muted mb-0">—</p>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% include "platform/uzhv/_list_modal.html" with modal_title="Срок" %}
+{% endblock %}
+{% block vendor_js %}{{ block.super }}
+{% if view_mode == 'month' %}
+<script src="{% static 'vendor/libs/fullcalendar/fullcalendar.js' %}"></script>
+{% endif %}
+{% endblock %}
+{% block page_js %}{{ block.super }}
+{% if view_mode == 'month' %}
+<script>window.uzhvDeadlineEvents = {{ events_json|safe }};</script>
+<script src="{% static 'js/delayu-uzhv-deadlines.js' %}"></script>
+{% endif %}
+{% include "platform/uzhv/_list_modal_js.html" %}
+{% endblock %}

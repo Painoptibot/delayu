@@ -1,0 +1,12 @@
+<dl class="row small mb-0">
+  <dt class="col-sm-3">Время</dt><dd class="col-sm-9">{{ entry.created_at|date:"d.m.Y H:i:s" }}</dd>
+  <dt class="col-sm-3">Пользователь</dt><dd class="col-sm-9">{{ entry.user|default:"—" }}</dd>
+  <dt class="col-sm-3">Действие</dt><dd class="col-sm-9"><code>{{ entry.action }}</code></dd>
+  <dt class="col-sm-3">Модель</dt><dd class="col-sm-9">{{ entry.model_name|default:"—" }}</dd>
+  <dt class="col-sm-3">ID объекта</dt><dd class="col-sm-9">{{ entry.object_id|default:"—" }}</dd>
+  <dt class="col-sm-3">IP</dt><dd class="col-sm-9">{{ entry.ip_address|default:"—" }}</dd>
+</dl>
+{% if entry.payload %}
+<h6 class="mt-3">Данные (JSON)</h6>
+<pre class="bg-light p-3 rounded small mb-0" style="max-height:320px;overflow:auto">{{ entry.payload }}</pre>
+{% endif %}

@@ -1,0 +1,86 @@
+{% extends layout_path %}
+{% block title %}{{ corr.reg_number }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div>
+    <h4 class="mb-1"><code>{{ corr.reg_number }}</code> — {{ corr.subject }}</h4>
+    <p class="text-muted small mb-0">{{ corr.get_direction_display }} · {{ corr.reg_date }} · {{ corr.get_status_display }}</p>
+  </div>
+  <div class="d-flex gap-1">
+    <a href="{% url 'platform-correspondence-history' corr.pk %}" class="btn btn-sm btn-outline-secondary">История (M28)</a>
+    {% if print_templates %}
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">Печать</button>
+      <ul class="dropdown-menu">
+        {% for t in print_templates %}
+        <li><a class="dropdown-item" href="{% url 'platform-print-template-preview' t.pk %}?correspondence={{ corr.pk }}">{{ t.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3">
+      <div class="card-header">Реквизиты</div>
+      <div class="card-body small">
+        <p><strong>Контрагент:</strong> {{ corr.counterparty|default:"—" }}</p>
+        <p><strong>Исполнитель:</strong> {{ corr.assignee|default:"—" }}</p>
+        <p><strong>Дело:</strong> {% if corr.case %}<a href="{% url 'platform-case-detail' corr.case_id %}">{{ corr.case.number }}</a>{% else %}—{% endif %}</p>
+        {% if corr.linked_incoming %}<p><strong>В ответ на:</strong> <a href="{% url 'platform-correspondence-detail' corr.linked_incoming_id %}">{{ corr.linked_incoming.reg_number }}</a></p>{% endif %}
+        <p><strong>Зарегистрировал:</strong> {{ corr.created_by }} · {{ corr.created_at|date:"d.m.Y H:i" }}</p>
+      </div>
+    </div>
+    {% if documents %}
+    <div class="card">
+      <div class="card-header">Документы дела</div>
+      <ul class="list-group list-group-flush">
+        {% for d in documents %}
+        <li class="list-group-item d-flex justify-content-between small">
+          <span>{{ d.title }}{% if d.is_signed %} <span class="badge bg-success">ЭП</span>{% endif %}</span>
+          <a href="{% url 'platform-documents' %}?open={{ d.pk }}">Открыть</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+  <div class="col-lg-5">
+    {% if can_route and corr.status != 'closed' %}
+    <div class="card mb-3">
+      <div class="card-header">Завершение маршрута</div>
+      <div class="card-body">
+        <p class="small text-muted mb-2">Закрывает документ и отправляет e-mail по шаблону <code>corr_workflow_complete</code> (M78).</p>
+        <form method="post" action="{% url 'platform-correspondence-complete' corr.pk %}">{% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-success">Завершить и уведомить</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+    {% if can_route %}
+    <div class="card mb-3">
+      <div class="card-header">Переадресация (M27)</div>
+      <div class="card-body">
+        <form method="post" action="{% url 'platform-correspondence-route' corr.pk %}">{% csrf_token %}
+          <div class="mb-2">{{ route_form.to_user.label }}{{ route_form.to_user }}</div>
+          <div class="mb-2">{{ route_form.comment.label }}{{ route_form.comment }}</div>
+          <button type="submit" class="btn btn-sm btn-primary">Передать</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+    <div class="card">
+      <div class="card-header">Маршрут и события</div>
+      <ul class="list-group list-group-flush small">
+        {% for r in routes %}
+        <li class="list-group-item">{{ r.created_at|date:"d.m.Y" }} → {{ r.to_user }}{% if r.comment %}: {{ r.comment|truncatechars:60 }}{% endif %}</li>
+        {% empty %}<li class="list-group-item text-muted">Переадресаций нет</li>{% endfor %}
+        {% for e in events %}
+        <li class="list-group-item text-muted">{{ e.created_at|date:"d.m.Y H:i" }} — {{ e.description }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

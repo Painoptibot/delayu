@@ -1,0 +1,101 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Подсистемы — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/datatables-bs5/datatables.bootstrap5.css' %}" />
+<link rel="stylesheet" href="{% static 'vendor/libs/apex-charts/apex-charts.css' %}" />
+{% endblock %}
+{% block vendor_js %}{{ block.super }}
+<script src="{% static 'vendor/libs/datatables-bs5/datatables-bootstrap5.js' %}"></script>
+<script src="{% static 'vendor/libs/apex-charts/apexcharts.js' %}"></script>
+{% endblock %}
+{% block page_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/app-ecommerce.css' %}" />
+{% endblock %}
+{% block content %}
+<div class="row mb-6 g-6">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body row widget-separator">
+        <div class="col-sm-5 border-end">
+          <h5 class="mb-2">Контуры платформы</h5>
+          <p class="mb-0"><span class="badge bg-label-success rounded-pill">{{ subsystems|length }} подсистем</span></p>
+        </div>
+        <div class="col-sm-7 d-flex align-items-center justify-content-end">
+          <div id="subsystemsChart" class="small text-muted">M01</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="mb-3">Статусы</h6>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="badge bg-label-success">Активные</span>
+          <span class="badge bg-label-warning">Черновики</span>
+          <span class="badge bg-label-secondary">Архив</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h5 class="card-title mb-0">Реестр подсистем</h5>
+    {% if can_create %}
+    <a href="{% url 'platform-subsystem-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line me-1"></i>Создать</a>
+    {% endif %}
+  </div>
+  <div class="card-datatable table-responsive">
+    <table class="table table-hover align-middle datatables-subsystems">
+      <thead>
+        <tr>
+          <th>Код</th>
+          <th>Наименование</th>
+          <th>Статус</th>
+          <th>Отрасль</th>
+          <th>Модулей</th>
+          <th>Пользователей</th>
+          <th>Обновлено</th>
+          <th class="text-end">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in subsystems %}
+        <tr>
+          <td><code>{{ s.code }}</code></td>
+          <td>{{ s.name }}</td>
+          <td>
+            {% if s.status == 'active' %}<span class="badge bg-label-success">{{ s.get_status_display }}</span>
+            {% elif s.status == 'draft' %}<span class="badge bg-label-warning">{{ s.get_status_display }}</span>
+            {% else %}<span class="badge bg-label-secondary">{{ s.get_status_display }}</span>{% endif %}
+          </td>
+          <td class="small">{{ s.get_industry_template_display }}</td>
+          <td>{{ s.enabled_module_count }}</td>
+          <td>{{ s.users_count }}</td>
+          <td class="small text-muted">{{ s.updated_at|date:"d.m.Y H:i" }}</td>
+          <td class="text-end text-nowrap">
+            <button type="button" class="btn btn-sm btn-icon btn-text-secondary sub-open"
+              data-modal-url="{% url 'platform-subsystem-modal' s.pk %}"><i class="ri-eye-line"></i></button>
+            {% if can_change %}
+            <button type="button" class="btn btn-sm btn-icon btn-text-secondary sub-open-edit"
+              data-modal-url="{% url 'platform-subsystem-modal' s.pk %}?mode=edit"><i class="ri-pencil-line"></i></button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="subModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Подсистема</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="subModalBody"></div>
+  </div></div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-subsystems-list.js' %}"></script>{% endblock %}

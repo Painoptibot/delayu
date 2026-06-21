@@ -1,0 +1,71 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Жилфонд{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap align-items-center">
+  <a href="{% url 'uzhv-fund-map' %}" class="btn btn-outline-primary btn-sm"><i class="ri-map-2-line"></i> Карта</a>
+  <a href="{% url 'uzhv-resettlement' %}" class="btn btn-outline-secondary btn-sm">Расселение</a>
+  <span class="btn btn-outline-secondary btn-sm disabled" title="PY-01: manage.py uzhv_py01_import data/gis_zhkh_fund.example.csv --kind fund"><i class="ri-upload-2-line"></i> Импорт CSV</span>
+  {% if can_create %}
+  <a href="{% url 'uzhv-building-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> МКД</a>
+  {% endif %}
+  <form method="get" class="d-flex gap-2 flex-wrap uzhv-filter-form">
+    <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" placeholder="Адрес, кадастр…">
+    <select name="condition" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все состояния</option>
+      {% for val, label in condition_choices %}
+      <option value="{{ val }}"{% if filter_condition == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <div class="form-check mt-1">
+      <input class="form-check-input" type="checkbox" name="free" value="1" id="freePrem" {% if filter_free == "1" %}checked{% endif %} onchange="this.form.submit()">
+      <label class="form-check-label small" for="freePrem">Есть свободные</label>
+    </div>
+    <div class="form-check mt-1">
+      <input class="form-check-input" type="checkbox" name="resettlement" value="1" id="resettlementChk" {% if filter_resettlement == "1" %}checked{% endif %} onchange="this.form.submit()">
+      <label class="form-check-label small" for="resettlementChk">Программа 4779</label>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block card_body %}
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Адрес</th>
+        <th>Этажность</th>
+        <th>Год</th>
+        <th>Состояние</th>
+        <th>Помещений</th>
+        <th>Свободно</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in buildings %}
+      <tr data-modal-url="{% url 'uzhv-building-modal' b.pk %}" data-modal-title="{{ b.address|truncatechars:60 }}"{% if request.GET.open == b.pk|stringformat:"s" %} data-auto-open-modal{% endif %}>
+        <td><strong>{{ b.address }}</strong></td>
+        <td>{{ b.floors|default:"—" }}</td>
+        <td>{{ b.year_built|default:"—" }}</td>
+        <td>
+          {{ b.get_condition_display }}
+          {% if b.in_resettlement_program %}<span class="badge bg-label-warning ms-1">4779</span>{% endif %}
+        </td>
+        <td>{{ b.premise_count }}</td>
+        <td>{% if b.free_count %}<span class="badge bg-label-success">{{ b.free_count }}</span>{% else %}0{% endif %}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-building-modal' b.pk %}" title="Просмотр"><i class="ri-eye-line"></i></button>
+          {% if can_change %}<a href="{% url 'uzhv-building-edit' b.pk %}" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать"><i class="ri-pencil-line"></i></a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-muted text-center py-4">Объекты жилфонда не найдены</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% include "platform/uzhv/_list_modal.html" with modal_title="МКД" %}
+{% endblock %}
+{% block page_js %}{{ block.super }}{% include "platform/uzhv/_list_modal_js.html" %}{% endblock %}

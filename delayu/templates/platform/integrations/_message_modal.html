@@ -1,0 +1,4 @@
+<p class="small mb-2"><strong>{{ msg.endpoint.name }}</strong> · {{ msg.get_direction_display }} · {{ msg.get_status_display }}</p>
+{% if msg.external_id %}<p class="small">ID: <code>{{ msg.external_id }}</code></p>{% endif %}
+{% if msg.error_text %}<div class="alert alert-danger small">{{ msg.error_text }}</div>{% endif %}
+<pre class="small bg-lighter p-3 rounded mb-0">{{ payload_json }}</pre>

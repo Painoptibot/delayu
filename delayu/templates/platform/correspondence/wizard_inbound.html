@@ -1,0 +1,133 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="delayu-page-inbound">
+<h4 class="mb-3">{{ page_title }}</h4>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card inbound-ai-panel d-none" id="inboundAiPanel">
+      <div class="card-body py-3">
+        <div class="d-flex align-items-start gap-2">
+          <i class="ri-robot-line text-primary fs-4"></i>
+          <div class="flex-grow-1">
+            <h6 class="mb-1">Подсказка ИИ</h6>
+            <p class="mb-1 small" id="inboundAiTheme">—</p>
+            <p class="mb-0 small text-muted" id="inboundAiReasons"></p>
+            <span class="badge bg-label-info mt-1" id="inboundAiConfidence"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <form method="post" id="inboundRegisterForm">{% csrf_token %}
+          {% for field in form %}
+          {% if field.name == "create_case" %}
+          <div class="mb-3">
+            <div class="form-check">
+              {{ field }}
+              <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            </div>
+            {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+          </div>
+          {% elif field.name == "new_case_title" %}
+          <div class="mb-3" id="newCaseTitleWrap">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            <div class="form-text">Будет создано дело и привязано к регистрации</div>
+            {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+          </div>
+          {% else %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+          </div>
+          {% endif %}
+          {% endfor %}
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>
+          {% endif %}
+          <div class="form-actions d-flex flex-wrap gap-2">
+            {% if can_create %}
+            <button type="submit" class="btn btn-primary">Зарегистрировать</button>
+            {% else %}
+            <div class="alert alert-warning py-2 mb-0 small">Нет права на регистрацию (M24 create). Обратитесь к администратору.</div>
+            {% endif %}
+            <a href="{% url 'platform-inbox' %}" class="btn btn-outline-secondary">Отмена</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card bg-light border-0">
+      <div class="card-body small">
+        <h6 class="mb-2">Подсказки</h6>
+        <ul class="mb-0 ps-3">
+          <li>Укажите тему — ИИ предложит класс и приоритет</li>
+          <li>Можно привязать к существующему делу или создать новое</li>
+          <li>После регистрации откроется карточка корреспонденции</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}
+<script>
+(function () {
+  var subjectInput = document.getElementById('id_subject');
+  var panel = document.getElementById('inboundAiPanel');
+  var createChk = document.getElementById('id_create_case');
+  var caseSelect = document.getElementById('id_case');
+  var newCaseWrap = document.getElementById('newCaseTitleWrap');
+  var previewUrl = '{{ classify_preview_url|escapejs }}';
+  var timer = null;
+
+  function toggleNewCase() {
+    if (!newCaseWrap) return;
+    var show = createChk && createChk.checked;
+    newCaseWrap.classList.toggle('d-none', !show);
+    if (caseSelect) caseSelect.closest('.mb-3').classList.toggle('d-none', show);
+  }
+
+  function renderHint(data) {
+    if (!panel) return;
+    panel.classList.remove('d-none');
+    document.getElementById('inboundAiTheme').textContent =
+      'Класс: ' + (data.theme || '—') + ', приоритет ' + (data.priority || '—');
+    document.getElementById('inboundAiReasons').textContent =
+      (data.reasons || []).join('; ');
+    var conf = document.getElementById('inboundAiConfidence');
+    if (conf) conf.textContent = 'Уверенность: ' + Math.round((data.confidence || 0) * 100) + '%';
+  }
+
+  function fetchHint() {
+    if (!subjectInput || subjectInput.value.trim().length < 3) {
+      if (panel) panel.classList.add('d-none');
+      return;
+    }
+    fetch(previewUrl + '?subject=' + encodeURIComponent(subjectInput.value.trim()), {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) { if (data) renderHint(data); });
+  }
+
+  if (subjectInput) {
+    subjectInput.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(fetchHint, 400);
+    });
+    fetchHint();
+  }
+  if (createChk) {
+    createChk.addEventListener('change', toggleNewCase);
+    toggleNewCase();
+  }
+})();
+</script>
+{% endblock %}

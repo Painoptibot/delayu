@@ -1,0 +1,51 @@
+{% extends "platform/_page.html" %}
+{% block title %}Предписания на проведение проверок{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap align-items-center">
+  <a href="{% url 'uzhv-inspections' %}" class="btn btn-outline-secondary btn-sm">Проверки</a>
+  <a href="{% url 'uzhv-prescriptions' %}" class="btn btn-outline-secondary btn-sm">Об устранении</a>
+  {% if can_create %}
+  <a href="{% url 'uzhv-inspection-order-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> Предписание</a>
+  {% endif %}
+  <form method="get" class="d-flex gap-2">
+    <input type="search" name="q" class="form-control form-control-sm" placeholder="№, адресат…" value="{{ request.GET.q }}">
+    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}"{% if request.GET.status == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <div class="form-check mt-1">
+      <input class="form-check-input" type="checkbox" name="overdue" value="1" id="odIO" {% if filter_overdue == "1" %}checked{% endif %} onchange="this.form.submit()">
+      <label class="form-check-label small" for="odIO">Просрочено</label>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block card_body %}
+<p class="text-muted small">Регистрация предписаний на проведение проверок (ТЗ п. 322), отдельно от предписаний об устранении нарушений.</p>
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr><th>№</th><th>Адресат</th><th>Предмет</th><th>Выдано</th><th>Срок проверки</th><th>Проверка</th><th>Статус</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for o in orders %}
+      <tr{% if o.is_overdue %} class="table-warning"{% endif %}>
+        <td><code>{{ o.order_number }}</code></td>
+        <td>{{ o.addressee|truncatechars:40 }}</td>
+        <td>{{ o.check_subject|truncatechars:40|default:"—" }}</td>
+        <td>{{ o.issued_at|date:"d.m.Y" }}</td>
+        <td>{{ o.conduct_by|date:"d.m.Y" }}</td>
+        <td>{% if o.inspection %}<a href="{% url 'uzhv-inspection-edit' o.inspection_id %}">{{ o.inspection.inspection_number }}</a>{% else %}—{% endif %}</td>
+        <td>{{ o.get_status_display }}</td>
+        <td class="text-end">{% if can_change %}<a href="{% url 'uzhv-inspection-order-edit' o.pk %}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ri-pencil-line"></i></a>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="text-muted text-center py-4">Предписаний нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% endblock %}

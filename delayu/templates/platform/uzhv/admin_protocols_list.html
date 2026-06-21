@@ -1,0 +1,60 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Протоколы об АП{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap align-items-center">
+  <a href="{% url 'uzhv-inspections' %}" class="btn btn-outline-secondary btn-sm">← Жилконтроль</a>
+  <form method="get" class="d-flex gap-2 uzhv-filter-form">
+    <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" placeholder="№, ФИО, статья…">
+    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все статусы</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}"{% if filter_status == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+{% endblock %}
+{% block card_body %}
+{% include "platform/uzhv/_bulk_toolbar.html" %}
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle uzhv-bulk-table">
+    <thead>
+      <tr>
+        <th style="width:2.5rem"><input type="checkbox" class="form-check-input uzhv-select-all" title="Выбрать все"></th>
+        <th>№ протокола</th>
+        <th>Дата</th>
+        <th>Проверка</th>
+        <th>Статья</th>
+        <th>Лицо</th>
+        <th>Штраф</th>
+        <th>Статус</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in protocols %}
+      <tr data-modal-url="{% url 'uzhv-admin-protocol-modal' p.pk %}" data-modal-title="Протокол {{ p.protocol_number }}"{% if request.GET.open == p.pk|stringformat:"s" %} data-auto-open-modal{% endif %}>
+        <td><input type="checkbox" class="form-check-input uzhv-row-check" value="{{ p.pk }}"></td>
+        <td><code>{{ p.protocol_number }}</code></td>
+        <td>{{ p.protocol_date|date:"d.m.Y" }}</td>
+        <td>{{ p.inspection.inspection_number }}</td>
+        <td>{{ p.legal_article }}</td>
+        <td>{{ p.violator_name|truncatechars:30 }}</td>
+        <td>{{ p.fine_amount|default:"—" }}</td>
+        <td>{{ p.get_status_display }}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-admin-protocol-modal' p.pk %}" title="Просмотр"><i class="ri-eye-line"></i></button>
+          {% if can_change %}<a href="{% url 'uzhv-admin-protocol-edit' p.pk %}" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать"><i class="ri-pencil-line"></i></a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" class="text-muted text-center py-4">Протоколов нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% include "platform/uzhv/_list_modal.html" with modal_title="Протокол об АП" %}
+{% endblock %}
+{% block page_js %}{{ block.super }}{% include "platform/uzhv/_list_modal_js.html" %}{% endblock %}

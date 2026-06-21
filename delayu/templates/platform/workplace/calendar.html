@@ -1,0 +1,102 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Календарь — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/fullcalendar/fullcalendar.css' %}" />
+<link rel="stylesheet" href="{% static 'vendor/libs/flatpickr/flatpickr.css' %}" />
+<link rel="stylesheet" href="{% static 'vendor/libs/select2/select2.css' %}" />
+{% endblock %}
+{% block page_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/app-calendar.css' %}" />
+<style>
+  .fc-event { color: #fff !important; }
+  .fc-event .fc-event-title, .fc-event .fc-event-time { color: #fff !important; }
+  .fc-event-personal { background-color: #ff4c51 !important; border-color: #ff4c51 !important; }
+  .fc-event-family { background-color: #ff9f43 !important; border-color: #ff9f43 !important; }
+  .fc-event-business { background-color: #7367f0 !important; border-color: #7367f0 !important; }
+  .fc-event-holiday { background-color: #28c76f !important; border-color: #28c76f !important; }
+</style>
+{% endblock %}
+{% block vendor_js %}{{ block.super }}
+<script src="{% static 'vendor/libs/fullcalendar/fullcalendar.js' %}"></script>
+<script src="{% static 'vendor/libs/moment/moment.js' %}"></script>
+<script src="{% static 'vendor/libs/flatpickr/flatpickr.js' %}"></script>
+<script src="{% static 'vendor/libs/select2/select2.js' %}"></script>
+{% endblock %}
+{% block page_js %}{{ block.super }}
+<script>window.events = {{ events_json|safe }};</script>
+<script src="{% static 'js/delayu-calendar.js' %}"></script>
+<script src="{% static 'js/delayu-form-modal.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.delayuBindFormModal) {
+    window.delayuBindFormModal('taskFormModal', 'taskFormModalBody', '.rec-form-open-task');
+  }
+});
+</script>
+{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  <div class="btn-group">
+    <a href="?mine=0" class="btn btn-sm {% if not filter_mine %}btn-primary{% else %}btn-outline-primary{% endif %}">Все задачи</a>
+    <a href="?mine=1" class="btn btn-sm {% if filter_mine %}btn-primary{% else %}btn-outline-primary{% endif %}">Только мои</a>
+  </div>
+</div>
+<div class="card app-calendar-wrapper">
+  <div class="row g-0">
+    <div class="col app-calendar-sidebar border-end" id="app-calendar-sidebar">
+      <div class="border-bottom my-sm-0 mb-4 p-4">
+        <p class="small text-muted mb-0">События строятся по срокам задач подсистемы. Фильтры категорий — как в демо шаблона.</p>
+      </div>
+      <div class="px-4 pb-4">
+        <div class="inline-calendar"></div>
+        <hr class="mb-4 mx-n4 mt-3" />
+        <div class="mb-3 ms-1"><h6 class="mb-0">Фильтры</h6></div>
+        <div class="form-check form-check-secondary mb-4 ms-2">
+          <input class="form-check-input select-all" type="checkbox" id="selectAll" data-value="all" checked />
+          <label class="form-check-label" for="selectAll">Показать все</label>
+        </div>
+        <div class="app-calendar-events-filter text-heading">
+          <div class="form-check form-check-danger mb-4 ms-2">
+            <input class="form-check-input input-filter" type="checkbox" id="select-personal" data-value="personal" checked />
+            <label class="form-check-label" for="select-personal">Высокий приоритет</label>
+          </div>
+          <div class="form-check mb-4 ms-2">
+            <input class="form-check-input input-filter" type="checkbox" id="select-business" data-value="business" checked />
+            <label class="form-check-label" for="select-business">Обычные</label>
+          </div>
+          <div class="form-check form-check-warning mb-4 ms-2">
+            <input class="form-check-input input-filter" type="checkbox" id="select-family" data-value="family" checked />
+            <label class="form-check-label" for="select-family">Средний приоритет</label>
+          </div>
+          <div class="form-check form-check-success mb-4 ms-2">
+            <input class="form-check-input input-filter" type="checkbox" id="select-holiday" data-value="holiday" checked />
+            <label class="form-check-label" for="select-holiday">Без срока</label>
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2 rec-form-open-task" data-form-modal-url="{% url 'platform-task-form-modal' %}" data-form-modal-title="Новая задача">Новая задача</button>
+      </div>
+    </div>
+    <div class="col app-calendar-content">
+      <div class="card shadow-none border-0">
+        <div class="card-body pb-0">
+          <div id="calendar"></div>
+        </div>
+      </div>
+      <div class="app-overlay"></div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="taskFormModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Задача</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="taskFormModalBody"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

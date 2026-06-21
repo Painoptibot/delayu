@@ -1,0 +1,65 @@
+<h5>{{ document.title }}</h5>
+<p class="text-muted small mb-2">
+  {{ document.get_doc_type_display }} · версия {{ document.version }}
+  {% if document.is_signed %} · <span class="badge bg-label-success">ЭП</span>{% endif %}
+  {% if case_archived %} · <span class="badge bg-label-warning">дело в архиве</span>{% endif %}
+</p>
+{% if document.description %}<p class="small">{{ document.description }}</p>{% endif %}
+<dl class="row small">
+  <dt class="col-sm-3">Дело</dt>
+  <dd class="col-sm-9">{% if document.case %}<a href="{% url 'platform-case-detail' document.case_id %}">{{ document.case.number }}</a>{% else %}не привязано{% endif %}</dd>
+  <dt class="col-sm-3">Загрузил</dt>
+  <dd class="col-sm-9">{{ document.uploaded_by.get_full_name|default:document.uploaded_by.username }}</dd>
+  <dt class="col-sm-3">Файл</dt>
+  <dd class="col-sm-9">{% if document.file %}<a href="{{ document.file.url }}" target="_blank" rel="noopener">Скачать</a>{% else %}—{% endif %}</dd>
+  <dt class="col-sm-3">Антивирус</dt>
+  <dd class="col-sm-9">
+    {% if av_scan %}
+    <span class="badge bg-label-{% if av_scan.status == 'clean' %}success{% elif av_scan.status == 'infected' %}danger{% else %}warning{% endif %}">{{ av_scan.get_status_display }}</span>
+    {% if av_scan.threat_name %} · {{ av_scan.threat_name }}{% endif %}
+  <span class="text-muted"> · {{ av_scan.scanned_at|date:"d.m.Y H:i" }}</span>
+    {% else %}<span class="text-muted">Не проверялся</span>{% endif %}
+  </dd>
+</dl>
+
+<h6 class="mt-3">Версии</h6>
+<table class="table table-sm">
+  <thead><tr><th>v.</th><th>Дата</th><th>ЭП</th><th></th></tr></thead>
+  <tbody>
+    {% for v in versions %}
+    <tr class="{% if v.is_current %}table-active{% endif %}">
+      <td>{{ v.version }}{% if v.is_current %} <span class="badge bg-label-primary">текущая</span>{% endif %}</td>
+      <td>{{ v.created_at|date:"d.m.Y H:i" }}</td>
+      <td>{% if v.is_signed %}да{% else %}—{% endif %}</td>
+      <td>{% if v.file %}<a href="{{ v.file.url }}" target="_blank" rel="noopener">файл</a>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="d-flex flex-wrap gap-2 mt-3 border-top pt-3">
+  {% if can_change and not case_archived and not document.is_signed %}
+  <form method="post" action="{% url 'platform-document-sign' document.pk %}">{% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-outline-success">Подписать (демо)</button>
+  </form>
+  {% endif %}
+  {% if can_create and not case_archived %}
+  <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#newVersionForm">Новая версия</button>
+  {% endif %}
+  {% if can_delete and not case_archived %}
+  <form method="post" action="{% url 'platform-document-delete' root.pk %}" class="d-inline"
+        onsubmit="return confirm('Удалить документ и все версии?');">{% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if can_create and not case_archived %}
+<div class="collapse mt-3" id="newVersionForm">
+  <form method="post" action="{% url 'platform-document-version' document.pk %}" enctype="multipart/form-data" class="border rounded p-3 bg-light">{% csrf_token %}
+    <div class="mb-2"><label class="form-label small">{{ version_form.file.label }}</label>{{ version_form.file }}</div>
+    <div class="mb-2"><label class="form-label small">{{ version_form.title.label }}</label>{{ version_form.title }}</div>
+    <button type="submit" class="btn btn-sm btn-primary">Загрузить версию</button>
+  </form>
+</div>
+{% endif %}

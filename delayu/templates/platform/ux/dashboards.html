@@ -1,0 +1,26 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ux/_nav.html" %}
+<div class="d-flex justify-content-between mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-dashboard-layout-create' %}" class="btn btn-primary btn-sm">Раскладка</a>{% endif %}
+</div>
+<p class="text-muted small">Виджеты данных — модуль M15. Сохранённая раскладка подставляется при открытии дашборда (демо).</p>
+<div class="card">
+  <table class="table mb-0">
+    <thead><tr><th>Название</th><th>Виджетов</th><th>По умолчанию</th><th>Обновлено</th></tr></thead>
+    <tbody>
+      {% for l in layouts %}
+      <tr>
+        <td>{{ l.name }}</td>
+        <td>{{ l.widgets|length }}</td>
+        <td>{% if l.is_default %}<i class="ri-check-line text-success"></i>{% endif %}</td>
+        <td class="small">{{ l.updated_at|date:"d.m.Y H:i" }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="4" class="text-muted text-center py-4">Создайте раскладку</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<a href="{% url 'platform-dashboard' %}" class="btn btn-outline-primary btn-sm mt-3">Открыть KPI-дашборд M15 →</a>
+{% endblock %}

@@ -1,0 +1,158 @@
+/* #49 — адаптив 375px: реестр дел, карточка 360°, «Мне на сегодня», входящая регистрация */
+
+@media (max-width: 575.98px) {
+  .delayu-page-cases .d-flex.justify-content-between.mb-4 {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .delayu-page-cases .card-body form.row > [class*="col-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .delayu-page-cases #casesBulkForm .row {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .delayu-page-cases #casesBulkForm .col-auto,
+  .delayu-page-cases #casesBulkForm [class*="col-md"] {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .delayu-page-cases .table thead {
+    display: none;
+  }
+
+  .delayu-page-cases .table tbody tr {
+    display: block;
+    border-bottom: 1px solid var(--bs-border-color, #e4e6ef);
+    padding: 0.75rem 0;
+  }
+
+  .delayu-page-cases .table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    text-align: right;
+  }
+
+  .delayu-page-cases .table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    text-align: left;
+    flex-shrink: 0;
+    max-width: 45%;
+    font-size: 0.8125rem;
+    color: var(--bs-secondary-color, #697a8d);
+  }
+
+  .delayu-page-cases .table tbody td.text-end {
+    justify-content: flex-end;
+  }
+
+  .delayu-page-case-360 .card-body .d-flex.justify-content-between {
+    flex-direction: column;
+  }
+
+  .delayu-page-case-360 h4 {
+    font-size: 1.1rem;
+    line-height: 1.35;
+  }
+
+  .delayu-page-case-360 .nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .delayu-page-case-360 .nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .delayu-page-case-360 .nav-tabs .nav-link {
+    white-space: nowrap;
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .delayu-page-case-360 .badge {
+    font-size: 0.7rem;
+  }
+
+  .delayu-page-today .card-widget-separator .row > [class*="col-"] {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  .delayu-page-today .card-widget-separator .border-end {
+    border-right: none !important;
+  }
+
+  .delayu-page-today .card-header .d-flex {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .delayu-page-today .card-header .d-flex.gap-2 {
+    flex-wrap: wrap;
+  }
+
+  .delayu-page-today .datatables-tasks thead {
+    display: none;
+  }
+
+  .delayu-page-today .datatables-tasks tbody tr {
+    display: block;
+    border-bottom: 1px solid var(--bs-border-color, #e4e6ef);
+    padding: 0.5rem 0;
+  }
+
+  .delayu-page-today .datatables-tasks tbody td {
+    display: block;
+    border: none;
+    padding: 0.2rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .delayu-page-today .datatables-tasks tbody td.text-end {
+    text-align: left !important;
+    padding-top: 0.5rem;
+  }
+
+  .delayu-page-inbound .card {
+    max-width: 100% !important;
+  }
+
+  .delayu-page-inbound .inbound-ai-panel {
+    margin-bottom: 1rem;
+  }
+
+  .delayu-page-inbound .form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .delayu-page-inbound .form-actions .btn {
+    width: 100%;
+  }
+
+  .delayu-today-widgets-toolbar {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+}
+
+@media (max-width: 374.98px) {
+  .delayu-page-today .card-widget-separator .row > [class*="col-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}

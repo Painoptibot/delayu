@@ -1,0 +1,82 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h5 class="mb-0">{{ page_title }}</h5>
+      <div class="small text-muted">{{ building.address }}, кв. {{ premise.number }}</div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'uzhv-personal-account-extract' account.pk %}" class="btn btn-sm btn-outline-primary">Выписка (docx)</a>
+      <a href="{% url 'uzhv-building-detail' building.pk %}" class="btn btn-sm btn-outline-secondary">← МКД</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save">
+      <div class="row g-3">
+        {% for field in form %}
+        <div class="col-md-{% if field.name == 'utility_services' or field.name == 'notes' %}12{% else %}4{% endif %}">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary mt-3">Сохранить</button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><h6 class="mb-0">Состав семьи</h6></div>
+      <div class="card-body">
+        {% if members %}
+        <ul class="list-group list-group-flush mb-3">
+          {% for m in members %}
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>{{ m.full_name }} <span class="text-muted small">({{ m.get_relation_display }})</span></span>
+            <form method="post" class="d-inline" onsubmit="return confirm('Удалить?');">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_member">
+              <input type="hidden" name="member_id" value="{{ m.pk }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger">×</button>
+            </form>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted small">Состав не заполнен — в выписке будет указан наниматель.</p>
+        {% endif %}
+        <form method="post" class="row g-2 align-items-end">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_member">
+          <div class="col-md-5"><label class="form-label small">ФИО</label>{{ member_form.full_name }}</div>
+          <div class="col-md-4"><label class="form-label small">Родство</label>{{ member_form.relation }}</div>
+          <div class="col-md-3"><button type="submit" class="btn btn-sm btn-outline-primary w-100">Добавить</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><h6 class="mb-0">История изменений</h6></div>
+      <div class="card-body">
+        {% if history %}
+        <ul class="list-unstyled small mb-0">
+          {% for h in history %}
+          <li class="mb-2"><span class="text-muted">{{ h.changed_at|date:"d.m.Y H:i" }}</span> — {{ h.description }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted small mb-0">Событий пока нет.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

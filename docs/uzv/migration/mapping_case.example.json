@@ -1,0 +1,17 @@
+{
+  "entity": "case",
+  "delimiter": ";",
+  "columns": {
+    "case_number": "Номер дела",
+    "last_name": "Фамилия",
+    "first_name": "Имя",
+    "middle_name": "Отчество",
+    "category": "Категория",
+    "registered_at": "Дата учёта",
+    "status": "Статус"
+  },
+  "defaults": {
+    "category": "general",
+    "status": "registered"
+  }
+}

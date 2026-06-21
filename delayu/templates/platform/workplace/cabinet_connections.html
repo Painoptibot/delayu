@@ -1,0 +1,161 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Личный кабинет — связи{% endblock %}
+{% block content %}
+{% include "platform/workplace/_cabinet_nav.html" %}
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-1">Подключённые сервисы</h5>
+    <p class="text-muted small mb-0">Интеграции платформы «ДелаЮ» с государственными и корпоративными системами</p>
+  </div>
+  <div class="card-body">
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="d-flex align-items-center justify-content-between border rounded p-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="avatar avatar-lg"><span class="avatar-initial rounded bg-label-primary"><i class="ri-government-line icon-28px"></i></span></span>
+          <div>
+            <h6 class="mb-0">ЕСИА</h6>
+            <small class="text-muted">Единая система идентификации</small>
+          </div>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" disabled checked />
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="d-flex align-items-center justify-content-between border rounded p-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="avatar avatar-lg"><span class="avatar-initial rounded bg-label-success"><i class="ri-key-2-line icon-28px"></i></span></span>
+          <div>
+            <h6 class="mb-0">Госключ</h6>
+            <small class="text-muted">Мобильная электронная подпись</small>
+          </div>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" disabled />
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="d-flex align-items-center justify-content-between border rounded p-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="avatar avatar-lg"><span class="avatar-initial rounded bg-label-warning"><i class="ri-file-shield-2-line icon-28px"></i></span></span>
+          <div>
+            <h6 class="mb-0">ЭП (КЭП)</h6>
+            <small class="text-muted">Квалифицированная электронная подпись</small>
+          </div>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" disabled checked />
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="d-flex align-items-center justify-content-between border rounded p-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="avatar avatar-lg"><span class="avatar-initial rounded bg-label-info"><i class="ri-mail-send-line icon-28px"></i></span></span>
+          <div>
+            <h6 class="mb-0">СМЭВ / МЭДО</h6>
+            <small class="text-muted">Межведомственный обмен</small>
+          </div>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" disabled />
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="d-flex align-items-center justify-content-between border rounded p-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="avatar avatar-lg"><span class="avatar-initial rounded bg-label-primary"><i class="ri-vk-line icon-28px"></i></span></span>
+          <div>
+            <h6 class="mb-0">ВКонтакте</h6>
+            <small class="text-muted">Уведомления (мессенджер M41)</small>
+          </div>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" disabled />
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="d-flex align-items-center justify-content-between border rounded p-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="avatar avatar-lg"><span class="avatar-initial rounded bg-label-secondary"><i class="ri-telegram-line icon-28px"></i></span></span>
+          <div>
+            <h6 class="mb-0">Telegram</h6>
+            <small class="text-muted">{% if profile.telegram %}@{{ profile.telegram }}{% else %}не привязан{% endif %}</small>
+          </div>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" disabled {% if profile.telegram %}checked{% endif %} />
+        </div>
+      </div>
+    </div>
+    {% if uzhv_user %}
+    <div class="col-12">
+      <div class="border rounded p-4" id="uzhvCabinetPushRoot"
+        data-push-url="{{ uzhv_push_subscribe_url }}"
+        data-test-url="{% url 'platform-cabinet-uzhv-push-test' %}"
+        data-sw-url="{{ uzhv_sw_url }}"
+        data-vapid="{{ uzhv_vapid_public_key|default:'' }}">
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <span class="avatar avatar-lg"><span class="avatar-initial rounded bg-label-danger"><i class="ri-home-smile-line icon-28px"></i></span></span>
+            <div>
+              <h6 class="mb-0">АИС УЖВ — Web Push</h6>
+              <p class="text-muted small mb-0" id="uzhvPushStatusText">
+                {% if uzhv_push_status.subscribed %}
+                <span class="text-success">Подключено{% if uzhv_push_status.endpoint_preview %}: {{ uzhv_push_status.endpoint_preview }}{% endif %}</span>
+                {% elif uzhv_push_status.vapid_configured %}
+                Не подключено — включите для мгновенных оповещений о просрочках
+                {% else %}
+                Сервер не настроен (нет VAPID-ключей) — работают только локальные уведомления в браузере
+                {% endif %}
+              </p>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            {% if uzhv_push_status.subscribed %}
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="uzhvPushDisableBtn">Отключить</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="uzhvPushTestBtn">Тест</button>
+            {% elif uzhv_push_status.vapid_configured %}
+            <button type="button" class="btn btn-sm btn-primary" id="uzhvPushEnableBtn">Включить push</button>
+            {% endif %}
+            <a href="{% url 'uzhv-hub' %}" class="btn btn-sm btn-outline-secondary">Обзор УЖВ</a>
+          </div>
+        </div>
+        <p class="text-muted small mt-3 mb-0">
+          Telegram: {% if profile.telegram_chat_id %}chat_id {{ profile.telegram_chat_id }}{% elif profile.telegram %}@{{ profile.telegram }}{% else %}не указан{% endif %}
+          — настраивается в разделе «Account». URGENT-просрочки дублируются в Telegram при настроенном боте M41.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <hr class="my-5" />
+  <h6 class="mb-3">Подсистемы и роли</h6>
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead><tr><th>Подсистема</th><th>Роль</th><th>Организация</th></tr></thead>
+      <tbody>
+        {% for mem in memberships %}
+        <tr>
+          <td>{{ mem.subsystem.name }}</td>
+          <td>{{ mem.role.name }}</td>
+          <td>{{ mem.organization.name|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-muted">Нет членств</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  </div>
+</div>
+{% if uzhv_user %}
+<script src="{% static 'js/delayu-uzhv-cabinet-push.js' %}"></script>
+{% endif %}
+{% endblock %}

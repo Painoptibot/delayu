@@ -1,0 +1,2630 @@
+
+
+<!DOCTYPE html>
+
+<html lang="ru" class="layout-navbar-fixed  layout-menu-fixed   customizer-hide layout-wide" dir="ltr" data-skin="default" data-bs-theme="light" data-assets-path="/static/" data-base-url="" data-framework="django" data-template="vertical-menu--default-light">
+
+
+<head>
+  <title>Вход — ДелаЮ | ДелаЮ - Платформа Дела.ЮГИт</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+  <meta name="description" content="" />
+  
+
+  <!-- Favicon (логотип ДелаЮ) -->
+  <link rel="icon" type="image/svg+xml" href="/static/img/branding/yugit-logo.svg" />
+  <link rel="manifest" href="/static/manifest.json" />
+
+  <!-- Include the styles partial -->
+  
+<link rel="stylesheet" href="/static/vendor/css/delayu-privacy.css" />
+<link rel="stylesheet" href="/static/vendor/css/delayu-module-hint.css" />
+
+<!--Fonts-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+
+<!-- Icons -->
+<link rel="stylesheet" href="/static/vendor/fonts/iconify-icons.css" />
+
+<!--Vendor CSS-->
+<link rel="stylesheet" href="/static/vendor/libs/node-waves/node-waves.css" />
+<link rel="stylesheet" href="/static/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />
+
+<!--Core CSS -->
+
+<link rel="stylesheet" href="/static/vendor/libs/pickr/pickr-themes.css" />
+
+
+<link rel="stylesheet" href="/static/vendor/css/core.css" />
+<link rel="stylesheet" href="/static/css/demo.css" />
+<link rel="stylesheet" href="/static/css/delayu-brand.css" />
+<link rel="stylesheet" href="/static/css/delayu-a11y.css" />
+<link rel="stylesheet" href="/static/css/delayu-mobile.css" />
+<link rel="stylesheet" href="/static/vendor/libs/flatpickr/flatpickr.css" />
+
+
+  
+
+<link rel="stylesheet" href="/static/vendor/libs/%40form-validation/form-validation.css" />
+
+
+  <!--Page CSS-->
+  
+
+<link rel="stylesheet" href="/static/vendor/css/pages/page-auth.css" />
+
+
+
+  <!-- Include the scripts partial (required ) -->
+   
+<!-- Helpers -->
+<!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
+<script src="/static/vendor/js/helpers.js"></script>
+<!--? Template customizer: To hide customizer set display_customizer value false in config.js.  -->
+
+<script src="/static/vendor/js/template-customizer.js"></script>
+<script src="/static/js/delayu-customizer-ru.js"></script>
+
+<!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
+<script src="/static/js/config.js"></script>
+<!-- beautify ignore:start -->
+
+<script>
+  if (typeof TemplateCustomizer !== 'undefined') {
+    window.templateCustomizer = new TemplateCustomizer({
+      defaultTheme: "light", // Required as system style can't decided without JS
+     
+    defaultTextDir: 'ltr',
+    defaultSemiDark: false,
+    defaultShowDropdownOnHover: true,
+    lang: 'ru',
+    controls: ['color', 'theme', 'skins', 'semiDark', 'layoutCollapsed', 'layoutNavbarOptions', 'headerType', 'contentLayout', 'rtl']
+  });
+  }
+</script>
+
+<!-- beautify ignore:end -->
+
+
+</head>
+
+<body data-privacy-audit-url="/platform/privacy-mode/">
+  
+  <!-- beautify ignore:end -->
+
+  
+
+<!-- Content: Start -->
+
+<div class="authentication-wrapper authentication-cover">
+  <!-- Logo -->
+  <a href="/" class="auth-cover-brand d-flex align-items-center gap-2">
+    <span class="app-brand-logo demo">
+<img
+  src="/static/img/branding/yugit-logo.svg"
+  alt="ЮГИт"
+  class="yugit-logo"
+  height="28"
+  width="auto"
+/>
+</span>
+    <span class="app-brand-text demo text-heading fw-semibold">ДелаЮ</span>
+  </a>
+  <!-- /Logo -->
+  <div class="authentication-inner row m-0">
+    <!-- /Left Section -->
+    <div class="d-none d-lg-flex col-lg-7 col-xl-8 align-items-center justify-content-center p-12 pb-2">
+      <img src="/static/img/illustrations/auth-login-illustration-light.png" class="auth-cover-illustration w-100" alt="auth-illustration" data-app-light-img="illustrations/auth-login-illustration-light.png" data-app-dark-img="illustrations/auth-login-illustration-dark.png" />
+      <img alt="mask" src="/static/img/illustrations/auth-basic-login-mask-light.png" class="authentication-image d-none d-lg-block" data-app-light-img="illustrations/auth-basic-login-mask-light.png" data-app-dark-img="illustrations/auth-basic-login-mask-dark.png" />
+    </div>
+    <!-- /Left Section -->
+
+    <!-- Login -->
+    <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg position-relative py-sm-12 px-12 py-6">
+      <div class="w-px-400 mx-auto pt-12 pt-lg-0">
+        <h4 class="mb-1">Вход в ДелаЮ</h4>
+        <p class="mb-5">Дела под контролем — ДелаЮ</p>
+        <div class="alert alert-primary small mb-6">
+          <p class="text-caption mb-1">Администратор: <strong>admin</strong> / пароль <strong>admin</strong></p>
+          <p class="text-caption mb-0">Демо-пользователь: <strong>demo</strong> / пароль <strong>demo</strong></p>
+        </div>
+        
+        <form id="formAuthentication" class="mb-5" action="/auth/login/" method="post">
+          <input type="hidden" name="csrfmiddlewaretoken" value="2Z5pYrfIruCBVk0BvTWCcHhPniHSSWKZEllUmHDUyNfb6fNJvbuwteWlI0V7TtZC">
+          <div class="form-floating form-floating-outline mb-5 form-control-validation">
+            <input type="text" class="form-control" id="email" name="email-username" value="admin" placeholder="Логин" autofocus />
+            <label for="email">Логин</label>
+          </div>
+          <div class="mb-5">
+            <div class="form-password-toggle form-control-validation">
+              <div class="input-group input-group-merge">
+                <div class="form-floating form-floating-outline">
+                  <input type="password" id="password" class="form-control" name="password" value="admin" aria-describedby="password" />
+                  <label for="password">Пароль</label>
+                </div>
+                <span class="input-group-text cursor-pointer"><i class="icon-base ri ri-eye-off-line icon-20px"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="mb-5 d-flex justify-content-between mt-5">
+            <div class="form-check mt-2">
+              <input class="form-check-input" type="checkbox" id="remember-me" />
+              <label class="form-check-label" for="remember-me">Запомнить</label>
+            </div>
+          </div>
+          
+          <input type="hidden" name="next" value="/">
+          
+          <button class="btn btn-primary d-grid w-100" type="submit">Войти</button>
+        </form>
+        
+        <div class="divider my-5">
+          <div class="divider-text">или</div>
+        </div>
+        
+        <a href="/auth/sso/1/start/" class="btn btn-outline-secondary d-grid w-100 mb-2">
+          <i class="ri-shield-keyhole-line me-1"></i> ЕСИА (демо)
+        </a>
+        
+        <a href="/auth/sso/2/start/" class="btn btn-outline-secondary d-grid w-100 mb-2">
+          <i class="ri-shield-keyhole-line me-1"></i> ЕСИА (демо)
+        </a>
+        
+        
+        <p class="text-center mt-4 mb-0">
+          <a href="#" class="text-muted small" data-bs-toggle="modal" data-bs-target="#tzModal">Техническое задание</a>
+        </p>
+
+      </div>
+    </div>
+    <!-- /Login -->
+  </div>
+</div>
+
+<!-- Content: End -->
+
+
+
+  
+
+<!--Core Javascript-->
+
+
+<script src="/static/vendor/libs/pickr/pickr.js"></script>
+
+
+<script src="/static/vendor/libs/jquery/jquery.js"></script>
+<script src="/static/vendor/libs/popper/popper.js"></script>
+<script src="/static/vendor/js/bootstrap.js"></script>
+<script src="/static/vendor/libs/%40algolia/autocomplete-js.js"></script>
+<script src="/static/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/static/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/static/vendor/libs/hammer/hammer.js"></script>
+<script src="/static/vendor/js/menu.js"></script>
+<script src="/static/js/main.js"></script>
+<script src="/static/vendor/libs/flatpickr/flatpickr.js"></script>
+<script src="/static/vendor/libs/moment/moment.js"></script>
+<script src="/static/js/delayu-flatpickr.js"></script>
+<script src="/static/js/delayu-privacy-mode.js"></script>
+<script src="/static/js/delayu-module-hint.js"></script>
+<script src="/static/js/delayu-global-search.js"></script>
+<script src="/static/js/delayu-studio.js"></script>
+
+
+
+  <!--Vendors Javascript-->
+  
+ 
+<script src="/static/vendor/libs/%40form-validation/popular.js"></script>
+<script src="/static/vendor/libs/%40form-validation/bootstrap5.js"></script>
+<script src="/static/vendor/libs/%40form-validation/auto-focus.js"></script>
+
+
+  <!--Page Javascript-->
+  
+ 
+<script src="/static/js/authentication.js"></script>
+<script src="/static/js/ui-popover.js"></script>
+
+
+  
+<div class="modal fade" id="tzModal" tabindex="-1" aria-labelledby="tzModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tzModalLabel">Техническое задание — ДелаЮ (платформа)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body tz-doc-content">
+        
+        <h1>Техническое задание</h1>
+<h2>Программный комплекс «ДелаЮ» (платформа «Дела.ЮГИт»)</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Правообладатель / разработчик</strong></td>
+<td><strong>ЮГИт</strong></td>
+</tr>
+<tr>
+<td><strong>Версия документа</strong></td>
+<td>2.2 (черновик)</td>
+</tr>
+<tr>
+<td><strong>Дата</strong></td>
+<td>27.05.2026</td>
+</tr>
+<tr>
+<td><strong>Статус</strong></td>
+<td>Утверждено к реализации (этап 0–1)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Бренд и позиционирование</h2>
+<table>
+<thead>
+<tr>
+<th>Элемент</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Наименование</strong></td>
+<td><strong>ДелаЮ</strong></td>
+</tr>
+<tr>
+<td><strong>Линейка / платформа</strong></td>
+<td><strong>Дела.ЮГИт</strong> (дела на платформе ЮГИт)</td>
+</tr>
+<tr>
+<td><strong>Разработчик / правообладатель</strong></td>
+<td><strong>ЮГИт</strong></td>
+</tr>
+<tr>
+<td><strong>Основной слоган</strong></td>
+<td><strong>«Дела под контролем — ДелаЮ»</strong></td>
+</tr>
+<tr>
+<td><strong>Короткий слоган (логотип)</strong></td>
+<td><em>Веду дела — ДелаЮ</em></td>
+</tr>
+<tr>
+<td><strong>Этап разработки</strong></td>
+<td>Сначала <strong>платформа</strong> (ядро + каталог модулей); отраслевые <strong>подсистемы</strong> — по опыту внедрения, отдельными ТЗ</td>
+</tr>
+</tbody>
+</table>
+<h3>1.1. Варианты слоганов (на выбор заказчика и маркетинга)</h3>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Слоган</th>
+<th>Акцент</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>★1</strong></td>
+<td><strong>Дела под контролем — ДелаЮ</strong></td>
+<td>Контроль, сроки, прозрачность</td>
+</tr>
+<tr>
+<td>2</td>
+<td>От заявки до архива — без потерь</td>
+<td>Полный цикл</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Одна платформа. Все дела. Вся команда.</td>
+<td>Единое пространство</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Умные процессы. Честные сроки. ЮГИт.</td>
+<td>ИИ + надёжность вендора</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Веду дела — ДелаЮ</td>
+<td>Классика, запоминается</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Государственный масштаб. Человеческий интерфейс.</td>
+<td>ОМСУ / госсектор</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Рекомендация:</strong> в коммуникации использовать <strong>★1</strong> на сайте и в презентациях, <strong>№5</strong> — в визитке и подписи к логотипу.</p>
+<hr />
+<h2>2. Назначение и описание продукта</h2>
+<h3>2.1. Одно предложение (elevator pitch)</h3>
+<p><strong>ДелаЮ</strong> — отечественная модульная платформа <strong>ЮГИт</strong>, где обращения, дела, документы, согласования и отчёты ведутся в одном контуре: от регистрации входящего письма до архива и аналитики для руководителя.</p>
+<h3>2.2. Описание для сайта и презентации</h3>
+<p><strong>ДелаЮ</strong> помогает организации <strong>не терять информацию и не срывать сроки</strong>. Сотрудник работает в личном кабинете: календарь, канбан задач, дела и реестры, переписка и документы. Руководитель видит дашборды, просрочки и качество исполнения. Администратор собирает <strong>подсистему</strong> под контур заказчика и включает только нужные <strong>модули</strong> из каталога (включая блок из <strong>20+ ИИ-сервисов</strong>).</p>
+<p>Платформа закрывает цепочку: <strong>входящая корреспонденция → исполнение по бизнес-процессу → ЭП и печатные формы → архив (в т.ч. аудиозаписей) → отчётность и интеграции с внешними ИС</strong>. Всё с ролевой моделью, аудитом и размещением в инфраструктуре заказчика (PostgreSQL, Docker, облако РФ / on-premise).</p>
+<h3>2.3. Описание для реестра ПО и закупки (официально)</h3>
+<p><strong>Назначение:</strong> автоматизация учёта обращений, дел и реестров, первичного и внутреннего документооборота, бизнес-процессов, задач, электронной подписи, коммуникаций, аналитики, архивирования (документы и аудио), интеграции с внешними системами и интеллектуальной обработки информации в веб-среде.</p>
+<p><strong>Область применения:</strong> органы государственной власти и местного самоуправления, муниципальные и казённые учреждения, коммерческие организации.</p>
+<p><strong>Архитектура:</strong> модульная; поставка в виде <strong>подсистем</strong> (отраслевых конфигураций) на едином ядре. Каталог — <strong>86 функциональных модулей</strong> (раздел 6.7–6.8), из них <strong>20 модулей ИИ</strong> (M47–M66).</p>
+<h3>2.4. Техническая суть (для ТЗ)</h3>
+<p>Платформа поставляется как <strong>единое техническое ядро</strong> с каталогом <strong>функциональных модулей (M01–M86)</strong> и одной или несколькими <strong>подсистемами</strong>. Подсистема задаёт включённые модули, меню, реестры, организации и матрицу доступа для конкретного заказчика (муниципалитет, ведомство, холдинг).</p>
+<p><strong>Целевые потребители:</strong> органы власти и подведомственные учреждения, муниципальные и казённые организации, коммерческие структуры (B2B).</p>
+<hr />
+<h2>3. Термины и определения</h2>
+<table>
+<thead>
+<tr>
+<th>Термин</th>
+<th>Определение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Платформа «ДелаЮ»</strong></td>
+<td>Программный комплекс целиком: ядро, общие сервисы, администрирование, API.</td>
+</tr>
+<tr>
+<td><strong>Подсистема</strong></td>
+<td>Развёрнутая <strong>конфигурация</strong> платформы для конкретного заказчика/контура: набор модулей, меню, реестров, организаций и политик доступа.</td>
+</tr>
+<tr>
+<td><em>Не отдельный продукт «с нуля», а настроенный контур на общем ядре.</em> Примеры: пилотные контуры коммерции и госзаказиков.</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Модуль</strong></td>
+<td>Законченная функциональная область платформы (учёт пользователей, документы, архив и т.д.), включаемая или отключаемая в составе подсистемы.</td>
+</tr>
+<tr>
+<td><strong>Реестр</strong></td>
+<td>Унифицированный справочник/перечень однотипных записей (граждане, объекты, договоры и др.) с настраиваемой структурой полей.</td>
+</tr>
+<tr>
+<td><strong>Дело / заявление</strong></td>
+<td>Учётная единица процесса: карточка с жизненным циклом, документами, сроками, исполнителем.</td>
+</tr>
+<tr>
+<td><strong>Организация</strong></td>
+<td>Юридическое или структурное подразделение в контуре подсистемы (мультитенантность).</td>
+</tr>
+<tr>
+<td><strong>Структура (ШР)</strong></td>
+<td>Кадрово-штатная и организационная иерархия: подразделения, должности, привязка пользователей.</td>
+</tr>
+<tr>
+<td><strong>Роль</strong></td>
+<td>Набор прав на действия и данные в рамках подсистемы.</td>
+</tr>
+<tr>
+<td><strong>Пользователь</strong></td>
+<td>Учётная запись сотрудника, допущенного к подсистеме и организациям.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>4. Цели создания системы</h2>
+<ol>
+<li><strong>Единое рабочее место</strong> — учёт, документы, сроки и отчёты без разрозненных файлов и таблиц.</li>
+<li><strong>Управляемость</strong> — централизованная настройка подсистем, модулей, ролей и реестров администратором.</li>
+<li><strong>Прозрачность</strong> — фиксация действий пользователей, версий документов, истории изменений.</li>
+<li><strong>Масштабируемость</strong> — подключение новых отраслевых подсистем и модулей без замены платформы.</li>
+<li><strong>Соответствие требованиям заказчика</strong> — в т.ч. по ПДн, размещению в инфраструктуре РФ, отечественному стеку (по согласованию).</li>
+</ol>
+<hr />
+<h2>5. Состав системы (логическая архитектура)</h2>
+<pre><code>┌────────────────────────────────────────────────────────────────────┐
+│                    Платформа «ДелаЮ» (ядро)                        │
+├────────────────────────────────────────────────────────────────────┤
+│  Администрирование │ Безопасность │ Аудит │ Интеграции │ Отчёты    │
+├──────────┬──────────┬──────────┬──────────┬──────────┬─────────────┤
+│ Подсист. │  Роли    │Пользова- │ Структура│Документы │ Архив       │
+│ (конфиг.)│          │  тели    │  (ШР)    │          │             │
+├──────────┴│─────────┴──────│───┴──────────┴──────────┴─────────────┤
+│    Модули -&gt;   матрица     -&gt;     Отраслевые реестры и             │
+│           │    доступа     │      процессы (в составе подсистемы)  │
+└───────────│────────────────│───────────────────────────────────────┘
+</code></pre>
+<p><strong>Уровни:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Уровень</th>
+<th>Назначение</th>
+<th>Пользователи</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Платформа</strong></td>
+<td>Управление подсистемами, глобальными модулями, лицензированием, мониторингом</td>
+<td>Администратор платформы, вендор (ЮГИт)</td>
+</tr>
+<tr>
+<td><strong>Подсистема</strong></td>
+<td>Организации, пользователи, роли, реестры, меню, отчёты в контуре заказчика</td>
+<td>Администратор подсистемы, руководитель</td>
+</tr>
+<tr>
+<td><strong>Рабочее место</strong></td>
+<td>Ежедневная работа: дела, документы, задачи, реестры</td>
+<td>Специалист, регистратор, контролёр</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>6. Функциональные модули платформы</h2>
+<p><strong>Каталог:</strong> <strong>86 модулей</strong> (M01–M86): <strong>6 модулей ядра</strong> (п. 6.1–6.6) + <strong>60 расширенных</strong> (п. 6.7) + <strong>20 дополнительных</strong> (п. 6.8).<br />
+Подсистема подключает модули из каталога по матрице «модуль × подсистема». Отраслевые реестры и процессы — <strong>надстройка</strong> над ядром (раздел 7), создаются после стабилизации платформы.</p>
+<h3>6.1. Подсистемы и каталог (M01)</h3>
+<p><strong>Назначение:</strong> создание и сопровождение <strong>изолированных контуров</strong> на едином ядре: модули, бренд, организации, роли, аудит.</p>
+<h4>6.1.1. Модель данных</h4>
+<table>
+<thead>
+<tr>
+<th>Сущность</th>
+<th>Атрибуты / связи</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Subsystem</code></td>
+<td>код, наименование, описание, статус (<code>draft</code> / <code>active</code> / <code>archived</code>), цвет бренда, шаблон отрасли, метка версии, дата публикации</td>
+</tr>
+<tr>
+<td><code>SubsystemModule</code></td>
+<td>матрица «подсистема × модуль каталога», флаг <code>enabled</code></td>
+</tr>
+<tr>
+<td><code>ModuleCatalog</code></td>
+<td>M01–M86: код, название, группа, признак ядра, порядок (справочник платформы, не редактируется в контуре заказчика)</td>
+</tr>
+<tr>
+<td><code>AuditLog</code></td>
+<td>действие, пользователь, подсистема, объект, payload JSON, IP, время</td>
+</tr>
+</tbody>
+</table>
+<h4>6.1.2. Интерфейс</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Подсистемы</strong></td>
+<td>список контуров; popup-карточка: сводка, матрица модулей, публикация, архив; клонирование</td>
+</tr>
+<tr>
+<td><strong>Мастер создания</strong></td>
+<td>3 шага (bs-stepper): (1) контур и отрасль, (2) выбор модулей по группам каталога, (3) версия и публикация; автоматическое создание головной организации, ролей и членства администратора</td>
+</tr>
+<tr>
+<td><strong>Каталог модулей</strong></td>
+<td>просмотр M01–M86, фильтр по группе и поиск, popup с описанием и списком подсистем, где модуль включён</td>
+</tr>
+<tr>
+<td><strong>Журнал аудита</strong></td>
+<td>список событий активной подсистемы, фильтр по действию, popup с JSON payload</td>
+</tr>
+</tbody>
+</table>
+<h4>6.1.3. Жизненный цикл конфигурации</h4>
+<ol>
+<li><strong>Черновик</strong> — настройка модулей и реквизитов.</li>
+<li><strong>Публикация</strong> — статус «Действует», фиксация <code>published_at</code> и метки версии; запись в <code>AuditLog</code>.</li>
+<li><strong>Архив</strong> — контур выводится из эксплуатации без удаления данных.</li>
+</ol>
+<p><strong>Клонирование:</strong> новый код/имя, копия включённых модулей и организаций, статус «Черновик».</p>
+<h4>6.1.4. Критерии приёмки M01</h4>
+<ol>
+<li>Мастер создаёт подсистему с выбранными модулями; создатель получает членство администратора.</li>
+<li>В карточке переключаются модули матрицы; изменения фиксируются в аудите.</li>
+<li>Черновик публикуется одной операцией.</li>
+<li>Каталог отображает 86 модулей с фильтрацией.</li>
+<li>Журнал аудита показывает детали записи в popup.</li>
+</ol>
+<p><strong>Этап 2:</strong> визуальный конструктор меню, политики данных по реестрам, сравнение версий конфигурации.</p>
+<p><strong>Результат для заказчика:</strong> отдельный брендированный контур без дублирования кода платформы.</p>
+<hr />
+<h3>6.2. Роли пользователей (M02)</h3>
+<p><strong>Назначение:</strong> разграничение доступа к модулям и административным функциям <strong>в рамках активной подсистемы</strong>; права не дублируются в прикладных модулях.</p>
+<h4>6.2.1. Модель данных</h4>
+<table>
+<thead>
+<tr>
+<th>Сущность</th>
+<th>Атрибуты</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Role</code></td>
+<td>код, наименование, описание, признак системной роли</td>
+</tr>
+<tr>
+<td><code>RoleModulePermission</code></td>
+<td>роль × модуль: <code>can_view</code>, <code>can_create</code>, <code>can_change</code>, <code>can_delete</code></td>
+</tr>
+</tbody>
+</table>
+<p>Матрица строится <strong>только по модулям, включённым в подсистеме</strong> (M01 → <code>SubsystemModule.enabled</code>).</p>
+<h4>6.2.2. Интерфейс</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Список ролей</strong></td>
+<td>код, название, число пользователей, тип; действия: карточка, редактирование, копирование, удаление</td>
+</tr>
+<tr>
+<td><strong>Карточка</strong></td>
+<td>popup: описание, таблица назначенных прав; кнопка «Редактировать»</td>
+</tr>
+<tr>
+<td><strong>Создание</strong></td>
+<td>мастер из <strong>2 шагов</strong> (bs-stepper): (1) реквизиты роли, (2) матрица прав по включённым модулям</td>
+</tr>
+<tr>
+<td><strong>Копирование</strong></td>
+<td>popup: новый код и имя; копируются все <code>RoleModulePermission</code></td>
+</tr>
+</tbody>
+</table>
+<h4>6.2.3. Правила</h4>
+<ul>
+<li>системные роли (<code>is_system</code>) <strong>нельзя удалить</strong>;</li>
+<li>роль с назначенными пользователями (<code>SubsystemMembership</code>) <strong>нельзя удалить</strong>;</li>
+<li>копирование и создание — <code>M02</code> / <code>can_create</code>; редактирование матрицы — <code>can_change</code>.</li>
+</ul>
+<h4>6.2.4. Критерии приёмки M02</h4>
+<ol>
+<li>Администратор создаёт роль через мастер; права сохраняются в матрице.</li>
+<li>Карточка показывает сводку прав; редактирование обновляет матрицу.</li>
+<li>Копия роли получает те же права при новом коде.</li>
+<li>Удаление заблокировано для системных ролей и ролей с пользователями.</li>
+</ol>
+<p><strong>Этап 2:</strong> права на тип дела/реестр, экспорт, наследование между подсистемами.</p>
+<p><strong>Ограничение:</strong> права оцениваются в контексте активной подсистемы и организации пользователя.</p>
+<hr />
+<h3>6.3. Пользователи (M03)</h3>
+<p><strong>Назначение:</strong> централизованный учёт сотрудников, допуск к подсистемам и организациям, ведение расширенной кадрово-контактной карточки в рамках платформы (без дублирования полноценной кадровой системы M04).</p>
+<p><strong>Обоснование объёма данных:</strong> для согласований, маршрутов BPM, отчётности и интеграций недостаточно пары полей «ФИО + e-mail»; карточка пользователя должна содержать <strong>не менее 30 атрибутов</strong> (учётная запись + профиль), сгруппированных для просмотра и редактирования.</p>
+<h4>6.3.1. Каталог атрибутов (минимум 30)</h4>
+<table>
+<thead>
+<tr>
+<th>Группа</th>
+<th>Атрибуты</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Учётная запись</td>
+<td>логин, рабочий e-mail, признак «активен», дата последнего входа</td>
+</tr>
+<tr>
+<td>ФИО и личные</td>
+<td>фамилия, имя, отчество, пол, дата рождения, СНИЛС, ИНН</td>
+</tr>
+<tr>
+<td>Паспорт</td>
+<td>серия, номер, кем выдан, дата выдачи</td>
+</tr>
+<tr>
+<td>Контакты</td>
+<td>телефон основной, мобильный, рабочий, внутренний, личный e-mail, Telegram</td>
+</tr>
+<tr>
+<td>Адреса</td>
+<td>регистрация, проживание</td>
+</tr>
+<tr>
+<td>Работа</td>
+<td>личный/табельный №, должность (текст), тип занятости, даты приёма/увольнения, подразделение (текст), руководитель</td>
+</tr>
+<tr>
+<td>Система</td>
+<td>часовой пояс, язык интерфейса, принудительная смена пароля, 2FA (флаг), примечание</td>
+</tr>
+<tr>
+<td>Допуск</td>
+<td>организация + роль в активной подсистеме (членство <code>SubsystemMembership</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Связь с M04: текстовые поля «подразделение/должность» допускаются до внедрения штатного расписания; после M04 — синхронизация с <code>Department</code> / штатной единицей (этап 2).</p>
+<h4>6.3.2. Интерфейс (Materialize)</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Список</strong></td>
+<td>таблица пользователей подсистемы; панель действий: «Добавить» (при <code>can_create</code>), в строке — просмотр карточки, редактирование, блокировка</td>
+</tr>
+<tr>
+<td><strong>Карточка</strong></td>
+<td>модальное окно (<code>modal-xl</code>), просмотр по группам (accordion); редактирование — та же модалка, форма POST</td>
+</tr>
+<tr>
+<td><strong>Создание</strong></td>
+<td><strong>пошаговый мастер</strong> (4 шага, <code>bs-stepper</code>, как <code>form_wizard_numbered</code> в шаблоне Materialize): (1) учётная запись, (2) личные и паспорт, (3) контакты и адреса, (4) работа и назначение роли/организации; финальная отправка — один POST, создание <code>User</code> + <code>UserProfile</code> + <code>SubsystemMembership</code></td>
+</tr>
+</tbody>
+</table>
+<h4>6.3.3. Операции и права</h4>
+<ul>
+<li><strong>Просмотр</strong> — <code>M03</code> / <code>can_view</code>;</li>
+<li><strong>Создание</strong> — мастер, <code>can_create</code>;</li>
+<li><strong>Изменение</strong> — карточка/форма, <code>can_change</code> (в т.ч. смена пароля администратором);</li>
+<li><strong>Блокировка</strong> — <code>is_active=False</code>, <code>can_delete</code> (самоблокировка запрещена);</li>
+<li>разблокировка, журнал сессий, SSO, делегирование — <strong>этап 2</strong> (отдельные подпункты ТЗ).</li>
+</ul>
+<h4>6.3.4. Критерии приёмки M03</h4>
+<ol>
+<li>Администратор создаёт пользователя через 4-шаговый мастер; пользователь появляется в списке с назначенной ролью и организацией.</li>
+<li>Карточка открывается в popup и отображает все группы атрибутов (≥30 полей).</li>
+<li>Редактирование сохраняет изменения без перезагрузки всего раздела (допустим redirect с авто-открытием карточки).</li>
+<li>Блокировка скрывает доступ (логин отклоняется); кнопка недоступна для текущего пользователя.</li>
+<li>Пользователь без <code>can_create</code> не видит кнопку «Добавить».</li>
+</ol>
+<hr />
+<h3>6.4. Структура (M04)</h3>
+<p><strong>Назначение:</strong> организационно-штатная структура для маршрутов BPM, согласований и привязки сотрудников к подразделениям.</p>
+<h4>6.4.1. Модель данных</h4>
+<table>
+<thead>
+<tr>
+<th>Сущность</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Organization</code></td>
+<td>юридический/учётный контур в подсистеме</td>
+</tr>
+<tr>
+<td><code>Department</code></td>
+<td>дерево подразделений (<code>parent</code>), код, наименование, руководитель (<code>manager</code>)</td>
+</tr>
+<tr>
+<td><code>Position</code></td>
+<td>штатная единица: код, наименование, число ставок (<code>headcount</code>)</td>
+</tr>
+<tr>
+<td><code>UserAssignment</code></td>
+<td>связь пользователь ↔ подразделение ↔ должность</td>
+</tr>
+</tbody>
+</table>
+<h4>6.4.2. Интерфейс</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Дерево</strong></td>
+<td>таблица с отступами по уровню; переключатель организации (если несколько); счётчики должностей и назначений</td>
+</tr>
+<tr>
+<td><strong>Подразделение</strong></td>
+<td>форма создания; popup: реквизиты, список должностей и назначений</td>
+</tr>
+<tr>
+<td><strong>Редактирование</strong></td>
+<td>popup: изменение реквизитов, добавление должности, назначение сотрудника на должность</td>
+</tr>
+<tr>
+<td><strong>Должность</strong></td>
+<td>popup: просмотр/редактирование ставки; удаление, если нет назначений</td>
+</tr>
+</tbody>
+</table>
+<h4>6.4.3. Правила</h4>
+<ul>
+<li>удаление подразделения запрещено при наличии дочерних узлов или должностей;</li>
+<li>удаление должности запрещено при наличии <code>UserAssignment</code>;</li>
+<li>операции — по правам <code>M04</code> (<code>can_create</code> / <code>can_change</code> / <code>can_delete</code>).</li>
+</ul>
+<h4>6.4.4. Критерии приёмки M04</h4>
+<ol>
+<li>Создано подразделение с родителем и руководителем; отображается в дереве.</li>
+<li>В подразделение добавлена должность с числом ставок.</li>
+<li>Сотрудник назначен на должность; отображается в карточке подразделения.</li>
+<li>Связь с M03: поля «подразделение/должность (текст)» в профиле дополняются, но не заменяют M04.</li>
+</ol>
+<p><strong>Этап 2:</strong> синхронизация с внешней кадровой системой, использование в маршрутах BPM «руководитель отдела».</p>
+<p><strong>Связь:</strong> организация — контур; подразделение — иерархия внутри организации.</p>
+<hr />
+<h3>6.5. Документы (M05)</h3>
+<p><strong>Назначение:</strong> единое хранилище файлов подсистемы с <strong>версионностью</strong>, привязкой к делам и демо-подписью; основа для СЭД (M24–M30) и шаблонов (этап 2).</p>
+<h4>6.5.1. Модель данных</h4>
+<table>
+<thead>
+<tr>
+<th>Поле / сущность</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DocumentFile</code></td>
+<td>файл, метаданные, тип (<code>attachment</code>, <code>incoming</code>, <code>outgoing</code>, …)</td>
+</tr>
+<tr>
+<td><code>root_document</code></td>
+<td>связь версий с корневой записью</td>
+</tr>
+<tr>
+<td><code>version</code>, <code>is_current</code></td>
+<td>нумерация; в реестре — только актуальные</td>
+</tr>
+<tr>
+<td><code>case</code></td>
+<td>опциональная привязка к делу (M22)</td>
+</tr>
+<tr>
+<td><code>is_signed</code>, <code>signature_meta</code></td>
+<td>демо электронной подписи</td>
+</tr>
+</tbody>
+</table>
+<h4>6.5.2. Интерфейс</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Реестр</strong></td>
+<td>таблица актуальных версий; фильтры: поиск, тип, ЭП; скачивание файла</td>
+</tr>
+<tr>
+<td><strong>Мастер загрузки</strong></td>
+<td>2 шага (bs-stepper): реквизиты + привязка к делу → файл</td>
+</tr>
+<tr>
+<td><strong>Карточка (popup)</strong></td>
+<td>метаданные, таблица версий, скачивание, новая версия, подпись, удаление цепочки</td>
+</tr>
+<tr>
+<td><strong>Ограничения</strong></td>
+<td>для <strong>архивного дела</strong> (M06): нет новых версий, подписи и удаления</td>
+</tr>
+</tbody>
+</table>
+<h4>6.5.3. Права</h4>
+<ul>
+<li>Просмотр и скачивание — <code>M05</code> / <code>can_view</code>;</li>
+<li>Загрузка и новая версия — <code>can_create</code>;</li>
+<li>Подпись — <code>can_change</code>;</li>
+<li>Удаление цепочки версий — <code>can_delete</code>;</li>
+<li>события — журнал аудита (M01).</li>
+</ul>
+<h4>6.5.4. Критерии приёмки M05</h4>
+<ol>
+<li>Документ загружается через мастер и отображается в реестре.</li>
+<li>Вторая версия снимает флаг <code>is_current</code> с предыдущей.</li>
+<li>Карточка показывает историю версий.</li>
+<li>Подпись фиксируется в <code>signature_meta</code> (демо).</li>
+<li>Для архивного дела операции изменения заблокированы.</li>
+</ol>
+<p><strong>Этап 2:</strong> шаблоны Word/PDF, сравнение версий, откат, Госключ, обязательность типов на этапах BPM.</p>
+<hr />
+<h3>6.6. Архив дел (M06)</h3>
+<p><strong>Назначение:</strong> долгосрочное хранение завершённых дел с учётом <strong>сроков хранения</strong>, <strong>legal hold</strong> и ограничений на изменение; подготовка к выгрузке комплектов (этап 2).</p>
+<h4>6.6.1. Модель данных (дело)</h4>
+<table>
+<thead>
+<tr>
+<th>Поле</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>is_archived</code>, <code>archived_at</code></td>
+<td>Признак и момент перевода в архив</td>
+</tr>
+<tr>
+<td><code>archived_by</code></td>
+<td>Пользователь, выполнивший архивирование</td>
+</tr>
+<tr>
+<td><code>archive_reason</code></td>
+<td>Текст основания / комментария</td>
+</tr>
+<tr>
+<td><code>retention_until</code></td>
+<td>Дата окончания срока хранения (пусто — «бессрочно» в смысле не задан срок в системе)</td>
+</tr>
+<tr>
+<td><code>legal_hold</code></td>
+<td>Запрет восстановления/«уничтожения» по регламенту (флаг)</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>При архивировании — <code>archived</code></td>
+</tr>
+</tbody>
+</table>
+<h4>6.6.2. Интерфейс</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Реестр архива</strong></td>
+<td>таблица: номер, тема, дата архива, срок хранения, legal hold, число вложений; фильтры: поиск, legal hold, «срок ≤ 90 дней»; пагинация</td>
+</tr>
+<tr>
+<td><strong>Карточка в popup</strong></td>
+<td>сводка, основание, переключение legal hold, восстановление (если hold снят), ссылка на полную карточку дела, кнопка экспорта</td>
+</tr>
+<tr>
+<td><strong>Карточка дела</strong></td>
+<td>для неархивного — форма «В архив» (основание, срок в годах или бессрочно); для архивного — баннер, read-only комментарии, операции M06</td>
+</tr>
+<tr>
+<td><strong>Редактирование дела (M22)</strong></td>
+<td>недоступно для архивных записей (404 при прямом URL)</td>
+</tr>
+</tbody>
+</table>
+<h4>6.6.3. Права</h4>
+<ul>
+<li>Просмотр архива и экспорт-заглушка — <code>M06</code> / <code>can_view</code>;</li>
+<li>Архивирование с карточки дела, legal hold, восстановление — <code>M06</code> / <code>can_change</code>;</li>
+<li>Все операции пишутся в <strong>журнал аудита</strong> (M01).</li>
+</ul>
+<h4>6.6.4. Критерии приёмки M06</h4>
+<ol>
+<li>Дело переводится в архив с основанием и сроком хранения (или без даты).</li>
+<li>Архивный реестр фильтруется и открывает popup.</li>
+<li>Legal hold блокирует восстановление до снятия флага.</li>
+<li>Восстановление возвращает дело в работу (статус «Исполнено» как безопасное значение по умолчанию).</li>
+<li>Экспорт формирует техническую заглушку с записью в аудите.</li>
+</ol>
+<p><strong>Этап 2:</strong> типы дел и нормативные сроки, уничтожение по истечении срока, ZIP/PDF комплект, интеграция с ГАИС.</p>
+<hr />
+<h3>6.7. Каталог модулей (M07–M66)</h3>
+<p><strong>60 модулей</strong>, включаемых в подсистему по требованию заказчика. Код <strong>M</strong> — единая нумерация для матрицы лицензирования, меню и прав доступа.</p>
+<h4>A. Рабочее место и продуктивность (M07–M14)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>M07</strong></td>
+<td><strong>Личный кабинет пользователя</strong></td>
+<td>Профиль, настройки, активные подсистемы, быстрый доступ к задачам и уведомлениям</td>
+</tr>
+<tr>
+<td>M08</td>
+<td>Рабочий стол «На сегодня»</td>
+<td>Очередь задач, просрочки, входящие на исполнение</td>
+</tr>
+<tr>
+<td>M09</td>
+<td>Календарь задач и событий</td>
+<td>Личный и общий календарь, служебные мероприятия, контрольные даты</td>
+</tr>
+<tr>
+<td>M10</td>
+<td>Канбан досок</td>
+<td>Визуализация этапов: колонки статусов, drag-and-drop, WIP-лимиты</td>
+</tr>
+<tr>
+<td>M11</td>
+<td>Планировщик операций (диаграмма Ганта)</td>
+<td>Сроки этапов проекта/дела, зависимости, критический путь</td>
+</tr>
+<tr>
+<td>M12</td>
+<td>Напоминания и подписки</td>
+<td>Push/e-mail/in-app, эскалация при бездействии</td>
+</tr>
+<tr>
+<td>M13</td>
+<td>Избранное и быстрые фильтры</td>
+<td>Закладки на реестры, сохранённые поиски</td>
+</tr>
+<tr>
+<td>M14</td>
+<td>Лента активности</td>
+<td>Хронология действий по делам и документам, где участвует пользователь</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.A.1. Личный кабинет (M07)</h4>
+<p><strong>Назначение:</strong> сводка для сотрудника: задачи, согласования BPM, уведомления, избранное, членства в подсистемах, базовые настройки профиля.</p>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Кабинет</strong></td>
+<td>виджеты-счётчики (открытые/просроченные задачи, непрочитанные уведомления, BPM); списки задач и уведомлений; закладки M13; форма часового пояса, языка, контактов</td>
+</tr>
+<tr>
+<td><strong>Popup задачи</strong></td>
+<td>загрузка карточки задачи по AJAX (общий с M08)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Права:</strong> просмотр — <code>M07</code> / <code>can_view</code>; настройки — <code>M07</code> / <code>can_change</code>. События настроек пишутся в ленту M14.</p>
+<h4>6.7.A.2. На сегодня (M08)</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Реестр задач</strong></td>
+<td>вкладки: сегодня, просроченные, неделя; завершение одной кнопкой; popup и полная форма редактирования</td>
+</tr>
+<tr>
+<td><strong>Создание/редактирование</strong></td>
+<td>поля: название, описание, исполнитель, срок, <strong>start_date</strong>, <strong>duration_days</strong>, приоритет, колонка канбана, дело</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Права:</strong> CRUD по матрице <code>M08</code>. Создание/завершение — запись в ленту M14.</p>
+<h4>6.7.A.3. Календарь (M09)</h4>
+<p>FullCalendar: события из задач (<code>start_date</code> или <code>due_date</code>), цвет по приоритету, фильтр «все / мои», переход в карточку задачи.</p>
+<h4>6.7.A.4. Канбан (M10)</h4>
+<p>Колонки <code>KanbanColumn</code>, смена колонки (POST), при «Готово» — <code>completed_at</code>. Фильтр «все / мои». События переноса — M14.</p>
+<h4>6.7.A.5. Гант (M11)</h4>
+<p>Таблица задач с <code>start_date</code>/<code>due_date</code> и <code>duration_days</code>; вычисление <code>gantt_end_date</code>; фильтр «мои». Этап 2: зависимости, drag-resize, критический путь.</p>
+<h4>6.7.A.6. Уведомления (M12)</h4>
+<table>
+<thead>
+<tr>
+<th>Поле</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>level</code></td>
+<td>info / warning / urgent</td>
+</tr>
+<tr>
+<td><code>link</code></td>
+<td>переход при «прочитано»</td>
+</tr>
+</tbody>
+</table>
+<p>Реестр с фильтрами по уровню и непрочитанным; «прочитать все»; отметка одного уведомления.</p>
+<h4>6.7.A.7. Избранное (M13)</h4>
+<p><code>Favorite</code>: label, url_path, icon_class, sort_order, привязка к подсистеме. <code>SavedFilter</code>: module_code, name, params (JSON). CRUD на одной странице.</p>
+<h4>6.7.A.8. Лента активности (M14)</h4>
+<p><code>ActivityEvent</code>: verb, target_repr, <strong>module_code</strong>, <strong>link_path</strong>, actor, subsystem. Фильтры: модуль, «только мои», поиск по тексту.</p>
+<p><strong>Критерии приёмки M07–M14 (этап 1):</strong> меню содержит M11 и M13; кабинет показывает сводку; задачи создаются с датами для Ганта; канбан и календарь работают в подсистеме pilot; уведомления с уровнями; избранное и фильтры сохраняются; лента отображает события с кодом модуля.</p>
+<h4>B. Статистика, отчётность и качество (M15–M21)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M15</td>
+<td>KPI-дашборды и сводки</td>
+<td>Виджеты: дела в работе, просрочки, нагрузка по людям и отделам</td>
+</tr>
+<tr>
+<td>M16</td>
+<td>Конструктор отчётов</td>
+<td>Пользовательские отчёты, поля, группировки, сохранённые шаблоны</td>
+</tr>
+<tr>
+<td>M17</td>
+<td>Регламентированная отчётность</td>
+<td>Формы для ОМСУ/ведомств, периоды, версии показателей</td>
+</tr>
+<tr>
+<td>M18</td>
+<td>Графики и визуализация</td>
+<td>Диаграммы, тренды, сравнение периодов, drill-down</td>
+</tr>
+<tr>
+<td>M19</td>
+<td>Оценка качества обработки</td>
+<td>Индикаторы полноты, возвраты, повторные обращения, SLA</td>
+</tr>
+<tr>
+<td>M20</td>
+<td>Мониторинг статусов и просрочек</td>
+<td>Светофор, очереди риска, фильтры для контролёров</td>
+</tr>
+<tr>
+<td>M21</td>
+<td>Аналитика по подразделениям</td>
+<td>Срезы по структуре (ШР), рейтинги исполнения</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.B.1. KPI-дашборды (M15)</h4>
+<p>Виджеты: дела в работе, просрочки, задачи, входящие, BPM. Графики ApexCharts: динамика дел за период (7/30/90 дн.), задачи по приоритету. Списки: статусы дел, нагрузка по исполнителям, топ просроченных.</p>
+<p><strong>Права:</strong> <code>M15</code> / <code>can_view</code>.</p>
+<h4>6.7.B.2. Конструктор отчётов (M16)</h4>
+<p>Модель <code>ReportTemplate</code>: code, name, query_key, columns (JSON), report_kind, description, is_active, default_period_days. Запуск формирует <code>ReportRun</code> с result и period_label. UI: реестр шаблонов, popup, мастер создания, таблица результата, история запусков.</p>
+<p><strong>Ключи запросов (этап 1):</strong> cases_summary, correspondence_in, tasks_by_user, docs_by_type, bpm_pending, cases_trend.</p>
+<p><strong>Права:</strong> просмотр/запуск — <code>can_view</code>; создание шаблона — <code>can_create</code>.</p>
+<h4>6.7.B.3. Регламентированная отчётность (M17)</h4>
+<p><code>RegulatoryReportSubmission</code>: form_code, form_name, period_label, version, status (черновик/сдано/принято), indicators (JSON). Черновик → сдача с фиксацией submitted_by/at.</p>
+<h4>6.7.B.4. Графики (M18)</h4>
+<p>Страница с тремя диаграммами (дела, задачи, корреспонденция), выбор периода. Этап 2: drill-down в реестры.</p>
+<h4>6.7.B.5. Качество (M19)</h4>
+<p>Индикаторы: заполненность исполнителя, входящие без дела, документы без ЭП, риск SLA, повторные обращения.</p>
+<h4>6.7.B.6. Мониторинг просрочек (M20)</h4>
+<p>Светофор (красный/жёлтый/зелёный) по делам и задачам; сортировка по риску.</p>
+<h4>6.7.B.7. Аналитика по подразделениям (M21)</h4>
+<p>Срез по <code>Department</code> + <code>UserAssignment</code>: открытые/просроченные/исполненные дела, рейтинг 0–100.</p>
+<p><strong>Критерии приёмки M15–M21:</strong> дашборд и графики отображаются в pilot; отчёт запускается и пишется в историю; регламентированная форма сохраняется и сдаётся; M21 показывает отделы при назначениях M04.</p>
+<h4>C. Дела, реестры и учёт (M22–M23)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M22</td>
+<td>Реестр дел (универсальный)</td>
+<td>Карточка дела, статусы, исполнитель, связи, история</td>
+</tr>
+<tr>
+<td>M23</td>
+<td>Универсальные реестры (конфигуратор)</td>
+<td>Настраиваемые справочники, поля, импорт, валидация</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.C.1. Реестр дел (M22)</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Реестр</strong></td>
+<td>фильтры: поиск, статус, исполнитель, приоритет, просрочка; пагинация; popup-карточка</td>
+</tr>
+<tr>
+<td><strong>Мастер (2 шага)</strong></td>
+<td>суть дела → исполнение (исполнитель, срок, приоритет, статус); автонумерация <code>КОД-ГОД-NNNN</code></td>
+</tr>
+<tr>
+<td><strong>Карточка дела</strong></td>
+<td>документы, BPM, комментарии (M38), архив (M06), ИИ-сводка</td>
+</tr>
+<tr>
+<td><strong>Редактирование</strong></td>
+<td>только неархивные дела</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Права:</strong> просмотр — <code>M22</code>/<code>can_view</code> (без change — только свои дела); создание/изменение — <code>can_create</code>/<code>can_change</code>. События в ленту M14.</p>
+<h4>6.7.C.2. Универсальные реестры (M23)</h4>
+<p><code>RegistryType</code>: code, name, description, field_schema (JSON), is_active, sort_order.<br />
+<code>RegistryRecord</code>: data (JSON по схеме), organization, created_by.</p>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Типы реестров</strong></td>
+<td>список с числом записей, popup, редактор схемы</td>
+</tr>
+<tr>
+<td><strong>Записи</strong></td>
+<td>таблица по колонкам схемы; CRUD; popup; импорт JSON-массива</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Права:</strong> CRUD по матрице <code>M23</code>. Валидация обязательных полей по схеме.</p>
+<p><strong>Критерии приёмки M22–M23:</strong> дело создаётся мастером и открывается в popup; фильтры реестра работают; тип реестра с JSON-схемой; записи добавляются и импортируются.</p>
+<h4>D. Первичный и внутренний документооборот (M24–M32)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>M24</strong></td>
+<td><strong>Первичный документооборот (входящие)</strong></td>
+<td>Регистрация входящей корреспонденции, реквизиты, номер, дата</td>
+</tr>
+<tr>
+<td>M25</td>
+<td>Исходящая корреспонденция</td>
+<td>Регистрация исходящих, связь с входящим, контроль отправки</td>
+</tr>
+<tr>
+<td>M26</td>
+<td>Журнал регистрации документов</td>
+<td>Сквозной журнал, поиск, печать реестров</td>
+</tr>
+<tr>
+<td>M27</td>
+<td>Маршрутизация и переадресация</td>
+<td>Передача между подразделениями, резолюции, история переадресаций</td>
+</tr>
+<tr>
+<td>M28</td>
+<td>Просмотр истории документа</td>
+<td>Версии, кто и когда изменил, цепочка согласований</td>
+</tr>
+<tr>
+<td>M29</td>
+<td>Шаблоны печатных форм</td>
+<td>Word/PDF, подстановка полей из карточки</td>
+</tr>
+<tr>
+<td>M30</td>
+<td><strong>Работа с ЭП (КЭП/УКЭП)</strong></td>
+<td>Подписание, проверка, пакетное подписание, протокол</td>
+</tr>
+<tr>
+<td>M31</td>
+<td>Госключ и внешние каналы ЭП</td>
+<td>Интеграция с Госключ/доверенными УЦ (по контуру заказчика)</td>
+</tr>
+<tr>
+<td>M32</td>
+<td>Сканирование и комплекты документов</td>
+<td>Пакетная загрузка, комплектность, связь с делом</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.D.1. Входящие (M24)</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Реестр входящих</strong></td>
+<td>фильтры: поиск, статус; пагинация; popup-карточка</td>
+</tr>
+<tr>
+<td><strong>Регистрация</strong></td>
+<td>мастер: тема, отправитель, дата, исполнитель, дело, статус; автонумерация <code>ВХ-ГОД-NNNN</code></td>
+</tr>
+<tr>
+<td><strong>Карточка</strong></td>
+<td>реквизиты, переадресация (M27), печать (M29), история (M28)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Права:</strong> <code>M24</code> / <code>can_view</code>, <code>can_create</code>, <code>can_change</code>. Запись в журнал M26 и ленту M14.</p>
+<h4>6.7.D.2. Исходящие (M25)</h4>
+<p>Реестр исходящих с привязкой <code>linked_incoming</code> к входящему. Регистрация с автонумерацией <code>ИСХ-ГОД-NNNN</code>.</p>
+<h4>6.7.D.3. Журнал регистрации (M26)</h4>
+<p>Сквозной журнал всех направлений: фильтры поиск, направление, год; оператор из <code>RegistrationJournalEntry</code>.</p>
+<h4>6.7.D.4. Маршрутизация (M27)</h4>
+<p><code>CorrespondenceRoute</code>: from_user, to_user, comment. Смена исполнителя и статуса «В работе»; событие в <code>CorrespondenceEvent</code>.</p>
+<h4>6.7.D.5. История (M28)</h4>
+<p><code>CorrespondenceEvent</code>: registered, routed, status, linked, signed, version, comment. Экран версий документов дела.</p>
+<h4>6.7.D.6. Печатные формы (M29)</h4>
+<p><code>PrintTemplate</code>: code, name, body с плейсхолдерами <code>{{reg_number}}</code>, <code>{{subject}}</code>, <code>{{counterparty}}</code>, <code>{{reg_date}}</code>. Предпросмотр и печать из браузера.</p>
+<h4>6.7.D.7. Электронная подпись (M30)</h4>
+<p>Центр подписания: список неподписанных <code>DocumentFile</code>, пакетное подписание (демо КЭП через <code>sign_document</code>). Точечная подпись — также M05.</p>
+<h4>6.7.D.8. Госключ (M31)</h4>
+<p>Заглушка интеграции с Госключ/УЦ; этап 2 — OAuth и проверка цепочки.</p>
+<h4>6.7.D.9. Сканирование (M32)</h4>
+<p>Пакетная загрузка файлов в дело (<code>DocumentFile</code>, тип SCAN). Множественный выбор файлов в форме.</p>
+<p><strong>Критерии приёмки M24–M32:</strong> входящее регистрируется с номером и журналом; исходящее связывается с входящим; переадресация фиксируется; история показывает события; шаблон печати рендерится; пакетное подписание и скан работают в pilot.</p>
+<h4>E. Бизнес-процессы (M33–M36)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>M33</strong></td>
+<td><strong>Конструктор бизнес-процессов</strong></td>
+<td>Моделирование BPMN, этапы, ветвления, таймеры</td>
+</tr>
+<tr>
+<td>M34</td>
+<td>Исполнение маршрутов согласования</td>
+<td>Задачи согласующим, «согласовано/отклонено», комментарии</td>
+</tr>
+<tr>
+<td>M35</td>
+<td>SLA и эскалации</td>
+<td>Нормативы времени, автоматическое повышение при нарушении</td>
+</tr>
+<tr>
+<td>M36</td>
+<td>Регламентные сроки по типам дел</td>
+<td>Календарь рабочих дней, переносы, обоснования</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.E.1. Конструктор BPM (M33)</h4>
+<p><code>BPMTemplate</code>: code, name, description, steps (JSON: id, name, assignee_id), is_active.</p>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Шаблоны</strong></td>
+<td>реестр, popup, редактор JSON-шагов</td>
+</tr>
+<tr>
+<td><strong>Экземпляры</strong></td>
+<td>запущенные процессы по делам, фильтры</td>
+</tr>
+<tr>
+<td><strong>Запуск</strong></td>
+<td>выбор шаблона и дела → <code>start_process</code></td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.E.2. Согласования (M34)</h4>
+<p>Карточки задач <code>BPMTask</code> (pending); экран решения: согласовать/отклонить + комментарий; быстрое решение с карточки дела.</p>
+<h4>6.7.E.3. SLA (M35)</h4>
+<p><code>SLARule</code>: code, name, hours_limit, escalate_to, is_active. Монитор: просрочки, зона риска, «застой», очередь BPM.</p>
+<h4>6.7.E.4. Регламенты (M36)</h4>
+<p><code>CaseRegulation</code>: default_working_days, applies_on_status. Применение к делу устанавливает <code>due_date</code>.</p>
+<p><strong>Критерии приёмки M33–M36:</strong> шаблон с шагами создаётся; процесс запускается и проходит согласование; монитор SLA показывает метрики; регламент выставляет срок дела.</p>
+<p>Интерактивный конфигуратор бизнес процессов (этап 2 — визуальный BPMN)</p>
+<h4>F. Чат и совместная работа (M37–M41)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>M37</strong></td>
+<td><strong>Внутренний чат</strong></td>
+<td>Диалоги, группы по делу/проекту, вложения</td>
+</tr>
+<tr>
+<td>M38</td>
+<td>Комментарии к карточкам</td>
+<td>Треды в деле, реестре, документе</td>
+</tr>
+<tr>
+<td>M39</td>
+<td>Упоминания и подписки на объекты</td>
+<td>@сотрудник, уведомление об изменениях</td>
+</tr>
+<tr>
+<td>M40</td>
+<td>Видеосовещания (интеграция)</td>
+<td>Ссылки на ВКС, протокол встречи</td>
+</tr>
+<tr>
+<td>M41</td>
+<td>Уведомления в мессенджеры</td>
+<td>Telegram/Max и др. по шлюзу</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.F.1. Внутренний чат (M37)</h4>
+<p><code>ChatRoom</code>: name, case, members M2M. <code>ChatMessage</code>: body, author. UI в стиле app-chat: список комнат-карточек, экран переписки с пузырями, @упоминания.</p>
+<h4>6.7.F.2. Комментарии (M38)</h4>
+<p><code>Comment</code>: case/document, parent (треды). Хаб <code>/comms/comments/</code>; на карточке дела — треды и ссылка на хаб.</p>
+<h4>6.7.F.3. Упоминания и подписки (M39)</h4>
+<p><code>Mention</code> + уведомление M12 при <code>@username</code>. <code>ObjectSubscription</code> на дело/документ — уведомление при новом комментарии.</p>
+<h4>6.7.F.4. Видеосовещания (M40)</h4>
+<p><code>VideoMeeting</code>: title, meeting_url, scheduled_at, protocol_notes, case.</p>
+<h4>6.7.F.5. Мессенджеры (M41)</h4>
+<p><code>MessengerChannel</code>: telegram/max, webhook_url (демо). Этап 2 — реальная доставка через M42.</p>
+<p><strong>Критерии приёмки M37–M41:</strong> чат с сообщениями; комментарий с @ создаёт Mention; подписка шлёт уведомление; ВКС с ссылкой; канал мессенджера в реестре.</p>
+<h4>G. Интеграции (M42–M45)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>M42</strong></td>
+<td><strong>Модуль интеграций (шлюз)</strong></td>
+<td>Единая точка: очереди, ретраи, мониторинг обменов</td>
+</tr>
+<tr>
+<td>M43</td>
+<td>REST / OpenAPI</td>
+<td>Публичное и внутреннее API, ключи, лимиты</td>
+</tr>
+<tr>
+<td>M44</td>
+<td>СМЭВ</td>
+<td>Отправка/приём межведомственных сообщений</td>
+</tr>
+<tr>
+<td>M45</td>
+<td>Внешние ИС (ГИС ЖКХ, 1С, ERP, почта)</td>
+<td>Коннекторы по адаптерам, маппинг полей</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.G.1. Шлюз интеграций (M42)</h4>
+<p><code>IntegrationEndpoint</code>: code, name, endpoint_type, config (JSON), max_retries, is_active.<br />
+<code>IntegrationMessage</code>: direction, payload, status, retry_count, external_id.</p>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Шлюз</strong></td>
+<td>KPI: активные коннекторы, очередь, ошибки, отправлено за день</td>
+</tr>
+<tr>
+<td><strong>Коннекторы</strong></td>
+<td>CRUD, тестовая отправка</td>
+</tr>
+<tr>
+<td><strong>Журнал</strong></td>
+<td>фильтры, popup payload, повтор при ошибке</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.G.2. REST / OpenAPI (M43)</h4>
+<p><code>ApiClientKey</code>: prefix, rate_limit. Страница спецификации, <code>/api/v1/</code>*, OpenAPI JSON.</p>
+<h4>6.7.G.3. СМЭВ (M44)</h4>
+<p>Коннекторы типа <code>smev</code>: отправка запроса, демо-приём ответа, журнал.</p>
+<h4>6.7.G.4. Внешние ИС (M45)</h4>
+<p>Типы <code>external_1c</code>, <code>external_gis</code>, <code>mail</code>; <code>config.field_mapping</code>; демо-синхронизация.</p>
+<p><strong>Критерии приёмки M42–M45:</strong> сообщение проходит очередь/ретрай; API-ключ создаётся; СМЭВ in/out в журнале; внешний коннектор с маппингом.</p>
+<h4>H. Архивы и долгосрочное хранение (M46)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>M46</strong></td>
+<td><strong>Аудиоархив</strong></td>
+<td>Хранение записей звонков/совещаний, привязка к делу, поиск, прослушивание, сроки хранения</td>
+</tr>
+</tbody>
+</table>
+<p><em>Документный архив — модуль ядра </em><em>M06</em><em>; аудиоархив </em><em>M46</em><em> дополняет его для голосовых материалов.</em></p>
+<h4>6.7.H.1. Аудиоархив (M46)</h4>
+<p><code>AudioArchiveItem</code>: title, file, source_type (call/meeting), duration_sec, transcript, case, recorded_at, retention_until.</p>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Реестр</strong></td>
+<td>KPI, фильтры, popup, плеер на карточке</td>
+</tr>
+<tr>
+<td><strong>Загрузка</strong></td>
+<td>привязка к делу, срок хранения</td>
+</tr>
+<tr>
+<td><strong>Транскрибация</strong></td>
+<td>M62, демо-текст в transcript</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.I.1. ИИ-хаб (M47–M66, этап 1)</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Модули</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Обзор</td>
+<td>M47 hub, лимиты M66</td>
+</tr>
+<tr>
+<td>Ассистент</td>
+<td>M47, RAG по M61</td>
+</tr>
+<tr>
+<td>Поиск</td>
+<td>M48</td>
+</tr>
+<tr>
+<td>Инструменты</td>
+<td>M49–M56, M59, M60, M63</td>
+</tr>
+<tr>
+<td>База знаний</td>
+<td>M61 CRUD</td>
+</tr>
+<tr>
+<td>Политики</td>
+<td>M66, журнал <code>AiRequestLog</code></td>
+</tr>
+<tr>
+<td>OCR</td>
+<td>M51 заглушка</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Критерии приёмки M46–M66 (этап 1):</strong> аудио в реестре с транскриптом; ассистент и поиск работают; инструменты по делу; политика и журнал отображаются.</p>
+<h4>I. Искусственный интеллект (M47–M66) — <strong>20 модулей</strong></h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M47</td>
+<td>ИИ-ассистент (чат)</td>
+<td>Ответы по регламентам и карточке дела в интерфейсе</td>
+</tr>
+<tr>
+<td>M48</td>
+<td>Семантический поиск</td>
+<td>Поиск по смыслу в делах, документах, реестрах</td>
+</tr>
+<tr>
+<td>M49</td>
+<td>Классификация обращений</td>
+<td>Автотип/тема/приоритет входящего</td>
+</tr>
+<tr>
+<td>M50</td>
+<td>Извлечение реквизитов (NER)</td>
+<td>ФИО, адреса, даты, номера из сканов и PDF</td>
+</tr>
+<tr>
+<td>M51</td>
+<td>OCR документов</td>
+<td>Распознавание сканов, черновик карточки</td>
+</tr>
+<tr>
+<td>M52</td>
+<td>Суммаризация дела</td>
+<td>Краткая выжимка истории для руководителя</td>
+</tr>
+<tr>
+<td>M53</td>
+<td>Генерация проекта ответа</td>
+<td>Черновик письма/решения по шаблону и контексту</td>
+</tr>
+<tr>
+<td>M54</td>
+<td>Проверка полноты дела</td>
+<td>Чек-лист: чего не хватает до перевода на этап</td>
+</tr>
+<tr>
+<td>M55</td>
+<td>Прогноз сроков исполнения</td>
+<td>Оценка даты завершения по истории аналогов</td>
+</tr>
+<tr>
+<td>M56</td>
+<td>Риск просрочки</td>
+<td>Раннее предупреждение «красная зона»</td>
+</tr>
+<tr>
+<td>M57</td>
+<td>Дедупликация персон (ИИ)</td>
+<td>Совпадения граждан/контрагентов в реестрах</td>
+</tr>
+<tr>
+<td>M58</td>
+<td>Аномалии в данных</td>
+<td>Выбросы, противоречия, дубли записей</td>
+</tr>
+<tr>
+<td>M59</td>
+<td>Q&amp;A по НПА и локальным актам</td>
+<td>Вопросы по нормам с указанием источника</td>
+</tr>
+<tr>
+<td>M60</td>
+<td>Подсказка маршрута согласования</td>
+<td>Рекомендация следующего шага BPM</td>
+</tr>
+<tr>
+<td>M61</td>
+<td>База знаний (RAG)</td>
+<td>Индексация регламентов, инструкций, FAQ</td>
+</tr>
+<tr>
+<td>M62</td>
+<td>Транскрибация аудио/видео</td>
+<td>Текст из записи + привязка к аудиоархиву (M46)</td>
+</tr>
+<tr>
+<td>M63</td>
+<td>Тональность обращения</td>
+<td>Негатив/эскалация для приоритизации</td>
+</tr>
+<tr>
+<td>M64</td>
+<td>Автотегирование документов</td>
+<td>Теги, тип, связь с делом</td>
+</tr>
+<tr>
+<td>M65</td>
+<td>Генерация пояснений к отчётам</td>
+<td>Текстовый комментарий к цифрам дашборда</td>
+</tr>
+<tr>
+<td>M66</td>
+<td>Политики ИИ и журнал запросов</td>
+<td>Модели, лимиты, ПДн, аудит промптов/ответов</td>
+</tr>
+</tbody>
+</table>
+<h4>L. Инфраструктура, данные и доступ (M67–M72)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M67</td>
+<td>Геопортал / GIS</td>
+<td>Карта объектов, слои, геокодирование, привязка к делу</td>
+</tr>
+<tr>
+<td>M68</td>
+<td>Мобильное PWA</td>
+<td>Полевые наряды, офлайн-черновики, синхронизация</td>
+</tr>
+<tr>
+<td>M69</td>
+<td>SSO / ЕСИА</td>
+<td>Единый вход, федеративная аутентификация для госсектора</td>
+</tr>
+<tr>
+<td>M70</td>
+<td>ETL и массовый импорт</td>
+<td>Планировщик загрузок, журнал пакетов, повторный запуск</td>
+</tr>
+<tr>
+<td>M71</td>
+<td>Витрина данных (Data Hub)</td>
+<td>Публикация наборов для аналитики и внешних потребителей</td>
+</tr>
+<tr>
+<td>M72</td>
+<td>Портал гражданина</td>
+<td>Приём обращений снаружи, статус для заявителя (опционально)</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.L.1. Инфраструктура (M67–M72, этап 1)</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Модули</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Обзор</strong></td>
+<td>M67 hub</td>
+<td>KPI: геообъекты, PWA-черновики, SSO, ETL, витрина, обращения</td>
+</tr>
+<tr>
+<td><strong>Геопортал</strong></td>
+<td>M67</td>
+<td>Leaflet-карта, слои <code>GeoLayer</code>, объекты <code>GeoObject</code>, привязка к делу, демо-геокодирование</td>
+</tr>
+<tr>
+<td><strong>PWA</strong></td>
+<td>M68</td>
+<td>Устройства <code>PwaDevice</code>, офлайн <code>PwaDraft</code>, кнопка синхронизации</td>
+</tr>
+<tr>
+<td><strong>SSO</strong></td>
+<td>M69</td>
+<td>Реестр <code>SsoProvider</code> (ЕСИА/SAML/OIDC)</td>
+</tr>
+<tr>
+<td><strong>ETL</strong></td>
+<td>M70</td>
+<td>Задания <code>EtlJob</code>, журнал <code>EtlRun</code>, демо-запуск пакета</td>
+</tr>
+<tr>
+<td><strong>Data Hub</strong></td>
+<td>M71</td>
+<td>Каталог <code>DataDataset</code>, публикация наборов</td>
+</tr>
+<tr>
+<td><strong>Портал гражданина</strong></td>
+<td>M72</td>
+<td><code>CitizenAppeal</code>, статусы, связь с делом, modal</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Критерии приёмки M67–M72 (этап 1):</strong> карта с точками; синхронизация черновика PWA; провайдер SSO в списке; ETL-запуск в журнале; набор данных в витрине; обращение гражданина с номером.</p>
+<h4>M. НСИ, формы и операции (M73–M77)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M73</td>
+<td>Центральные справочники (НСИ)</td>
+<td>Единые классификаторы: ОКТМО, типы документов, темы обращений</td>
+</tr>
+<tr>
+<td>M74</td>
+<td>Конструктор форм карточек</td>
+<td>Визуальный редактор полей дела/реестра без программирования</td>
+</tr>
+<tr>
+<td>M75</td>
+<td>Массовые операции</td>
+<td>Пакетная смена статуса, назначение исполнителя, экспорт</td>
+</tr>
+<tr>
+<td>M76</td>
+<td>Реестр выгрузок и печати</td>
+<td>Журнал сформированных печатных форм и выгрузок</td>
+</tr>
+<tr>
+<td>M77</td>
+<td>Контроль исполнения поручений</td>
+<td>Реестр поручений руководства, сроки, отчёт исполнителя</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.M.1. НСИ и операции (M73–M77, этап 1)</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Модули</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Обзор</strong></td>
+<td>M73 hub</td>
+<td>KPI НСИ, схем форм, поручения, массовые/выгрузки</td>
+</tr>
+<tr>
+<td><strong>НСИ</strong></td>
+<td>M73</td>
+<td>CRUD <code>NSIClassifier</code> / <code>NSIValue</code>, иерархия parent</td>
+</tr>
+<tr>
+<td><strong>Конструктор форм</strong></td>
+<td>M74</td>
+<td><code>FormSchema</code> (target case/registry/correspondence), JSON полей; <strong>интеграция:</strong> динамические поля в карточке/мастере дела (<code>case_extra</code>), записи реестра по <code>resolve_registry_schema</code>, синхронизация <code>field_schema</code> реестра при сохранении схемы</td>
+</tr>
+<tr>
+<td><strong>Массовые</strong></td>
+<td>M75</td>
+<td><code>BulkOperation</code> — статус/назначение по фильтру дел</td>
+</tr>
+<tr>
+<td><strong>Выгрузки</strong></td>
+<td>M76</td>
+<td><code>ExportJob</code> — журнал, демо-генерация CSV</td>
+</tr>
+<tr>
+<td><strong>Поручения</strong></td>
+<td>M77</td>
+<td><code>ManagementDirective</code>, отчёт исполнителя, просрочка</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Критерии приёмки M73–M77 (этап 1):</strong> справочник с значениями; схема формы сохраняется и применяется к форме дела/записи реестра; массовая операция в журнале; выгрузка в статусе «Готово»; поручение с отчётом закрывается.</p>
+<h4>N. Безопасность, эксплуатация, обучение (M78–M82)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M78</td>
+<td>Шаблоны уведомлений</td>
+<td>Редактор текстов e-mail/SMS/in-app по событиям</td>
+</tr>
+<tr>
+<td>M79</td>
+<td>Антивирусная проверка вложений</td>
+<td>Сканирование файлов при загрузке (интеграция с AV)</td>
+</tr>
+<tr>
+<td>M80</td>
+<td>Маскирование и обезличивание ПДн</td>
+<td>Скрытие полей по роли, режим демонстрации</td>
+</tr>
+<tr>
+<td>M81</td>
+<td>Резервное копирование (UI)</td>
+<td>Статус бэкапов, ручной запуск восстановления на тест</td>
+</tr>
+<tr>
+<td>M82</td>
+<td>Мониторинг и панель здоровья</td>
+<td>Uptime, очереди, ошибки, версия релиза</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.N.1. Эксплуатация (M78–M82, этап 1)</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Модули</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Обзор</strong></td>
+<td>M78 hub</td>
+<td>KPI шаблонов, AV, бэкапов, снимков</td>
+</tr>
+<tr>
+<td><strong>Уведомления</strong></td>
+<td>M78</td>
+<td><code>NotificationTemplate</code> по event_code и каналу</td>
+</tr>
+<tr>
+<td><strong>Антивирус</strong></td>
+<td>M79</td>
+<td><code>AvScanResult</code>, демо-скан; <strong>интеграция:</strong> автоматический вызов <code>scan_document_on_upload</code> при создании документа и новой версии, статус на карточке документа</td>
+</tr>
+<tr>
+<td><strong>ПДн</strong></td>
+<td>M80</td>
+<td><code>PiiMaskingPolicy</code>, роли и demo_mode</td>
+</tr>
+<tr>
+<td><strong>Бэкапы</strong></td>
+<td>M81</td>
+<td><code>BackupRecord</code>, демо-запуск</td>
+</tr>
+<tr>
+<td><strong>Мониторинг</strong></td>
+<td>M82</td>
+<td><code>SystemHealthSnapshot</code> + метрики очередей</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Критерии приёмки M78–M82 (этап 1):</strong> шаблон сохраняется; скан в журнале и после загрузки вложения; политика ПДн; бэкап в списке; снимок health с версией.</p>
+<h4>O. Лицензии, UX и расширяемость (M83–M86)</h4>
+<table>
+<thead>
+<tr>
+<th>Код</th>
+<th>Модуль</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M83</td>
+<td>Лицензирование модулей</td>
+<td>Учёт включённых M-кодов, срок лицензии, предупреждения</td>
+</tr>
+<tr>
+<td>M84</td>
+<td>Обучение и онбординг</td>
+<td>Туры по интерфейсу, база подсказок, «что нового»</td>
+</tr>
+<tr>
+<td>M85</td>
+<td>Конструктор дашбордов</td>
+<td>Пользовательская раскладка виджетов M15</td>
+</tr>
+<tr>
+<td>M86</td>
+<td>Каталог коннекторов</td>
+<td>Marketplace адаптеров интеграций к M42</td>
+</tr>
+</tbody>
+</table>
+<h4>6.7.O.1. UX и лицензии (M83–M86, этап 1)</h4>
+<table>
+<thead>
+<tr>
+<th>Экран</th>
+<th>Модули</th>
+<th>Поведение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Обзор</strong></td>
+<td>M83 hub</td>
+<td>Лицензии, обучение, marketplace</td>
+</tr>
+<tr>
+<td><strong>Лицензии</strong></td>
+<td>M83</td>
+<td><code>LicenseEntitlement</code> + флаг включения модуля</td>
+</tr>
+<tr>
+<td><strong>Обучение</strong></td>
+<td>M84</td>
+<td><code>OnboardingArticle</code> (тур/подсказка/changelog)</td>
+</tr>
+<tr>
+<td><strong>Дашборды</strong></td>
+<td>M85</td>
+<td><code>UserDashboardLayout</code>, JSON виджетов M15; <strong>интеграция:</strong> KPI-дашборд M15 читает раскладку пользователя (<code>DELAYU_LAYOUT</code>), скрывает виджеты вне списка</td>
+</tr>
+<tr>
+<td><strong>Marketplace</strong></td>
+<td>M86</td>
+<td><code>MarketplaceConnector</code>, демо-установка</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Критерии приёмки M83–M86 (этап 1):</strong> таблица лицензий; материал обучения; раскладка дашборда влияет на M15; коннектор в каталоге.</p>
+<p>Сводная таблица: ядро + расширение</p>
+<table>
+<thead>
+<tr>
+<th>Группа</th>
+<th>Коды</th>
+<th>Кол-во</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ядро (детально в п. 6.1–6.6)</td>
+<td>M01–M06</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Рабочее место</td>
+<td>M07–M14</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Аналитика</td>
+<td>M15–M21</td>
+<td>7</td>
+</tr>
+<tr>
+<td>Дела и реестры</td>
+<td>M22–M23</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Документооборот и ЭП</td>
+<td>M24–M32</td>
+<td>9</td>
+</tr>
+<tr>
+<td>Бизнес-процессы</td>
+<td>M33–M36</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Коммуникации</td>
+<td>M37–M41</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Интеграции</td>
+<td>M42–M45</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Аудиоархив</td>
+<td>M46</td>
+<td>1</td>
+</tr>
+<tr>
+<td><strong>ИИ</strong></td>
+<td><strong>M47–M66</strong></td>
+<td><strong>20</strong></td>
+</tr>
+<tr>
+<td>Дополнительные (п. 6.8)</td>
+<td>M67–M86</td>
+<td>20</td>
+</tr>
+<tr>
+<td><strong>Итого в каталоге</strong></td>
+<td><strong>M01–M86</strong></td>
+<td><strong>86</strong></td>
+</tr>
+</tbody>
+</table>
+<h2>7. Отраслевые подсистемы (после платформы)</h2>
+<p><strong>Текущий фокус разработки:</strong> платформа «ДелаЮ» — ядро M01–M06, каталог M07–M86, UI, администрирование, демо-контур.</p>
+<p><strong>Подсистемы заказчика</strong> создаются на базе платформы <strong>опытным путём</strong>: мастер подсистемы, матрица модулей, универсальные реестры (M23), при необходимости — отдельное ТЗ на отраслевые реестры и процессы (<code>docs/tz-source/</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Принцип</th>
+<th>Описание</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Не дублировать ядро</td>
+<td>Пользователи, роли, документы, архив — только модули платформы</td>
+</tr>
+<tr>
+<td>Расширение</td>
+<td>Отраслевые сущности — реестры, типы дел, шаблоны процессов в контуре подсистемы</td>
+</tr>
+<tr>
+<td>Документация</td>
+<td>Каждая крупная подсистема — отдельный документ ТЗ, вне данного файла</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>8. Сквозные сервисы платформы</h2>
+<p>Реализуются как отдельные модули каталога (раздел 6.7) или как общие компоненты ядра:</p>
+<table>
+<thead>
+<tr>
+<th>Сервис</th>
+<th>Модули каталога</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Аутентификация, 2FA, сессии</td>
+<td>Ядро + M07</td>
+</tr>
+<tr>
+<td>Полнотекстовый поиск</td>
+<td>M48, общий индекс</td>
+</tr>
+<tr>
+<td>Журнал аудита</td>
+<td>Ядро (обязателен)</td>
+</tr>
+<tr>
+<td>Файловое хранилище</td>
+<td>M05, M32</td>
+</tr>
+<tr>
+<td>Импорт/экспорт CSV, XLSX</td>
+<td>M23, M70</td>
+</tr>
+<tr>
+<td>Печать и экспорт PDF</td>
+<td>M29, M17</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>9. Роли пользователей (типовые)</h2>
+<table>
+<thead>
+<tr>
+<th>Роль</th>
+<th>Полномочия (обобщённо)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Администратор платформы</strong></td>
+<td>Подсистемы, глобальные модули, мониторинг</td>
+</tr>
+<tr>
+<td><strong>Администратор подсистемы</strong></td>
+<td>Организации, пользователи, роли, реестры, конфигурация меню</td>
+</tr>
+<tr>
+<td><strong>Руководитель</strong></td>
+<td>Просмотр всех дел подразделения, отчёты, согласования</td>
+</tr>
+<tr>
+<td><strong>Специалист</strong></td>
+<td>Ведение дел и реестров в рамках прав</td>
+</tr>
+<tr>
+<td><strong>Регистратор</strong></td>
+<td>Создание и первичная обработка обращений</td>
+</tr>
+<tr>
+<td><strong>Аудитор</strong></td>
+<td>Только чтение + журнал аудита</td>
+</tr>
+</tbody>
+</table>
+<p>Конкретная матрица прав утверждается <strong>для каждой подсистемы</strong> на этапе внедрения.</p>
+<hr />
+<h2>10. Основные бизнес-процессы (сквозные)</h2>
+<h3>10.1. Создание новой подсистемы (мастер)</h3>
+<ol>
+<li>Администратор платформы запускает мастер.</li>
+<li>Указывает код, название, шаблон (чистое ядро / копия существующей подсистемы).</li>
+<li>Выбирает модули из каталога.</li>
+<li>Создаёт головную организацию.</li>
+<li>Назначает администратора подсистемы.</li>
+<li>Публикует конфигурацию → пользователи входят в контур подсистемы.</li>
+</ol>
+<h3>10.2. Ежедневная работа специалиста</h3>
+<ol>
+<li>Вход в систему, выбор подсистемы (если доступно несколько).</li>
+<li>Рабочий стол: задачи, просрочки, входящие.</li>
+<li>Работа с делом/реестром: данные, документы, смена статуса.</li>
+<li>Формирование печатной формы, передача на согласование.</li>
+<li>Завершение → архив (по правилам).</li>
+</ol>
+<h3>10.3. Администрирование доступа</h3>
+<ol>
+<li>Создание пользователя, привязка к организации и подсистеме.</li>
+<li>Назначение роли.</li>
+<li>Проверка матрицы «роль × модуль».</li>
+<li>Аудит изменений прав.</li>
+</ol>
+<hr />
+<h2>11. Требования к данным и мультитенантности</h2>
+<ol>
+<li>Все прикладные данные (дела, реестры, документы) <strong>привязаны к организации</strong> и <strong>контексту подсистемы</strong>.</li>
+<li>Пользователь видит только данные тех организаций и подсистем, к которым допущен.</li>
+<li>Справочники могут быть <strong>общими для подсистемы</strong> или <strong>изолированными по организации</strong> (настройка).</li>
+<li>Резервное копирование и восстановление БД — по регламенту заказчика.</li>
+</ol>
+<hr />
+<h2>12. Нефункциональные требования (базовый уровень)</h2>
+<table>
+<thead>
+<tr>
+<th>Категория</th>
+<th>Требование</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Доступность</strong></td>
+<td>Веб-интерфейс, актуальные версии Chrome, Edge, Yandex Browser</td>
+</tr>
+<tr>
+<td><strong>Производительность</strong></td>
+<td>Отклик типовых операций ≤ 3 с при штатной нагрузке (уточняется нагрузочным тестом)</td>
+</tr>
+<tr>
+<td><strong>Масштаб</strong></td>
+<td>Не менее ___ одновременных пользователей на инсталляцию (заполняет заказчик)</td>
+</tr>
+<tr>
+<td><strong>Безопасность</strong></td>
+<td>Ролевая модель, хеширование паролей, HTTPS, журнал аудита</td>
+</tr>
+<tr>
+<td><strong>ПДн</strong></td>
+<td>Соответствие 152-ФЗ, класс защищённости ИСПДн — по акту заказчика</td>
+</tr>
+<tr>
+<td><strong>Развёртывание</strong></td>
+<td>PostgreSQL, Docker, Nginx; опционально Astra Linux</td>
+</tr>
+<tr>
+<td><strong>Язык интерфейса</strong></td>
+<td>Русский</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>13. Состав поставки</h2>
+<ol>
+<li>Серверная часть (backend) и веб-клиент (frontend).</li>
+<li>СУБД PostgreSQL, скрипты миграций.</li>
+<li>Инструкция администратора и пользователя.</li>
+<li>Комплект для реестра отечественного ПО (по запросу).</li>
+<li>Исходные ТЗ на отраслевые подсистемы (при наличии) — в <code>docs/tz-source/</code>.</li>
+</ol>
+<hr />
+<h2>14. Этапы реализации (предложение)</h2>
+<table>
+<thead>
+<tr>
+<th>Этап</th>
+<th>Модули (примеры)</th>
+<th>Результат</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>0. Основа</strong></td>
+<td>—</td>
+<td>Django, PostgreSQL, health, CI</td>
+</tr>
+<tr>
+<td><strong>1. Ядро</strong></td>
+<td>M01–M06, M02–M03</td>
+<td>Подсистемы, роли, пользователи, архив</td>
+</tr>
+<tr>
+<td><strong>2. Рабочее место</strong></td>
+<td>M07–M14</td>
+<td>Личный кабинет, календарь, канбан</td>
+</tr>
+<tr>
+<td><strong>3. Документооборот</strong></td>
+<td>M24–M32, M30–M31</td>
+<td>Входящие, ЭП, история, переадресация</td>
+</tr>
+<tr>
+<td><strong>4. Процессы</strong></td>
+<td>M33–M36, M22–M23</td>
+<td>BPM, дела, реестры</td>
+</tr>
+<tr>
+<td><strong>5. Коммуникации и интеграции</strong></td>
+<td>M37–M45</td>
+<td>Чат, СМЭВ, шлюз</td>
+</tr>
+<tr>
+<td><strong>6. Аналитика</strong></td>
+<td>M15–M21</td>
+<td>Дашборды, отчёты, качество</td>
+</tr>
+<tr>
+<td><strong>7. ИИ (волна 1)</strong></td>
+<td>M47–M56</td>
+<td>Ассистент, OCR, классификация, риски</td>
+</tr>
+<tr>
+<td><strong>8. ИИ (волна 2)</strong></td>
+<td>M57–M66, M46</td>
+<td>RAG, транскрибация, аудиоархив</td>
+</tr>
+<tr>
+<td><strong>8a. UI-каркас</strong></td>
+<td>Materialize starter-kit</td>
+<td>Layout, меню, Customizer, вход</td>
+</tr>
+<tr>
+<td><strong>9. Пилот подсистемы</strong></td>
+<td>M23, отраслевые реестры</td>
+<td>Первая конфигурация заказчика (отдельное ТЗ)</td>
+</tr>
+<tr>
+<td><strong>10. Расширение</strong></td>
+<td>M67–M86</td>
+<td>GIS, PWA, ЕСИА, НСИ, мониторинг</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>15. Критерии приёмки (общие)</h2>
+<ol>
+<li>Создана подсистема с выбранным набором модулей, назначены пользователи и роли.</li>
+<li>Специалист ведёт дело/запись реестра, прикладывает документ, меняет статус.</li>
+<li>Руководитель видит отчёт и журнал действий.</li>
+<li>Завершённое дело переводится в архив согласно политике.</li>
+<li>Пользователь без права не получает доступ к чужому модулю/данным.</li>
+<li>Документация и развёртывание на стенде заказчика выполнены по акту.</li>
+</ol>
+<p>внесены демо данные  для тестирования и испытаний системы</p>
+<hr />
+<h2>16. Пользовательский интерфейс и шаблон Materialize</h2>
+<h3>16.1. Принципы UI</h3>
+<ol>
+<li><strong>Единый визуальный язык</strong> — тот же шаблон <strong>Materialize v13.11.1</strong> (Material Design), что использовался в предыдущей итерации разработки; без «с нуля» нового дизайна.</li>
+<li><strong>Панель настройки внешнего вида (Customizer)</strong> — берётся из шаблона: тема светлая/тёмная, semi-dark, цвет primary, компоновка меню, фиксация navbar, RTL (при необходимости).</li>
+<li><strong>Адаптивность</strong> — desktop-first для операторов; ключевые экраны пригодны для планшета (PWA, M68).</li>
+<li><strong>Русский интерфейс</strong> — все подписи, сообщения об ошибках, пустые состояния.</li>
+<li><strong>Доступность</strong> — контраст, фокус клавиатуры на формах (базовый уровень WCAG по согласованию).</li>
+</ol>
+<h3>16.2. Источник шаблона</h3>
+<table>
+<thead>
+<tr>
+<th>Компонент</th>
+<th>Путь / пакет</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Django-версия шаблона</strong></td>
+<td><code>D:\Materialize 13.11.1 – …\django-version\</code></td>
+</tr>
+<tr>
+<td><strong>Стартовый каркас</strong></td>
+<td><code>django-version\starter-kit\</code> — layout, menu, navbar, footer</td>
+</tr>
+<tr>
+<td><strong>Полная демо-версия</strong></td>
+<td><code>django-version\full-version\</code> — примеры страниц (таблицы, формы, wizard)</td>
+</tr>
+<tr>
+<td><strong>Настройка темы</strong></td>
+<td><code>web_project\template_helpers\theme.py</code>, <code>template-config\demo-*.py</code></td>
+</tr>
+<tr>
+<td><strong>Меню (JSON)</strong></td>
+<td><code>templates\layout\partials\menu\vertical\json\vertical_menu.json</code></td>
+</tr>
+<tr>
+<td><strong>Customizer</strong></td>
+<td><code>has_customizer</code>, <code>customizer_controls</code> в <code>TEMPLATE_CONFIG</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Предыдущая попытка (delau):</strong> фронтенд на <strong>Vue + Vuetify</strong> из <strong>Vue-редакции</strong> того же семейства Materialize. Визуально целевое состояние — <strong>как в той ветке</strong>, но на <strong>чистом репозитории</strong> <code>newsystem</code> без накопленного технического долга.</p>
+<h3>16.3. Выбор стека UI (рекомендация для реализации)</h3>
+<table>
+<thead>
+<tr>
+<th>Вариант</th>
+<th>Суть</th>
+<th>Плюсы</th>
+<th>Минусы</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A. Django + Materialize (django-version)</strong></td>
+<td>SSR, шаблоны Django, меню JSON, customizer из коробки</td>
+<td>Быстрый старт, один деплой, админка Django рядом</td>
+<td>Сложные SPA-экраны (канбан, BPM) требуют HTMX/Alpine или встраивания Vue</td>
+</tr>
+<tr>
+<td><strong>B. Django API + Vue Materialize</strong></td>
+<td>Backend REST + SPA как в delau</td>
+<td>Богатый UX, канбан/календарь, привычный стек из прошлой попытки</td>
+<td>Два приложения, больше DevOps</td>
+</tr>
+<tr>
+<td><strong>C. Гибрид (рекомендуется)</strong></td>
+<td>Каркас <strong>A</strong> (layout, auth, настройки, админ-разделы) + острова <strong>B</strong> для M09–M11, M33, M15</td>
+<td>Баланс скорости и UX</td>
+<td>Чётко разделить границы «страница SSR / остров Vue»</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Решение для этапа 0–1:</strong> взять <code>**django-version/starter-kit</code><strong> — перенести <code>web_project</code>, <code>templates</code>, <code>src</code> (static), подключить к проекту <code>newsystem</code>; реализовать вход, layout, </strong>Customizer<strong>, заглушки разделов меню.<br />
+</strong>Решение для этапа 2+:<strong> экраны с высокой интерактивностью — </strong>Vue-редакция Materialize** (отдельная папка <code>frontend/</code> в монорепо) с тем же <code>primary_color</code> и токенами темы.</p>
+<p><em>Использовать только django-version </em><em>проще</em><em> для каркаса и админки; для «крутого» операционного UX канбан/календарь всё равно понадобится Vue из того же пакета шаблона.</em></p>
+<h3>16.4. Панель настройки внешнего вида (Customizer)</h3>
+<p>Переносится из шаблона без изменения набора контролов (минимум):</p>
+<table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Тема (light / dark / system)</td>
+<td>Общий тон интерфейса</td>
+</tr>
+<tr>
+<td>Primary color</td>
+<td>Акцентный цвет бренда подсистемы</td>
+</tr>
+<tr>
+<td>Semi dark menu</td>
+<td>Тёмное боковое меню</td>
+</tr>
+<tr>
+<td>Layout collapsed</td>
+<td>Свёрнутое меню</td>
+</tr>
+<tr>
+<td>Navbar sticky / static</td>
+<td>Поведение шапки</td>
+</tr>
+<tr>
+<td>Content wide / compact</td>
+<td>Ширина контентной области</td>
+</tr>
+</tbody>
+</table>
+<p>Настройки сохраняются <strong>в профиле пользователя</strong> и/или <strong>в брендинге подсистемы</strong> (M01).</p>
+<h3>16.5. Предварительная структура меню</h3>
+<p>Меню формируется <strong>динамически</strong> из включённых модулей подсистемы (M01) и прав роли (M02). Ниже — эталон <strong>платформенного</strong> меню (без отраслевых разделов).</p>
+<pre><code>ДелаЮ
+├── 🏠 Главная
+├── ── Ежедневная работа ──
+│   ├── Личный кабинет          [M07]
+│   ├── Мне на сегодня          [M08]
+│   ├── Календарь               [M09]
+│   ├── Канбан                  [M10]
+│   ├── Реестр дел              [M22]
+│   └── Входящие / СЭД          [M24]
+├── ── Документы ──
+│   ├── Документы и вложения    [M05]
+│   ├── Исходящие               [M25]
+│   ├── Журнал регистрации      [M26]
+│   └── Работа с ЭП             [M30]
+├── ── Данные и реестры ──
+│   ├── Универсальные реестры   [M23]
+│   ├── Поиск                   [M48]
+│   └── Импорт / ETL            [M70]
+├── ── Коммуникации ──
+│   ├── Чат                     [M37]
+│   └── Уведомления             [M12]
+├── ── Аналитика ──
+│   ├── Дашборды                [M15]
+│   ├── Отчёты                  [M16–M17]
+│   └── Качество исполнения     [M19]
+├── ── ИИ-помощник ──
+│   ├── Ассистент               [M47]
+│   └── База знаний             [M61]
+└── ── Администрирование ──     (по ролям)
+    ├── Подсистема и модули     [M01]
+    ├── Организации и ШР        [M03–M04]
+    ├── Пользователи и роли     [M02–M03]
+    ├── Бизнес-процессы         [M33]
+    ├── Интеграции              [M42]
+    ├── Справочники НСИ         [M73]
+    ├── Архив и аудиоархив      [M06, M46]
+    ├── Журнал аудита
+    └── Настройки интерфейса    (Customizer)
+</code></pre>
+<p><strong>Платформенное меню</strong> (только администратор платформы, вне подсистемы):</p>
+<table>
+<thead>
+<tr>
+<th>Пункт</th>
+<th>Модуль</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Подсистемы</td>
+<td>M01</td>
+</tr>
+<tr>
+<td>Каталог модулей M01–M86</td>
+<td>M01</td>
+</tr>
+<tr>
+<td>Лицензии</td>
+<td>M83</td>
+</tr>
+<tr>
+<td>Мониторинг</td>
+<td>M82</td>
+</tr>
+<tr>
+<td>Паспорт продукта / версия</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3>16.6. Эталонные экраны из шаблона (переиспользование)</h3>
+<table>
+<thead>
+<tr>
+<th>Задача ДелаЮ</th>
+<th>Страница-образец Materialize (full-version)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Списки дел/реестров</td>
+<td>Tables, Datatables</td>
+</tr>
+<tr>
+<td>Карточка дела</td>
+<td>Pages → Account, Form layouts</td>
+</tr>
+<tr>
+<td>Мастер подсистемы</td>
+<td>Form Wizard</td>
+</tr>
+<tr>
+<td>Дашборд</td>
+<td>Dashboards Analytics</td>
+</tr>
+<tr>
+<td>Канбан</td>
+<td>Apps Kanban (Vue-редакция предпочтительна)</td>
+</tr>
+<tr>
+<td>Календарь</td>
+<td>Apps Calendar</td>
+</tr>
+<tr>
+<td>Чат</td>
+<td>Apps Chat</td>
+</tr>
+<tr>
+<td>Настройки профиля</td>
+<td>Pages → Account Settings</td>
+</tr>
+<tr>
+<td>Ошибки 404/403</td>
+<td>Misc Error</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>17. Приложения и связанные документы</h2>
+<table>
+<thead>
+<tr>
+<th>Документ</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docs/tz-source/</code></td>
+<td>Исходные ТЗ заказчиков на отраслевые подсистемы (вне scope платформы)</td>
+</tr>
+<tr>
+<td><code>docs/delayu-product-opisanie.md</code></td>
+<td>Маркетинговое и реестровое описание</td>
+</tr>
+<tr>
+<td><code>docs/model-uchastnikov-produkt-kommertiya.md</code></td>
+<td>Модель участников (коммерция)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>18. История изменений</h2>
+<table>
+<thead>
+<tr>
+<th>Версия</th>
+<th>Дата</th>
+<th>Автор</th>
+<th>Изменения</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>19.05.2026</td>
+<td>ЮГИт</td>
+<td>Первый черновик: состав модулей, подсистемы, этапы</td>
+</tr>
+<tr>
+<td>2.2</td>
+<td>27.05.2026</td>
+<td>ЮГИт</td>
+<td>Слоганы, описание продукта, каталог M07–M66 (60+20 ИИ)</td>
+</tr>
+<tr>
+<td>2.3</td>
+<td>27.05.2026</td>
+<td>ЮГИт</td>
+<td>Правки архитектуры; каталог M67–M86; UI/Materialize; меню</td>
+</tr>
+<tr>
+<td>2.4</td>
+<td>27.05.2026</td>
+<td>ЮГИт</td>
+<td>Фокус на платформе; отраслевые подсистемы вынесены; старт реализации</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>Документ утверждён к реализации этапов 0–1. Отраслевые подсистемы описываются отдельными ТЗ после стабилизации ядра.</em></p>
+        
+      </div>
+      <div class="modal-footer flex-wrap gap-2">
+        <span class="text-muted small me-auto">Файл: docs/TZ-PLATFORM-2.2.md · версия: 2.2 (черновик)</span>
+        <a href="/docs/tz/download/" class="btn btn-outline-primary btn-sm" download>Скачать TZ-PLATFORM-2.2.md</a>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</body>
+
+</html>

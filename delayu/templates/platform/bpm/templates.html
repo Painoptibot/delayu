@@ -1,0 +1,38 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/bpm/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-bpm-template-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line me-1"></i>Шаблон</a>{% endif %}
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Код</th><th>Название</th><th>Шагов</th><th>Запусков</th><th></th></tr></thead>
+      <tbody>
+        {% for t in templates %}
+        <tr>
+          <td><code>{{ t.code }}</code>{% if not t.is_active %} <span class="badge bg-label-secondary">выкл</span>{% endif %}</td>
+          <td>{{ t.name }}{% if t.description %}<div class="small text-muted">{{ t.description|truncatechars:50 }}</div>{% endif %}</td>
+          <td>{{ t.steps|length }}</td>
+          <td>{{ t.instance_count }}</td>
+          <td class="text-end text-nowrap">
+            <button type="button" class="btn btn-sm btn-icon btn-text-secondary bpm-tpl-open" data-modal-url="{% url 'platform-bpm-template-modal' t.pk %}"><i class="ri-eye-line"></i></button>
+            {% if can_change %}<a href="{% url 'platform-bpm-template-edit' t.pk %}" class="btn btn-sm btn-outline-secondary">Изменить</a>{% endif %}
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Шаблонов нет</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="modal fade" id="bpmTplModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Шаблон BPM</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="bpmTplModalBody"></div>
+  </div></div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-bpm-list.js' %}"></script>{% endblock %}

@@ -1,0 +1,114 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h5 class="mb-0">{{ page_title }}</h5>
+      <div class="small text-muted">{{ contract.citizen.full_name }} · {{ contract.premise|default:"—" }}</div>
+    </div>
+    <a href="{% url 'uzhv-contract-edit' contract.pk %}" class="btn btn-sm btn-outline-secondary">К договору</a>
+  </div>
+  <div class="card-body">
+    <h6 class="mb-3">Новое согласие / действие</h6>
+    <form method="post" class="mb-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_consent">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Вид</label>
+          {{ consent_form.consent_type }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Решение</label>
+          {{ consent_form.decision }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Дата регистрации</label>
+          {{ consent_form.registered_at }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">№ документа</label>
+          {{ consent_form.document_number }}
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Содержание</label>
+          {{ consent_form.subject }}
+        </div>
+        <div class="col-12">
+          <label class="form-label">Примечание</label>
+          {{ consent_form.notes }}
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary mt-3">Зарегистрировать</button>
+    </form>
+
+    <h6 class="mb-2">Реестр согласий</h6>
+    {% if consents %}
+    <div class="table-responsive mb-4">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Вид</th>
+            <th>Решение</th>
+            <th>Содержание</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in consents %}
+          <tr>
+            <td>{{ c.registered_at|date:"d.m.Y" }}</td>
+            <td>{{ c.get_consent_type_display }}</td>
+            <td>{{ c.get_decision_display }}</td>
+            <td class="small">{{ c.subject|truncatechars:80|default:"—" }}</td>
+            <td class="text-nowrap">
+              <a href="{% url 'uzhv-contract-consent-document' contract.pk c.pk %}" class="btn btn-sm btn-outline-secondary">docx</a>
+              <form method="post" class="d-inline" onsubmit="return confirm('Удалить запись?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_consent">
+                <input type="hidden" name="consent_id" value="{{ c.pk }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">×</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small mb-4">Согласий пока нет.</p>
+    {% endif %}
+
+    <h6 class="mb-2">Скан-копии</h6>
+    <form method="post" enctype="multipart/form-data" class="row g-2 align-items-end mb-3">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_attachment">
+      <div class="col-md-4">{{ attachment_form.title }}</div>
+      <div class="col-md-3">{{ attachment_form.doc_kind }}</div>
+      <div class="col-md-3">{{ attachment_form.file }}</div>
+      <div class="col-md-2"><button type="submit" class="btn btn-outline-primary w-100">Загрузить</button></div>
+    </form>
+    {% if attachments %}
+    <ul class="list-group list-group-flush">
+      {% for a in attachments %}
+      <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+        <span>{{ a.title }} <span class="text-muted small">({{ a.get_doc_kind_display }})</span></span>
+        <span>
+          <a href="{{ a.file.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">Скачать</a>
+          <form method="post" class="d-inline" onsubmit="return confirm('Удалить файл?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_attachment">
+            <input type="hidden" name="attachment_id" value="{{ a.pk }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger">×</button>
+          </form>
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</div>
+<p class="text-muted small">ТЗ: поднайм, вселение, обмен, запрет временных жильцов, обязательства, изъятие аварийного жилья, передача в собственность.</p>
+{% endblock %}

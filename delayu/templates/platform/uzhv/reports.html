@@ -1,0 +1,36 @@
+{% extends "platform/_page.html" %}
+{% block title %}Отчёты УЖВ{% endblock %}
+{% block card_body %}
+<p class="text-muted">Формы по ТЗ. Выгрузка: CSV, Excel (XLSX), PDF (reportlab + Arial для кириллицы).</p>
+<div class="table-responsive">
+  <table class="table align-middle">
+    <thead>
+      <tr><th>Код</th><th>Наименование</th><th>Период</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for r in reports %}
+      <tr>
+        <td><code>{{ r.code|upper }}</code></td>
+        <td>{{ r.title }}</td>
+        <td>{% if r.period %}Параметры <code>?from=YYYY-MM-DD&to=YYYY-MM-DD</code>{% else %}На текущую дату{% endif %}</td>
+        <td class="text-end text-nowrap">
+          <div class="btn-group btn-group-sm">
+            <a href="{% url 'uzhv-report-export' r.code %}{% if r.period %}?from={{ request.GET.from|default:'' }}&to={{ request.GET.to|default:'' }}{% endif %}" class="btn btn-outline-secondary">CSV</a>
+            <a href="{% url 'uzhv-report-export-xlsx' r.code %}{% if r.period %}?from={{ request.GET.from|default:'' }}&to={{ request.GET.to|default:'' }}{% endif %}" class="btn btn-outline-success">XLSX</a>
+            <a href="{% url 'uzhv-report-export-pdf' r.code %}{% if r.period %}?from={{ request.GET.from|default:'' }}&to={{ request.GET.to|default:'' }}{% endif %}" class="btn btn-primary">PDF</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<form method="get" class="row g-2 align-items-end mb-3">
+  <div class="col-auto"><label class="form-label small mb-0">Период «с»</label><input type="date" name="from" value="{{ request.GET.from }}" class="form-control form-control-sm"></div>
+  <div class="col-auto"><label class="form-label small mb-0">«по»</label><input type="date" name="to" value="{{ request.GET.to }}" class="form-control form-control-sm"></div>
+  <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary">Применить к ссылкам</button></div>
+</form>
+<div class="alert alert-info small mb-0">
+  Шаблоны заказчика: еженедельная таблица договоров, импорт соцнайма, приложение по формам — см. <code>docs/uzv/FORMS.md</code>.
+</div>
+{% endblock %}

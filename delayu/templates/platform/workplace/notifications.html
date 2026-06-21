@@ -1,0 +1,53 @@
+{% extends "platform/_page.html" %}
+{% block title %}Уведомления{% endblock %}
+{% block header_actions %}
+{% if can_change %}
+<form method="post" action="{% url 'platform-notifications-read-all' %}" class="d-inline">{% csrf_token %}
+  <button type="submit" class="btn btn-sm btn-outline-secondary">Прочитать все</button>
+</form>
+{% endif %}
+{% endblock %}
+{% block card_body %}
+<form method="get" class="row g-2 mb-3 align-items-end">
+  <div class="col-md-3">
+    <label class="form-label">Уровень</label>
+    <select name="level" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все</option>
+      {% for val, label in levels %}
+      <option value="{{ val }}" {% if filter_level == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Статус</label>
+    <select name="unread" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все</option>
+      <option value="1" {% if filter_unread == "1" %}selected{% endif %}>Непрочитанные</option>
+    </select>
+  </div>
+</form>
+<table class="table table-hover table-sm">
+  <thead><tr><th></th><th>Заголовок</th><th>Текст</th><th>Дата</th><th></th></tr></thead>
+  <tbody>
+    {% for n in notifications %}
+    <tr class="{% if not n.is_read %}table-active{% endif %}">
+      <td><span class="badge bg-label-{% if n.level == 'urgent' %}danger{% elif n.level == 'warning' %}warning{% else %}info{% endif %}">{{ n.get_level_display }}</span></td>
+      <td>{% if not n.is_read %}<strong>{% endif %}{{ n.title }}{% if not n.is_read %}</strong>{% endif %}</td>
+      <td class="small">{{ n.body|truncatechars:80 }}</td>
+      <td class="small text-muted">{{ n.created_at|date:"d.m.Y H:i" }}</td>
+      <td class="text-end">
+        {% if can_change and not n.is_read %}
+        <form method="post" action="{% url 'platform-notification-read' n.pk %}" class="d-inline">{% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-primary">Прочитано</button>
+        </form>
+        {% elif n.link %}
+        <a href="{{ n.link }}" class="btn btn-sm btn-outline-primary">Открыть</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-muted">Уведомлений нет</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

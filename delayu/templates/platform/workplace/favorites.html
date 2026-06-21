@@ -1,0 +1,68 @@
+{% extends "platform/_page.html" %}
+{% block title %}Избранное{% endblock %}
+{% block card_body %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <h6>Закладки</h6>
+    <table class="table table-sm">
+      <tbody>
+        {% for f in favorites %}
+        <tr>
+          <td><a href="{{ f.url_path }}"><i class="{{ f.icon_class }} me-1"></i>{{ f.label }}</a></td>
+          <td class="text-muted small">{{ f.url_path }}</td>
+          <td class="text-end">
+            {% if can_delete %}
+            <form method="post" action="{% url 'platform-favorite-delete' f.pk %}" class="d-inline">{% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-icon btn-text-danger"><i class="ri-delete-bin-line"></i></button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-muted">Нет закладок</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if can_create %}
+    <form method="post" class="border rounded p-3 mt-2">{% csrf_token %}
+      <input type="hidden" name="action" value="favorite">
+      {% for field in favorite_form %}
+      <div class="mb-2"><label class="form-label small">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <button type="submit" class="btn btn-sm btn-primary">Добавить закладку</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="col-lg-6">
+    <h6>Сохранённые фильтры</h6>
+    <table class="table table-sm">
+      <tbody>
+        {% for sf in saved_filters %}
+        <tr>
+          <td><span class="badge bg-label-secondary">{{ sf.module_code }}</span> {{ sf.name }}</td>
+          <td class="small text-muted"><code>{{ sf.params }}</code></td>
+          <td class="text-end">
+            {% if can_delete %}
+            <form method="post" action="{% url 'platform-saved-filter-delete' sf.pk %}" class="d-inline">{% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-icon btn-text-danger"><i class="ri-delete-bin-line"></i></button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-muted">Нет фильтров</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if can_create %}
+    <form method="post" class="border rounded p-3 mt-2">{% csrf_token %}
+      <input type="hidden" name="action" value="filter">
+      {% for field in filter_form %}
+      <div class="mb-2"><label class="form-label small">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <button type="submit" class="btn btn-sm btn-primary">Сохранить фильтр</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+[Unit]
+Description=Delayu (DelaYu) Gunicorn
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=delayu
+Group=delayu
+WorkingDirectory=/opt/delayu
+EnvironmentFile=/opt/delayu/.env
+ExecStart=/opt/delayu/.venv/bin/gunicorn config.wsgi:application \
+  --bind 127.0.0.1:8000 \
+  --workers 4 \
+  --timeout 120 \
+  --access-logfile /opt/delayu/logs/gunicorn-access.log \
+  --error-logfile /opt/delayu/logs/gunicorn-error.log
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

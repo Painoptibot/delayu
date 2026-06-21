@@ -1,0 +1,98 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Архив дел{% endblock %}
+{% block card_body %}
+<form method="get" class="row g-2 mb-3 align-items-end">
+  <div class="col-md-4">
+    <label class="form-label">Поиск</label>
+    <input name="q" class="form-control form-control-sm" value="{{ search_q }}" placeholder="Номер или тема">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Legal hold</label>
+    <select name="legal_hold" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все</option>
+      <option value="1" {% if filter_legal_hold == "1" %}selected{% endif %}>Только с hold</option>
+      <option value="0" {% if filter_legal_hold == "0" %}selected{% endif %}>Без hold</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Срок хранения</label>
+    <select name="expiring" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все</option>
+      <option value="1" {% if filter_expiring == "1" %}selected{% endif %}>Истекает ≤ 90 дн.</option>
+    </select>
+  </div>
+  <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100">Найти</button></div>
+</form>
+
+{% if expired_count %}
+<div class="alert alert-warning py-2 px-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+  <span>Истёк срок хранения: <strong>{{ expired_count }}</strong> дел (без legal hold).</span>
+  {% if can_purge %}
+  <form method="post" action="{% url 'platform-archive-purge' %}" class="d-flex gap-2">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-outline-secondary">Пробный прогон</button>
+    <button type="submit" name="execute" value="1" class="btn btn-sm btn-danger"
+            onclick="return confirm('Удалить дела с истёкшим сроком хранения?');">Удалить</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="table-responsive">
+  <table class="table table-hover table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Номер</th>
+        <th>Тема</th>
+        <th>Архивировано</th>
+        <th>До</th>
+        <th>Hold</th>
+        <th>Влож.</th>
+        <th class="text-end"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in cases %}
+      <tr{% if request.GET.open == c.pk|stringformat:"s" %} data-auto-open data-modal-url="{% url 'platform-archive-case-modal' c.pk %}"{% endif %}>
+        <td><code>{{ c.number }}</code></td>
+        <td>{{ c.title|truncatechars:60 }}</td>
+        <td class="text-nowrap small">{{ c.archived_at|date:"d.m.Y H:i" }}</td>
+        <td class="small">{% if c.retention_until %}{{ c.retention_until|date:"d.m.Y" }}{% else %}—{% endif %}</td>
+        <td>{% if c.legal_hold %}<span class="badge bg-label-danger">да</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+        <td>{{ c.document_count }}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary arc-open"
+                  data-modal-url="{% url 'platform-archive-case-modal' c.pk %}"><i class="ri-eye-line"></i></button>
+          <a href="{% url 'platform-archive-case-export' c.pk %}" class="btn btn-sm btn-icon btn-text-secondary" title="Экспорт (заглушка)"><i class="ri-download-line"></i></a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-center text-muted py-4">В архиве нет дел</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page_obj.has_other_pages %}
+<nav><ul class="pagination pagination-sm">
+  {% if page_obj.has_previous %}
+  <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_q }}&legal_hold={{ filter_legal_hold }}&expiring={{ filter_expiring }}">←</a></li>
+  {% endif %}
+  <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+  {% if page_obj.has_next %}
+  <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_q }}&legal_hold={{ filter_legal_hold }}&expiring={{ filter_expiring }}">→</a></li>
+  {% endif %}
+</ul></nav>
+{% endif %}
+
+<div class="modal fade" id="arcModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Архивное дело</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body" id="arcModalBody"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block page_js %}{{ block.super }}<script src="{% static 'js/delayu-archive-cases.js' %}"></script>{% endblock %}

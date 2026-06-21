@@ -1,0 +1,23 @@
+{% load delayu_access %}
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    {% if request.user|can_module:"M15" %}
+    <li class="nav-item"><a class="nav-link{% if analytics_tab == 'dashboard' %} active{% endif %}" href="{% url 'platform-dashboard' %}"><i class="icon-base ri ri-dashboard-line icon-sm me-2"></i>Дашборд</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M16" %}
+    <li class="nav-item"><a class="nav-link{% if analytics_tab == 'reports' %} active{% endif %}" href="{% url 'platform-reports' %}"><i class="icon-base ri ri-file-chart-line icon-sm me-2"></i>Отчёты</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M18" %}
+    <li class="nav-item"><a class="nav-link{% if analytics_tab == 'charts' %} active{% endif %}" href="{% url 'platform-charts' %}"><i class="icon-base ri ri-bar-chart-2-line icon-sm me-2"></i>Графики</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M19" %}
+    <li class="nav-item"><a class="nav-link{% if analytics_tab == 'quality' %} active{% endif %}" href="{% url 'platform-quality' %}"><i class="icon-base ri ri-shield-check-line icon-sm me-2"></i>Качество</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M21" %}
+    <li class="nav-item"><a class="nav-link{% if analytics_tab == 'departments' %} active{% endif %}" href="{% url 'platform-departments' %}"><i class="icon-base ri ri-building-line icon-sm me-2"></i>Подразделения</a></li>
+    {% endif %}
+    {% if request.user|can_module:"M17" %}
+    <li class="nav-item"><a class="nav-link{% if analytics_tab == 'regulatory' %} active{% endif %}" href="{% url 'platform-regulatory' %}"><i class="icon-base ri ri-government-line icon-sm me-2"></i>Регламент</a></li>
+    {% endif %}
+  </ul>
+</div>

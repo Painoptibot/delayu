@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Обращение принято</title>
+  <link rel="stylesheet" href="/static/vendor/css/core.css">
+</head>
+<body class="bg-light">
+  <div class="container py-5" style="max-width: 520px;">
+    <div class="alert alert-success">
+      <h1 class="h5">Обращение зарегистрировано</h1>
+      <p class="mb-0">Номер: <strong>{{ result.appeal_number }}</strong></p>
+    </div>
+    <a href="{% url 'uzhv-public-appeal' subsystem.code %}" class="btn btn-outline-secondary">Новое обращение</a>
+  </div>
+</body>
+</html>

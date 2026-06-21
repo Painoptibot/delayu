@@ -1,0 +1,21 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">{{ page_title }}</h5></div>
+  <div class="card-body">
+    <form method="post" action="{% if order %}{% url 'uzhv-inspection-order-edit' order.pk %}{% else %}{% url 'uzhv-inspection-order-create' %}{% endif %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save">
+      {% include "platform/uzhv/_form_fields.html" %}
+      <div class="d-flex gap-2 flex-wrap mt-3">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        {% if order and not order.inspection_id %}
+        <button type="submit" name="action" value="spawn_inspection" class="btn btn-outline-primary">Создать проверку</button>
+        {% endif %}
+        <a href="{% url 'uzhv-inspection-orders' %}" class="btn btn-outline-secondary">К списку</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

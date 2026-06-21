@@ -1,0 +1,52 @@
+{% extends "platform/uzhv/_wizard_layout.html" %}
+{% block wizard_body %}
+<form method="post" id="uzhvWizardForm">{% csrf_token %}
+  <div class="bs-stepper wizard-numbered">
+    <div class="bs-stepper-header">
+      <div class="step" data-target="#uzhv-s1"><button type="button" class="step-trigger"><span class="bs-stepper-circle">1</span><span class="bs-stepper-label"><span class="bs-stepper-title">ФИО</span></span></button></div>
+      <div class="line"></div>
+      <div class="step" data-target="#uzhv-s2"><button type="button" class="step-trigger"><span class="bs-stepper-circle">2</span><span class="bs-stepper-label"><span class="bs-stepper-title">Документы</span></span></button></div>
+      <div class="line"></div>
+      <div class="step" data-target="#uzhv-s3"><button type="button" class="step-trigger"><span class="bs-stepper-circle">3</span><span class="bs-stepper-label"><span class="bs-stepper-title">Контакты</span></span></button></div>
+    </div>
+    <div class="bs-stepper-content">
+      <div id="uzhv-s1" class="content">
+        <div class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.last_name col=4 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.first_name col=4 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.middle_name col=4 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.birth_date col=4 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev" disabled>Назад</button>
+          <button type="button" class="btn btn-primary btn-next">Далее</button>
+        </div>
+      </div>
+      <div id="uzhv-s2" class="content">
+        <div class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.snils col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.passport_series col=3 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.passport_number col=3 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.passport_issued_at col=4 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.passport_issued_by col=12 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+          <button type="button" class="btn btn-primary btn-next">Далее</button>
+        </div>
+      </div>
+      <div id="uzhv-s3" class="content">
+        <div class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.phone col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.email col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.reg_address col=12 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+          <button type="submit" class="btn btn-success">Сохранить гражданина</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

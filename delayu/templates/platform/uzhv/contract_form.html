@@ -1,0 +1,21 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">{{ page_title }}</h5></div>
+  <div class="card-body">
+    <form method="post" action="{% if contract %}{% url 'uzhv-contract-edit' contract.pk %}{% else %}{% url 'uzhv-contract-create' %}{% endif %}">
+      {% csrf_token %}
+      {% include "platform/uzhv/_form_fields.html" %}
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="submit" class="btn btn-primary">{% if contract %}Сохранить{% else %}Создать{% endif %}</button>
+        <a href="{% url 'uzhv-contracts' %}" class="btn btn-outline-secondary">К списку</a>
+        {% if contract %}
+        <a href="{% url 'uzhv-contract-consents' contract.pk %}" class="btn btn-outline-primary">Согласия и сканы</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+<p class="text-muted small mt-2">При расторжении снимите «Действует» и укажите основание — помещение освободится автоматически.</p>
+{% endblock %}

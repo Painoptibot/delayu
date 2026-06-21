@@ -1,0 +1,92 @@
+{% extends "platform/uzhv/_wizard_layout.html" %}
+{% block wizard_body %}
+<form method="post" id="uzhvWizardForm">{% csrf_token %}
+  <div class="bs-stepper wizard-numbered">
+    <div class="bs-stepper-header">
+      <div class="step" data-target="#uzhv-s1"><button type="button" class="step-trigger"><span class="bs-stepper-circle">1</span><span class="bs-stepper-label"><span class="bs-stepper-title">Гражданин</span></span></button></div>
+      <div class="line"></div>
+      <div class="step" data-target="#uzhv-s2"><button type="button" class="step-trigger"><span class="bs-stepper-circle">2</span><span class="bs-stepper-label"><span class="bs-stepper-title">Дело</span></span></button></div>
+      {% if can_appeal %}<div class="line"></div>
+      <div class="step" data-target="#uzhv-s3"><button type="button" class="step-trigger"><span class="bs-stepper-circle">3</span><span class="bs-stepper-label"><span class="bs-stepper-title">Обращение</span></span></button></div>{% endif %}
+      <div class="line"></div>
+      <div class="step" data-target="#uzhv-s4"><button type="button" class="step-trigger"><span class="bs-stepper-circle">{% if can_appeal %}4{% else %}3{% endif %}</span><span class="bs-stepper-label"><span class="bs-stepper-title">Итог</span></span></button></div>
+    </div>
+    <div class="bs-stepper-content">
+      <div id="uzhv-s1" class="content">
+        <div class="mb-3">
+          {% for radio in form.citizen_mode %}
+          <div class="form-check">
+            {{ radio.tag }}
+            <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+          </div>
+          {% endfor %}
+        </div>
+        <div id="chainExisting" class="row g-0 uzhv-chain-panel">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.existing_citizen col=12 %}
+        </div>
+        <div id="chainNew" class="row g-0 uzhv-chain-panel">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.last_name col=4 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.first_name col=4 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.middle_name col=4 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.snils col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.phone col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.reg_address col=12 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev" disabled>Назад</button>
+          <button type="button" class="btn btn-primary btn-next">Далее</button>
+        </div>
+      </div>
+      <div id="uzhv-s2" class="content">
+        <div class="form-check mb-3">
+          {{ form.create_case }}
+          <label class="form-check-label" for="{{ form.create_case.id_for_label }}">{{ form.create_case.label }}</label>
+        </div>
+        <div id="chainCaseFields" class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.case_category col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.case_status col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.case_assignee col=12 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+          <button type="button" class="btn btn-primary btn-next">Далее</button>
+        </div>
+      </div>
+      {% if can_appeal %}
+      <div id="uzhv-s3" class="content">
+        <div class="form-check mb-3">
+          {{ form.create_appeal }}
+          <label class="form-check-label" for="{{ form.create_appeal.id_for_label }}">{{ form.create_appeal.label }}</label>
+        </div>
+        <div id="chainAppealFields" class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.received_at col=4 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.appeal_subject col=12 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.appeal_body col=12 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.appeal_assignee col=12 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+          <button type="button" class="btn btn-primary btn-next">Далее</button>
+        </div>
+      </div>
+      {% endif %}
+      <div id="uzhv-s4" class="content">
+        <p class="mb-3">Проверьте выбор и нажмите «Создать» — все отмеченные сущности будут сохранены связанными.</p>
+        <ul class="list-group list-group-flush small mb-4">
+          <li class="list-group-item">Гражданин: новый или из реестра</li>
+          <li class="list-group-item">Учётное дело: по флагу «Создать учётное дело»</li>
+          {% if can_appeal %}<li class="list-group-item">Обращение: по флагу «Зарегистрировать обращение»</li>{% endif %}
+        </ul>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+          <button type="submit" class="btn btn-success">Создать</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block wizard_js %}
+{% load static %}
+<script src="{% static 'js/delayu-uzhv-chain-wizard.js' %}"></script>
+{% endblock %}

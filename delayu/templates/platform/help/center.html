@@ -1,0 +1,90 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Центр помощи — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/front-page-help-center.css' %}" />
+{% endblock %}
+{% block content %}
+<section class="section-py first-section-pt help-center-header position-relative overflow-hidden">
+  <img class="banner-bg-img z-n1" src="{% static 'img/pages/header-' %}{{ COOKIES.theme|default:theme }}.png" alt="" data-app-light-img="pages/header-light.png" data-app-dark-img="pages/header-dark.png" />
+  <h4 class="text-center text-primary">Здравствуйте! Чем можем помочь?</h4>
+  <div class="input-wrapper my-4 input-group input-group-merge position-relative mx-auto">
+    <span class="input-group-text"><i class="ri-search-line"></i></span>
+    <input type="text" class="form-control" placeholder="Поиск по разделам" id="helpCenterSearch" />
+  </div>
+  <p class="text-center px-4 mb-0">Платформа «ДелаЮ»: дела, документооборот, BPM, аналитика, интеграции</p>
+</section>
+
+<section class="section-py">
+  <div class="container">
+    <h4 class="text-center mb-6">Популярные статьи</h4>
+    <div class="row">
+      <div class="col-lg-10 mx-auto">
+        <div class="row gy-6">
+          {% for article in help_articles %}
+          <div class="col-md-4">
+            <div class="card border shadow-none h-100">
+              <div class="card-body text-center">
+                <span class="avatar avatar-lg mb-3"><span class="avatar-initial rounded bg-label-primary"><i class="{{ article.icon }} icon-28px"></i></span></span>
+                <h5 class="my-3">{{ article.title }}</h5>
+                <p class="mb-3 text-muted">{{ article.text }}</p>
+                <a class="btn btn-outline-primary btn-sm" href="#topic-{{ forloop.counter }}">Подробнее</a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-py bg-body">
+  <div class="container">
+    <h4 class="text-center mb-6">База знаний</h4>
+    <div class="row" id="helpTopics">
+      {% for block in help_topics %}
+      <div class="col-md-6 col-lg-3 mb-6" id="topic-{{ forloop.counter }}">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="mb-4">{{ block.category }}</h5>
+            <ul class="list-unstyled mb-0">
+              {% for title, desc in block.items %}
+              <li class="mb-3 help-topic-item">
+                <span class="fw-medium d-block">{{ title }}</span>
+                <small class="text-muted">{{ desc }}</small>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section-py">
+  <div class="container text-center">
+    <h4 class="mb-3">Не нашли ответ?</h4>
+    <p class="text-muted mb-4">Обратитесь к администратору подсистемы или откройте техническое задание в меню «Администрирование».</p>
+    <a href="{% url 'platform-cabinet' %}" class="btn btn-primary me-2">Личный кабинет</a>
+    <a href="{% url 'platform-today' %}" class="btn btn-outline-primary">Мне на сегодня</a>
+  </div>
+</section>
+{% endblock %}
+{% block page_js %}{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var input = document.getElementById('helpCenterSearch');
+  if (!input) return;
+  input.addEventListener('input', function () {
+    var q = input.value.toLowerCase().trim();
+    document.querySelectorAll('.help-topic-item').forEach(function (li) {
+      var show = !q || li.textContent.toLowerCase().indexOf(q) >= 0;
+      li.style.display = show ? '' : 'none';
+    });
+  });
+});
+</script>
+{% endblock %}

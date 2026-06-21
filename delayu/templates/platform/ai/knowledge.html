@@ -1,0 +1,22 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ai/_nav.html" %}
+<div class="d-flex justify-content-between mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}<a href="{% url 'platform-knowledge-create' %}" class="btn btn-sm btn-primary">Статья</a>{% endif %}
+</div>
+<div class="row g-3">
+  {% for a in articles %}
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="mb-2">{{ a.title }}{% if not a.is_published %} <span class="badge bg-label-secondary">черновик</span>{% endif %}</h6>
+        <p class="small text-muted mb-2">{{ a.body|truncatewords:35 }}</p>
+        {% if a.tags %}<span class="badge bg-label-primary">{{ a.tags }}</span>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}<div class="col-12"><div class="alert alert-secondary">Статей нет</div></div>{% endfor %}
+</div>
+{% endblock %}

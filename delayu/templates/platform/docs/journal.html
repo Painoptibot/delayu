@@ -1,0 +1,6 @@
+{% extends "platform/_page.html" %}
+{% block title %}Журнал регистрации{% endblock %}
+{% block card_body %}
+<table class="table table-sm"><thead><tr><th>№</th><th>Направление</th><th>Дата</th><th>Тема</th></tr></thead>
+<tbody>{% for i in items %}<tr><td>{{ i.reg_number }}</td><td>{{ i.get_direction_display }}</td><td>{{ i.reg_date }}</td><td>{{ i.subject }}</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

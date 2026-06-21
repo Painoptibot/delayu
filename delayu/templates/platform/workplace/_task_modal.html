@@ -1,0 +1,17 @@
+<dl class="row mb-3">
+  <dt class="col-sm-3">Название</dt><dd class="col-sm-9">{{ task.title }}</dd>
+  <dt class="col-sm-3">Исполнитель</dt><dd class="col-sm-9">{{ task.assignee }}</dd>
+  <dt class="col-sm-3">Срок</dt><dd class="col-sm-9">{{ task.due_date|default:"—" }}</dd>
+  <dt class="col-sm-3">Начало</dt><dd class="col-sm-9">{{ task.start_date|default:"—" }}</dd>
+  <dt class="col-sm-3">Длительность</dt><dd class="col-sm-9">{{ task.duration_days }} дн.</dd>
+  <dt class="col-sm-3">Колонка</dt><dd class="col-sm-9">{{ task.get_kanban_column_display }}</dd>
+  {% if task.case %}
+  <dt class="col-sm-3">Дело</dt><dd class="col-sm-9"><a href="{% url 'platform-case-detail' task.case_id %}">{{ task.case.number }}</a></dd>
+  {% endif %}
+</dl>
+{% if task.description %}<p class="text-muted small">{{ task.description }}</p>{% endif %}
+<div class="text-end">
+  {% if can_change %}
+  <button type="button" class="btn btn-sm btn-primary rec-form-open-task" data-form-modal-url="{% url 'platform-task-form-modal-edit' task.pk %}" data-form-modal-title="Редактировать задачу">Редактировать</button>
+  {% endif %}
+</div>

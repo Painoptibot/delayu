@@ -1,0 +1,426 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Обзор АИС УЖВ{% endblock %}
+{% block card_body %}
+{% if show_uzhv_push_banner %}
+<div class="alert alert-info d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4" role="alert">
+  <span><i class="ri-smartphone-line me-1"></i> Подключите <strong>Web Push</strong> в личном кабинете — мгновенные оповещения о просрочках УЖВ.</span>
+  <div class="d-flex gap-2">
+    <a href="{% url 'platform-cabinet-connections' %}" class="btn btn-sm btn-info">Настроить</a>
+    <a href="{% url 'uzhv-hub' %}?dismiss=push_banner" class="btn btn-sm btn-outline-secondary">Не сейчас</a>
+  </div>
+</div>
+{% endif %}
+{% if uzhv_unread_notifications %}
+<div class="alert alert-warning d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4" role="alert">
+  <span><i class="ri-notification-3-line me-1"></i> Непрочитанных уведомлений по УЖВ: <strong>{{ uzhv_unread_notifications }}</strong></span>
+  <a href="{% url 'platform-notifications' %}?unread=1" class="btn btn-sm btn-warning">Открыть</a>
+</div>
+{% endif %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <form method="get" class="d-flex gap-2 flex-wrap align-items-center uzhv-filter-form">
+    <label class="small text-muted mb-0">Исполнитель:</label>
+    <select name="assignee" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+      <option value="">Все</option>
+      <option value="me"{% if filter_assignee == "me" %} selected{% endif %}>Мои просроченные</option>
+      {% for u in hub_assignee_users %}
+      <option value="{{ u.pk }}"{% if filter_assignee == u.pk|stringformat:"s" %} selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <a href="{% url 'uzhv-cases' %}" class="card h-100 text-body text-decoration-none">
+      <div class="card-body">
+        <span class="text-muted d-block mb-1">На учёте / в очереди</span>
+        <h3 class="mb-0">{{ stats.cases_active }}</h3>
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <a href="{% url 'uzhv-citizens' %}" class="card h-100 text-body text-decoration-none">
+      <div class="card-body">
+        <span class="text-muted d-block mb-1">Граждан в реестре</span>
+        <h3 class="mb-0">{{ stats.citizens }}</h3>
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <a href="{% url 'uzhv-fund' %}" class="card h-100 text-body text-decoration-none">
+      <div class="card-body">
+        <span class="text-muted d-block mb-1">МКД</span>
+        <h3 class="mb-0">{{ stats.buildings }}</h3>
+        <span class="small text-muted">свободно помещений: {{ stats.premises_free }}</span>
+        <span class="small d-block mt-1"><a href="{% url 'uzhv-fund-map' %}" class="text-primary" onclick="event.stopPropagation()"><i class="ri-map-2-line"></i> Карта жилфонда</a></span>
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <a href="{% url 'uzhv-inspections' %}" class="card h-100 text-body text-decoration-none">
+      <div class="card-body">
+        <span class="text-muted d-block mb-1">Проверки в работе</span>
+        <h3 class="mb-0">{{ stats.inspections_open }}</h3>
+        {% if stats.prescriptions_overdue %}
+        <span class="badge bg-warning mt-1">{{ stats.prescriptions_overdue }} предписаний просрочено</span>
+        {% endif %}
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <a href="{% url 'uzhv-resettlement' %}" class="card h-100 text-body text-decoration-none">
+      <div class="card-body">
+        <span class="text-muted d-block mb-1">Расселение (МКД)</span>
+        <h3 class="mb-0">{{ stats.resettlement_buildings }}</h3>
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <a href="{% url 'uzhv-appeals' %}" class="card h-100 text-body text-decoration-none">
+      <div class="card-body">
+        <span class="text-muted d-block mb-1">Обращения в работе</span>
+        <h3 class="mb-0">{{ stats.appeals_open }}</h3>
+        {% if stats.appeals_overdue %}
+        <span class="badge bg-danger mt-1">{{ stats.appeals_overdue }} просрочено</span>
+        {% endif %}
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <a href="{% url 'uzhv-contracts' %}" class="card h-100 text-body text-decoration-none">
+      <div class="card-body">
+        <span class="text-muted d-block mb-1">Договоров (активных)</span>
+        <h3 class="mb-0">{{ stats.contracts_active }}</h3>
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <a href="{% url 'uzhv-court-cases' %}" class="card h-100 text-body text-decoration-none">
+      <div class="card-body">
+        <span class="text-muted d-block mb-1">Судебные дела</span>
+        <h3 class="mb-0">{{ stats.court_cases_open }}</h3>
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <a href="{% url 'uzhv-interagency' %}" class="card h-100 text-body text-decoration-none">
+      <div class="card-body">
+        <span class="text-muted d-block mb-1">Межвед. запросы</span>
+        <h3 class="mb-0">{{ stats.interagency_awaiting }}</h3>
+        {% if stats.interagency_overdue %}
+        <span class="badge bg-warning mt-1">{{ stats.interagency_overdue }} просрочено</span>
+        {% endif %}
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+      <h5 class="mb-0">Просроченные сроки{% if filter_assignee %} <span class="badge bg-label-warning">фильтр</span>{% endif %}</h5>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'uzhv-overdue-export' %}{% if filter_assignee %}?assignee={{ filter_assignee }}{% endif %}" class="btn btn-sm btn-outline-secondary"><i class="ri-download-2-line"></i> CSV</a>
+        <a href="{% url 'uzhv-overdue-export' %}?format=xlsx{% if filter_assignee %}&amp;assignee={{ filter_assignee }}{% endif %}" class="btn btn-sm btn-outline-success">XLSX</a>
+        <a href="{% url 'uzhv-appeals' %}?overdue=1{% if filter_assignee %}&amp;assignee={{ filter_assignee }}{% endif %}" class="btn btn-sm btn-outline-danger">Обращения</a>
+        <a href="{% url 'uzhv-prescriptions' %}?overdue=1{% if filter_assignee %}&amp;assignee={{ filter_assignee }}{% endif %}" class="btn btn-sm btn-outline-warning">Предписания</a>
+        <a href="{% url 'uzhv-interagency' %}?overdue=1{% if filter_assignee %}&amp;assignee={{ filter_assignee }}{% endif %}" class="btn btn-sm btn-outline-warning">Межвед.</a>
+      </div>
+    </div>
+    <div class="table-responsive uzhv-table-wrap">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead><tr><th>Тип</th><th>Событие</th><th>Срок</th><th>Дней</th><th>Исполнитель</th><th></th></tr></thead>
+        <tbody>
+          {% for o in overdue_items %}
+          <tr data-modal-url="{{ o.modal_url }}" data-modal-title="{{ o.modal_title }}" class="table-danger">
+            <td><span class="badge bg-label-danger">{{ o.type_label }}</span></td>
+            <td>{{ o.title|truncatechars:50 }}</td>
+            <td>{{ o.date|date:"d.m.Y" }}</td>
+            <td><span class="badge bg-danger">{{ o.days_overdue }}</span></td>
+            <td class="small">{{ o.assignee_label }}</td>
+            <td class="text-end"><button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{{ o.modal_url }}" data-modal-title="{{ o.modal_title }}"><i class="ri-eye-line"></i></button></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-muted">Просроченных сроков нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+      <h5 class="mb-0">Сроки на 7 дней</h5>
+      <div class="d-flex gap-2 align-items-center">
+        <a href="{% url 'uzhv-deadlines' %}" class="btn btn-sm btn-outline-primary">Календарь</a>
+        <a href="{% url 'uzhv-deadlines' %}?view=month" class="btn btn-sm btn-outline-secondary">Месяц</a>
+        <a href="{% url 'uzhv-deadlines-export' %}?days=30" class="btn btn-sm btn-outline-secondary">CSV</a>
+        <a href="{% url 'uzhv-deadlines-export' %}?format=ical&amp;days=60" class="btn btn-sm btn-outline-secondary">iCal</a>
+      </div>
+    </div>
+    <div class="table-responsive uzhv-table-wrap">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead><tr><th>Тип</th><th>Событие</th><th>Дата</th><th></th></tr></thead>
+        <tbody>
+          {% for d in week_deadlines %}
+          <tr data-modal-url="{{ d.modal_url }}" data-modal-title="{{ d.modal_title }}"{% if d.is_overdue %} class="table-danger"{% elif d.kind == "court" %} class="table-info"{% endif %}>
+            <td><span class="badge bg-label-{% if d.is_overdue %}danger{% elif d.kind == 'court' %}info{% else %}primary{% endif %}">{{ d.type_label }}</span></td>
+            <td>{{ d.title|truncatechars:55 }}</td>
+            <td>{{ d.date|date:"d.m.Y" }}{% if d.is_overdue %} <span class="badge bg-danger">!</span>{% endif %}</td>
+            <td class="text-end"><button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{{ d.modal_url }}" data-modal-title="{{ d.modal_title }}"><i class="ri-eye-line"></i></button></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted">На ближайшую неделю сроков нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Мои дела</h5>
+      <a href="{% url 'uzhv-cases' %}" class="btn btn-sm btn-outline-primary">Все</a>
+    </div>
+    <div class="table-responsive uzhv-table-wrap">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead><tr><th>Номер</th><th>Гражданин</th><th></th></tr></thead>
+        <tbody>
+          {% for c in my_cases %}
+          <tr data-modal-url="{% url 'uzhv-case-modal' c.pk %}" data-modal-title="Дело {{ c.case_number }}">
+            <td><code>{{ c.case_number }}</code></td>
+            <td>{{ c.citizen.full_name|truncatechars:25 }}</td>
+            <td class="text-end"><button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-case-modal' c.pk %}"><i class="ri-eye-line"></i></button></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="text-muted">Нет назначенных дел</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Мои обращения</h5>
+      <a href="{% url 'uzhv-appeals' %}" class="btn btn-sm btn-outline-primary">Все</a>
+    </div>
+    <div class="table-responsive uzhv-table-wrap">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead><tr><th>Номер</th><th>Срок</th><th></th></tr></thead>
+        <tbody>
+          {% for a in my_appeals %}
+          <tr data-modal-url="{% url 'uzhv-appeal-modal' a.pk %}" data-modal-title="Обращение {{ a.appeal_number }}"{% if a.is_overdue %} class="table-danger"{% endif %}>
+            <td><code>{{ a.appeal_number }}</code></td>
+            <td>{{ a.due_date|date:"d.m.Y" }}</td>
+            <td class="text-end"><button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-appeal-modal' a.pk %}"><i class="ri-eye-line"></i></button></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="text-muted">Нет назначенных обращений</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Просроченные межвед. запросы</h5>
+      <a href="{% url 'uzhv-interagency' %}?overdue=1" class="btn btn-sm btn-outline-warning">Все</a>
+    </div>
+    <div class="table-responsive uzhv-table-wrap">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead><tr><th>№</th><th>Адресат</th><th>Срок</th><th></th></tr></thead>
+        <tbody>
+          {% for r in overdue_interagency %}
+          <tr data-modal-url="{% url 'uzhv-interagency-modal' r.pk %}" data-modal-title="Запрос {{ r.request_number }}" class="table-warning">
+            <td><code>{{ r.request_number }}</code></td>
+            <td>{{ r.recipient_name|truncatechars:20 }}</td>
+            <td>{{ r.due_date|date:"d.m.Y" }}</td>
+            <td class="text-end"><button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-interagency-modal' r.pk %}"><i class="ri-eye-line"></i></button></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted">Просроченных запросов нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Срочные обращения (≤ 5 дней)</h5>
+      <a href="{% url 'uzhv-appeals' %}?overdue=1" class="btn btn-sm btn-outline-danger">Все просроченные</a>
+    </div>
+    <div class="table-responsive uzhv-table-wrap">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead><tr><th>Номер</th><th>Тема</th><th>Срок</th><th></th></tr></thead>
+        <tbody>
+          {% for a in urgent_appeals %}
+          <tr data-modal-url="{% url 'uzhv-appeal-modal' a.pk %}" data-modal-title="Обращение {{ a.appeal_number }}"{% if a.is_overdue %} class="table-danger"{% endif %}>
+            <td><code>{{ a.appeal_number }}</code></td>
+            <td>{{ a.subject|truncatechars:35 }}</td>
+            <td>{{ a.due_date|date:"d.m.Y" }}</td>
+            <td class="text-end"><button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-appeal-modal' a.pk %}"><i class="ri-eye-line"></i></button></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted">Нет срочных обращений</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Просроченные предписания</h5>
+      <a href="{% url 'uzhv-prescriptions' %}?overdue=1" class="btn btn-sm btn-outline-warning">Все</a>
+    </div>
+    <div class="table-responsive uzhv-table-wrap">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead><tr><th>№</th><th>Объект</th><th>Срок</th><th></th></tr></thead>
+        <tbody>
+          {% for p in overdue_prescriptions %}
+          <tr data-modal-url="{% url 'uzhv-prescription-modal' p.pk %}" data-modal-title="Предписание {{ p.prescription_number }}" class="table-warning">
+            <td><code>{{ p.prescription_number }}</code></td>
+            <td>{% if p.inspection.building %}{{ p.inspection.building.address|truncatechars:30 }}{% else %}—{% endif %}</td>
+            <td>{{ p.due_date|date:"d.m.Y" }}</td>
+            <td class="text-end"><button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-prescription-modal' p.pk %}"><i class="ri-eye-line"></i></button></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted">Просроченных предписаний нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-5">
+    <div class="card h-100 border-primary border-opacity-25">
+      <div class="card-body">
+        <h5 class="card-title mb-2"><i class="ri-global-line text-primary"></i> Публичная форма обращений</h5>
+        <p class="small text-muted mb-3">Ссылка для граждан и плакатов в МФЦ — без входа в систему. QR ведёт на ту же страницу.</p>
+        <div class="input-group input-group-sm mb-3">
+          <input type="text" class="form-control font-monospace small" id="uzhvPublicAppealUrl" readonly value="{{ public_appeal_url }}">
+          <button type="button" class="btn btn-outline-primary" data-uzhv-copy="#uzhvPublicAppealUrl" title="Копировать ссылку">
+            <i class="ri-file-copy-line"></i>
+          </button>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <a href="{{ public_appeal_path }}" class="btn btn-sm btn-primary" target="_blank" rel="noopener">
+            <i class="ri-external-link-line"></i> Открыть форму
+          </a>
+          {% url 'uzhv-qr-public' subsystem_code as qr_public_url %}
+          {% include "platform/uzhv/_modal_qr_btn.html" with qr_img_url=qr_public_url qr_hint="Для печати на стенде или в памятке" qr_title="QR публичной формы" %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <h5 class="mb-3">Быстрые действия</h5>
+    <div class="d-flex flex-wrap gap-2">
+      {% if show_create_hub %}
+      <a href="{% url 'uzhv-create-hub' %}" class="btn btn-primary btn-sm"><i class="ri-magic-line"></i> Мастер создания</a>
+      {% endif %}
+      {% if can_create %}
+      <a href="{% url 'uzhv-appeal-create' %}" class="btn btn-outline-primary btn-sm">+ Обращение</a>
+      <a href="{% url 'uzhv-case-create' %}" class="btn btn-outline-primary btn-sm">+ Учётное дело</a>
+      <a href="{% url 'uzhv-citizen-create' %}" class="btn btn-outline-primary btn-sm">+ Гражданин</a>
+      <a href="{% url 'uzhv-inspection-create' %}" class="btn btn-outline-primary btn-sm">+ Проверка</a>
+      <a href="{% url 'uzhv-building-create' %}" class="btn btn-outline-primary btn-sm">+ МКД</a>
+      <a href="{% url 'uzhv-interagency-create' %}" class="btn btn-outline-primary btn-sm">+ Межвед. запрос</a>
+      {% endif %}
+      <a href="{% url 'uzhv-reports' %}" class="btn btn-outline-secondary btn-sm">Отчёты</a>
+      <a href="{% url 'platform-integrations' %}" class="btn btn-outline-secondary btn-sm">Интеграции</a>
+    </div>
+    <p class="small text-muted mt-3 mb-0"><kbd>↑</kbd> <kbd>↓</kbd> — выбор строки, <kbd>Enter</kbd> — карточка · <kbd>Ctrl+K</kbd> — поиск по системе</p>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+      <h5 class="mb-0">Нагрузка по исполнителям</h5>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'uzhv-report-export' 'workload' %}" class="btn btn-sm btn-outline-primary">CSV</a>
+        <a href="{% url 'uzhv-workload-export-xlsx' %}" class="btn btn-sm btn-outline-success">XLSX</a>
+        <a href="{% url 'uzhv-report-export-xlsx' 'workload' %}" class="btn btn-sm btn-outline-secondary">Отчёты</a>
+      </div>
+    </div>
+    <div class="table-responsive uzhv-table-wrap">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Исполнитель</th>
+            <th>Дела</th>
+            <th>Обращения</th>
+            <th class="text-danger">Проср. обр.</th>
+            <th class="text-warning">Проср. пред.</th>
+            <th class="text-warning">Проср. межвед.</th>
+            <th>Итого проср.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in workload_rows %}
+          <tr{% if w.total_overdue %} class="table-warning"{% endif %}>
+            <td><a href="{% url 'uzhv-assignee' w.user_id %}" class="text-body">{{ w.name }}</a></td>
+            <td>{% if w.cases_open %}<a href="{% url 'uzhv-cases' %}?assignee={{ w.user_id }}">{{ w.cases_open }}</a>{% else %}0{% endif %}</td>
+            <td>{% if w.appeals_open %}<a href="{% url 'uzhv-appeals' %}?assignee={{ w.user_id }}">{{ w.appeals_open }}</a>{% else %}0{% endif %}</td>
+            <td>{% if w.appeals_overdue %}<a href="{% url 'uzhv-appeals' %}?overdue=1&amp;assignee={{ w.user_id }}" class="badge bg-danger text-decoration-none">{{ w.appeals_overdue }}</a>{% else %}0{% endif %}</td>
+            <td>{% if w.prescriptions_overdue %}<a href="{% url 'uzhv-prescriptions' %}?overdue=1&amp;assignee={{ w.user_id }}" class="badge bg-warning text-decoration-none">{{ w.prescriptions_overdue }}</a>{% else %}0{% endif %}</td>
+            <td>{% if w.interagency_overdue %}<a href="{% url 'uzhv-interagency' %}?overdue=1&amp;assignee={{ w.user_id }}" class="badge bg-warning text-decoration-none">{{ w.interagency_overdue }}</a>{% else %}0{% endif %}</td>
+            <td><strong>{{ w.total_overdue }}</strong></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-muted">Нет назначенных задач</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<h5 class="mb-3">Последние учётные дела</h5>
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Номер</th>
+        <th>Гражданин</th>
+        <th>Категория</th>
+        <th>Статус</th>
+        <th>Очерёдность</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in recent_cases %}
+      <tr data-modal-url="{% url 'uzhv-case-modal' c.pk %}" data-modal-title="Дело {{ c.case_number }}">
+        <td><strong>{{ c.case_number }}</strong></td>
+        <td>{{ c.citizen.full_name }}</td>
+        <td>{{ c.get_category_display }}</td>
+        <td><span class="badge bg-label-primary">{{ c.get_status_display }}</span></td>
+        <td>{{ c.queue_position|default:"—" }}</td>
+        <td class="text-end"><button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-case-modal' c.pk %}"><i class="ri-eye-line"></i></button></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted text-center py-4">Нет данных. Запустите <code>seed_uzhv</code>.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="alert alert-info mt-4 mb-0">
+  <strong>Контур подсистемы.</strong>
+  Пользователи, роли, формы и НСИ настраиваются администратором УЖВ.
+  Глобальные интеграции (СМЭВ, ГИС ЖКХ, почтовый транспорт) — в платформе «ДелаЮ» (администратор ЮГИт).
+</div>
+
+{% include "platform/uzhv/_list_modal.html" with modal_title="Карточка" %}
+{% endblock %}
+{% block page_js %}{{ block.super }}{% include "platform/uzhv/_list_modal_js.html" %}{% endblock %}

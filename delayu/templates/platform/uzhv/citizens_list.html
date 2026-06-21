@@ -1,0 +1,58 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% load delayu_access %}
+{% block title %}Граждане{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap align-items-center">
+  {% if can_create %}
+  <a href="{% url 'uzhv-create-hub' %}" class="btn btn-outline-primary btn-sm"><i class="ri-magic-line"></i> Мастер</a>
+  <a href="{% url 'uzhv-citizen-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> Гражданин</a>
+  {% endif %}
+  <form method="get" class="d-flex gap-2 flex-wrap uzhv-filter-form">
+    <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" placeholder="ФИО, СНИЛС…">
+    <div class="form-check mt-1">
+      <input class="form-check-input" type="checkbox" name="has_cases" value="1" id="hasCasesChk" {% if filter_has_cases == "1" %}checked{% endif %} onchange="this.form.submit()">
+      <label class="form-check-label small" for="hasCasesChk">С учётными делами</label>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block card_body %}
+{% include "platform/uzhv/_bulk_toolbar.html" %}
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle uzhv-bulk-table">
+    <thead>
+      <tr>
+        <th style="width:2.5rem"><input type="checkbox" class="form-check-input uzhv-select-all" title="Выбрать все"></th>
+        <th>ФИО</th>
+        <th>СНИЛС</th>
+        <th>Дата рождения</th>
+        <th>Адрес регистрации</th>
+        <th>Дел</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in citizens %}
+      <tr data-modal-url="{% url 'uzhv-citizen-modal' c.pk %}" data-modal-title="{{ c.full_name }}"{% if request.GET.open == c.pk|stringformat:"s" %} data-auto-open-modal{% endif %}>
+        <td><input type="checkbox" class="form-check-input uzhv-row-check" value="{{ c.pk }}"></td>
+        <td><strong>{{ c.full_name|mask_name:request.user }}</strong></td>
+        <td>{{ c.snils|mask_pii:request.user|default:"—" }}</td>
+        <td>{{ c.birth_date|date:"d.m.Y"|default:"—" }}</td>
+        <td class="text-truncate" style="max-width:280px">{{ c.reg_address|mask_pii:request.user|default:"—" }}</td>
+        <td>{{ c.case_count }}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-citizen-modal' c.pk %}" title="Просмотр"><i class="ri-eye-line"></i></button>
+          {% if can_change %}<a href="{% url 'uzhv-citizen-edit' c.pk %}" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать"><i class="ri-pencil-line"></i></a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-muted text-center py-4">Граждане не найдены</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% include "platform/uzhv/_list_modal.html" with modal_title="Гражданин" %}
+{% endblock %}
+{% block page_js %}{{ block.super }}{% include "platform/uzhv/_list_modal_js.html" %}{% endblock %}

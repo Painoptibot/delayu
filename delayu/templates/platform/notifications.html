@@ -1,0 +1,5 @@
+{% extends "platform/_page.html" %}
+{% block title %}Уведомления{% endblock %}
+{% block card_body %}
+<ul>{% for n in notifications %}<li>{% if not n.is_read %}<strong>{% endif %}{{ n.title }}{% if not n.is_read %}</strong>{% endif %} — {{ n.body }}</li>{% empty %}<li class="text-muted">Нет</li>{% endfor %}</ul>
+{% endblock %}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#71dd37" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#71dd37" stop-opacity="0.04"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="400" rx="24" fill="url(#bg)"/>
+  <rect x="40" y="40" width="120" height="120" rx="28" fill="#71dd37" fill-opacity="0.2"/>
+  <circle cx="100" cy="100" r="48" fill="#71dd37" fill-opacity="0.35"/>
+  <rect x="200" y="70" width="380" height="28" rx="14" fill="#71dd37" fill-opacity="0.25"/>
+  <rect x="200" y="120" width="300" height="18" rx="9" fill="#71dd37" fill-opacity="0.15"/>
+  <rect x="200" y="155" width="340" height="18" rx="9" fill="#71dd37" fill-opacity="0.12"/>
+  <rect x="60" y="220" width="520" height="120" rx="16" fill="#fff" fill-opacity="0.55" stroke="#71dd37" stroke-opacity="0.2"/>
+  <text x="320" y="265" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#384551">Аналитика</text>
+  <text x="320" y="305" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#697a8d">KPI, отчёты, просрочки</text>
+</svg>

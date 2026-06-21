@@ -1,0 +1,61 @@
+body.delayu-privacy-mode .layout-page input[type="text"],
+body.delayu-privacy-mode .layout-page input[type="email"],
+body.delayu-privacy-mode .layout-page input[type="tel"],
+body.delayu-privacy-mode .layout-page input[type="url"],
+body.delayu-privacy-mode .layout-page input[type="number"],
+body.delayu-privacy-mode .layout-page input[type="password"],
+body.delayu-privacy-mode .layout-page input.delayu-date,
+body.delayu-privacy-mode .layout-page textarea,
+body.delayu-privacy-mode .layout-page select,
+body.delayu-privacy-mode .layout-page .form-control,
+body.delayu-privacy-mode .layout-page .form-select,
+body.delayu-privacy-mode .layout-page .form-control-plaintext,
+body.delayu-privacy-mode .layout-page .select2-selection__rendered,
+body.delayu-privacy-mode .layout-page .avatar img,
+body.delayu-privacy-mode .layout-page #cabinetAvatarPreview,
+body.delayu-privacy-mode .layout-page .delayu-pii,
+body.delayu-privacy-mode .layout-page [data-pii="1"],
+body.delayu-privacy-mode .layout-page .email-list-item-username,
+body.delayu-privacy-mode .layout-page .email-list-item-subject,
+body.delayu-privacy-mode .layout-page .chat-contact-name,
+body.delayu-privacy-mode .layout-page .chat-message-text,
+body.delayu-privacy-mode .layout-page .chat-message-text p,
+body.delayu-privacy-mode .layout-page table.table tbody td,
+body.delayu-privacy-mode .layout-page .list-group-item,
+body.delayu-privacy-mode .layout-page .dropdown-user .fw-medium,
+body.delayu-privacy-mode .layout-page .dropdown-user .fw-semibold,
+body.delayu-privacy-mode .layout-page .navbar-dropdown .dropdown-item .fw-medium,
+body.delayu-privacy-mode .layout-page .delayu-privacy-blur {
+  filter: blur(8px);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body.delayu-privacy-mode .layout-page input[type="checkbox"],
+body.delayu-privacy-mode .layout-page input[type="radio"],
+body.delayu-privacy-mode .layout-page input[type="hidden"],
+body.delayu-privacy-mode .layout-page input[type="file"],
+body.delayu-privacy-mode .layout-page .btn,
+body.delayu-privacy-mode .layout-page .btn *,
+body.delayu-privacy-mode .layout-page .nav-link,
+body.delayu-privacy-mode .layout-page .menu-link,
+body.delayu-privacy-mode .layout-page h1,
+body.delayu-privacy-mode .layout-page h4,
+body.delayu-privacy-mode .layout-page .card-title,
+body.delayu-privacy-mode .layout-page .breadcrumb,
+body.delayu-privacy-mode .layout-page .badge:not(.email-list-item-label),
+body.delayu-privacy-mode .layout-page .email-search-input,
+body.delayu-privacy-mode .layout-page .chat-search-input,
+body.delayu-privacy-mode .layout-page .delayu-module-hint,
+body.delayu-privacy-mode .layout-page .delayu-module-hint *,
+body.delayu-privacy-mode #delayu-privacy-toggle,
+body.delayu-privacy-mode #delayu-privacy-toggle * {
+  filter: none !important;
+  user-select: auto;
+  pointer-events: auto;
+}
+
+body.delayu-privacy-mode .layout-page .delayu-privacy-blur,
+body.delayu-privacy-mode .layout-page [data-pii="1"] {
+  pointer-events: none;
+}

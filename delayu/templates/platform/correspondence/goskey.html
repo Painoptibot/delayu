@@ -1,0 +1,15 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card col-lg-8">
+  <div class="card-body">
+    <p>Интеграция с <strong>Госключ</strong> и доверенными удостоверяющими центрами настраивается по контуру заказчика (M31, этап 2).</p>
+    <ul class="small text-muted mb-0">
+      <li>OAuth / API шлюза УЦ</li>
+      <li>Проверка цепочки сертификатов</li>
+      <li>Синхронизация статуса подписи в карточку документа (M05, M28)</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

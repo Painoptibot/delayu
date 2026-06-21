@@ -1,0 +1,56 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/bpm/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="mb-0 text-body-secondary">Запущенные маршруты согласования по делам</p>
+  </div>
+  {% if can_create %}<a href="{% url 'platform-bpm-start' %}" class="btn btn-primary btn-sm"><i class="ri-play-line me-1"></i>Запустить</a>{% endif %}
+</div>
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-4"><label class="form-label">Поиск по делу</label><input name="q" class="form-control form-control-sm" value="{{ search_q }}"></div>
+      <div class="col-md-3">
+        <label class="form-label">Статус</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">Все</option>
+          {% for val, label in status_choices %}<option value="{{ val }}" {% if filter_status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100">Найти</button></div>
+    </form>
+  </div>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Дело</th><th>Шаблон</th><th>Статус</th><th>Текущий шаг</th><th>Старт</th><th></th></tr></thead>
+      <tbody>
+        {% for i in instances %}
+        <tr>
+          <td><a href="{% url 'platform-case-detail' i.case_id %}"><code>{{ i.case.number }}</code></a><div class="small text-muted">{{ i.case.title|truncatechars:40 }}</div></td>
+          <td>{{ i.template.name }}</td>
+          <td><span class="badge bg-label-{% if i.status == 'completed' %}success{% elif i.status == 'rejected' %}danger{% else %}primary{% endif %}">{{ i.get_status_display }}</span></td>
+          <td class="small">{{ i.current_step_id|default:"—" }}</td>
+          <td class="small text-muted">{{ i.started_at|date:"d.m.Y H:i" }}</td>
+          <td class="text-end"><a href="{% url 'platform-bpm-instance' i.pk %}" class="btn btn-sm btn-icon btn-text-primary"><i class="ri-external-link-line"></i></a></td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Процессов нет</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page_obj.has_other_pages %}
+  <div class="card-footer d-flex justify-content-between small">
+    <span>Стр. {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    <div>{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">←</a>{% endif %}{% if page_obj.has_next %} <a href="?page={{ page_obj.next_page_number }}">→</a>{% endif %}</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

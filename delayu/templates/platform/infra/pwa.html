@@ -1,0 +1,47 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block vendor_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/pages/cards-statistics.css' %}">
+{% endblock %}
+{% block content %}
+{% include "platform/infra/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">Устройства</div>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Метка</th><th>Пользователь</th><th>Синхронизация</th></tr></thead>
+        <tbody>
+          {% for d in devices %}
+          <tr>
+            <td>{{ d.device_label }}</td>
+            <td>{{ d.user.get_username }}</td>
+            <td class="small">{% if d.last_sync_at %}{{ d.last_sync_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+          </tr>
+          {% empty %}<tr><td colspan="3" class="text-muted text-center py-3">Нет устройств</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">Офлайн-черновики (ожидают синхронизации)</div>
+      <ul class="list-group list-group-flush">
+        {% for draft in drafts %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ draft.title }}</strong>
+            <div class="small text-muted">{{ draft.device.device_label }} · {{ draft.created_at|date:"d.m.Y H:i" }}</div>
+          </div>
+          <form method="post" action="{% url 'platform-pwa-sync' draft.pk %}">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-primary">Синхронизировать</button>
+          </form>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">Все черновики синхронизированы</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

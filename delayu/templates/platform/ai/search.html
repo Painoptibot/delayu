@@ -1,0 +1,27 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ai/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card mb-4"><div class="card-body">
+  <form method="get">
+    <div class="input-group">
+      <input name="q" class="form-control" value="{{ query }}" placeholder="Семантический поиск по делам и базе знаний…">
+      <button class="btn btn-primary">Искать</button>
+    </div>
+  </form>
+</div></div>
+{% if query %}
+<div class="card">
+  <div class="card-header">Результаты для «{{ query }}»</div>
+  <ul class="list-group list-group-flush">
+    {% for r in results %}
+    <li class="list-group-item d-flex align-items-center gap-2">
+      <span class="badge bg-label-{% if r.type == 'case' %}primary{% else %}info{% endif %}">{{ r.type }}</span>
+      {% if r.type == 'case' %}<a href="{% url 'platform-case-detail' r.id %}">{{ r.title }}</a>{% else %}{{ r.title }}{% endif %}
+    </li>
+    {% empty %}<li class="list-group-item text-muted">Ничего не найдено</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

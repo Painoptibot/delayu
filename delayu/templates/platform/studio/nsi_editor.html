@@ -1,0 +1,25 @@
+{% extends "platform/studio/_base.html" %}
+{% block studio_content %}
+<div class="card" data-studio="nsi" data-save-url="{% url 'platform-studio-save' 'nsi' %}" data-classifier-id="{{ classifier.pk|default:'' }}">
+  <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <h5 class="mb-0">Редактор НСИ</h5>
+    {% if classifiers %}
+    <select class="form-select form-select-sm w-auto" onchange="if(this.value) location.href='/studio/nsi/'+this.value+'/'">
+      {% for c in classifiers %}
+      <option value="{{ c.pk }}" {% if classifier and classifier.pk == c.pk %}selected{% endif %}>{{ c.code }} — {{ c.name }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    {% if classifier %}
+    <p class="text-muted small">{{ classifier.description|default:"Перетащите строки для изменения порядка в выпадающих списках." }}</p>
+    <ul id="studioNsiList" class="list-group studio-nsi-list"></ul>
+    <script type="application/json" id="studioNsiJson">{{ values_json|safe }}</script>
+    <div class="text-end mt-3"><button type="button" class="btn btn-primary" id="studioNsiSave">Сохранить порядок</button></div>
+    {% else %}
+    <p class="text-muted">Справочники не найдены. Запустите <code>python manage.py seed_nsi_classifiers</code></p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

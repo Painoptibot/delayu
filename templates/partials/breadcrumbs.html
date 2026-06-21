@@ -1,0 +1,13 @@
+{% if breadcrumbs %}
+<nav aria-label="breadcrumb" class="mb-3 delayu-breadcrumbs">
+  <ol class="breadcrumb breadcrumb-style1 mb-0">
+    {% for crumb in breadcrumbs %}
+      {% if crumb.url %}
+        <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.label }}</a></li>
+      {% else %}
+        <li class="breadcrumb-item active">{{ crumb.label }}</li>
+      {% endif %}
+    {% endfor %}
+  </ol>
+</nav>
+{% endif %}

@@ -1,0 +1,57 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/integrations/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="mb-0 text-body-secondary">Внутреннее API платформы (сессия + ключи)</p>
+  </div>
+  {% if can_create %}<a href="{% url 'platform-api-key-create' %}" class="btn btn-sm btn-primary">Новый ключ</a>{% endif %}
+</div>
+{% if new_api_key %}
+<div class="alert alert-warning">
+  <strong>Сохраните ключ:</strong> <code id="newApiKey">{{ new_api_key }}</code>
+  <button type="button" class="btn btn-sm btn-outline-dark ms-2" onclick="navigator.clipboard.writeText(document.getElementById('newApiKey').textContent)">Копировать</button>
+</div>
+{% endif %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">Эндпоинты</div>
+      <ul class="list-group list-group-flush">
+        {% for path, methods in spec.paths.items %}
+        {% for method, info in methods.items %}
+        <li class="list-group-item"><span class="badge bg-label-primary me-2">{{ method|upper }}</span><code>{{ path }}</code><span class="text-muted ms-2">{{ info.summary }}</span></li>
+        {% endfor %}
+        {% endfor %}
+      </ul>
+      <div class="card-footer">
+        <a href="{% url 'platform-api-openapi' %}" class="btn btn-sm btn-outline-secondary" target="_blank">OpenAPI JSON</a>
+        <a href="/api/v1/health/" class="btn btn-sm btn-outline-primary" target="_blank">Проверка health</a>
+      </div>
+    </div>
+    <div class="card mt-3">
+      <div class="card-header">Спецификация (фрагмент)</div>
+      <pre class="card-body small mb-0" style="max-height:16rem;overflow:auto">{{ spec_json }}</pre>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">API-ключи</div>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Название</th><th>Префикс</th><th>Лимит/ч</th></tr></thead>
+        <tbody>
+          {% for k in keys %}
+          <tr>
+            <td>{{ k.name }}{% if not k.is_active %} <span class="badge bg-label-secondary">выкл</span>{% endif %}</td>
+            <td><code>{{ k.key_prefix }}…</code></td>
+            <td>{{ k.rate_limit_per_hour }}</td>
+          </tr>
+          {% empty %}<tr><td colspan="3" class="text-muted text-center">Ключей нет</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

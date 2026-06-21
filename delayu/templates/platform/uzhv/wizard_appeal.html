@@ -1,0 +1,47 @@
+{% extends "platform/uzhv/_wizard_layout.html" %}
+{% block wizard_body %}
+<div class="alert alert-info py-2 small">Срок ответа — <strong>{{ sla_days }} календарных дней</strong>. Создаётся запись входящей корреспонденции (M24).</div>
+<form method="post" id="uzhvWizardForm">{% csrf_token %}
+  <div class="bs-stepper wizard-numbered">
+    <div class="bs-stepper-header">
+      <div class="step" data-target="#uzhv-s1"><button type="button" class="step-trigger"><span class="bs-stepper-circle">1</span><span class="bs-stepper-label"><span class="bs-stepper-title">Заявитель</span></span></button></div>
+      <div class="line"></div>
+      <div class="step" data-target="#uzhv-s2"><button type="button" class="step-trigger"><span class="bs-stepper-circle">2</span><span class="bs-stepper-label"><span class="bs-stepper-title">Содержание</span></span></button></div>
+      <div class="line"></div>
+      <div class="step" data-target="#uzhv-s3"><button type="button" class="step-trigger"><span class="bs-stepper-circle">3</span><span class="bs-stepper-label"><span class="bs-stepper-title">Исполнение</span></span></button></div>
+    </div>
+    <div class="bs-stepper-content">
+      <div id="uzhv-s1" class="content">
+        <div class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.citizen col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.housing_case col=6 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.received_at col=6 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev" disabled>Назад</button>
+          <button type="button" class="btn btn-primary btn-next">Далее</button>
+        </div>
+      </div>
+      <div id="uzhv-s2" class="content">
+        <div class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.subject col=12 %}
+          {% include "platform/uzhv/_wizard_field.html" with field=form.body col=12 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+          <button type="button" class="btn btn-primary btn-next">Далее</button>
+        </div>
+      </div>
+      <div id="uzhv-s3" class="content">
+        <div class="row g-0">
+          {% include "platform/uzhv/_wizard_field.html" with field=form.assignee col=12 %}
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary btn-prev">Назад</button>
+          <button type="submit" class="btn btn-success">Зарегистрировать обращение</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

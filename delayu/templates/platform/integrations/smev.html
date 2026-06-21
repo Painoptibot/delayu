@@ -1,0 +1,56 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/integrations/_nav.html" %}
+<h4 class="mb-1">{{ page_title }}</h4>
+<p class="text-body-secondary small mb-4">Межведомственный обмен (демо-контур)</p>
+<div class="row g-4">
+  <div class="col-lg-5">
+    {% if can_create and endpoints %}
+    <div class="card">
+      <div class="card-header">Отправить запрос</div>
+      <div class="card-body">
+        <form method="post">{% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Коннектор</label>
+            <select name="endpoint_id" class="form-select">
+              {% for e in endpoints %}<option value="{{ e.pk }}">{{ e.name }}</option>{% endfor %}
+            </select>
+          </div>
+          {% for field in form %}<div class="mb-3"><label class="form-label">{{ field.label }}</label>{{ field }}</div>{% endfor %}
+          <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+    <ul class="list-group mt-3">
+      {% for e in endpoints %}
+      <li class="list-group-item d-flex justify-content-between">
+        <span>{{ e.name }}</span>
+        <form method="post" action="{% url 'platform-smev-receive' e.pk %}">{% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-secondary">Демо-ответ</button>
+        </form>
+      </li>
+      {% empty %}<li class="list-group-item text-muted">Нет коннекторов СМЭВ</li>{% endfor %}
+    </ul>
+  </div>
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">Журнал СМЭВ</div>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Время</th><th>Напр.</th><th>Статус</th><th>ID</th></tr></thead>
+        <tbody>
+          {% for m in messages %}
+          <tr>
+            <td>{{ m.created_at|date:"d.m.Y H:i" }}</td>
+            <td>{{ m.get_direction_display }}</td>
+            <td>{{ m.get_status_display }}</td>
+            <td class="small"><code>{{ m.external_id|default:"—" }}</code></td>
+          </tr>
+          {% empty %}<tr><td colspan="4" class="text-muted text-center py-3">Пусто</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

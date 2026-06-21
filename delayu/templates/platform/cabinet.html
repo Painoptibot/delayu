@@ -1,0 +1,8 @@
+{% extends "platform/_page.html" %}
+{% block title %}Личный кабинет{% endblock %}
+{% block card_body %}
+<p>{{ request.user.get_full_name|default:request.user.username }} · {{ active_membership.role.name }}</p>
+<h6>Открытые задачи</h6><ul>{% for t in tasks_open %}<li><a href="{% url 'platform-task-edit' t.pk %}">{{ t.title }}</a></li>{% empty %}<li class="text-muted">Нет</li>{% endfor %}</ul>
+<h6>Согласования</h6><ul>{% for b in bpm_pending %}<li>{{ b.step_name }}</li>{% empty %}<li class="text-muted">Нет</li>{% endfor %}</ul>
+<h6>Уведомления</h6><ul>{% for n in notifications %}<li>{{ n.title }}</li>{% empty %}<li class="text-muted">Нет</li>{% endfor %}</ul>
+{% endblock %}

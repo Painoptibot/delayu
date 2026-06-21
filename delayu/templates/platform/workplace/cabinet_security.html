@@ -1,0 +1,178 @@
+{% extends layout_path %}
+
+{% load static %}
+
+{% block title %}Личный кабинет — безопасность{% endblock %}
+
+{% block content %}
+
+{% include "platform/workplace/_cabinet_nav.html" %}
+
+<div class="row">
+
+  <div class="col-md-12">
+
+    <div class="card mb-6">
+
+      <h5 class="card-header">Смена пароля</h5>
+
+      <div class="card-body">
+
+        <p class="text-muted small">Смена пароля выполняется администратором подсистемы или через корпоративный SSO. Здесь — требования к паролю по политике «ДелаЮ».</p>
+
+        <h6 class="text-body mt-4">Требования к паролю</h6>
+
+        <ul class="ps-4 mb-4">
+
+          <li class="mb-2">Не менее 8 символов</li>
+
+          <li class="mb-2">Строчные и прописные буквы</li>
+
+          <li>Цифра или спецсимвол</li>
+
+        </ul>
+
+        <div class="row g-4">
+
+          <div class="col-md-4">
+
+            <span class="text-muted d-block small">Сменить при входе</span>
+
+            <strong>{{ profile.must_change_password|yesno:"Да,Нет" }}</strong>
+
+          </div>
+
+          <div class="col-md-4">
+
+            <span class="text-muted d-block small">Двухфакторная аутентификация</span>
+
+            <strong>{{ profile.two_factor_enabled|yesno:"Включена,Выключена" }}</strong>
+
+          </div>
+
+          <div class="col-md-4">
+
+            <span class="text-muted d-block small">Последний вход</span>
+
+            <strong>{% if request.user.last_login %}{{ request.user.last_login|date:"d.m.Y H:i" }}{% else %}—{% endif %}</strong>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="card mb-6">
+
+      <h5 class="card-header">Двухфакторная аутентификация (TOTP)</h5>
+
+      <div class="card-body">
+
+        {% if profile.two_factor_enabled %}
+
+        <p class="mb-3">2FA включена. При каждом входе потребуется код из приложения-аутентификатора.</p>
+
+        <form method="post" action="{% url 'two-factor-disable' %}" class="border rounded p-3 bg-light">{% csrf_token %}
+
+          <p class="small text-muted">Отключение (если политика не требует 2FA):</p>
+
+          <div class="row g-2 mb-2">
+
+            <div class="col-md-4"><input type="password" name="password" class="form-control form-control-sm" placeholder="Пароль" required></div>
+
+            <div class="col-md-3"><input type="text" name="code" class="form-control form-control-sm" placeholder="Код 2FA" maxlength="6" required></div>
+
+            <div class="col-md-3"><button type="submit" class="btn btn-sm btn-outline-danger">Отключить</button></div>
+
+          </div>
+
+        </form>
+
+        {% else %}
+
+        <p class="mb-3">Подключите TOTP для дополнительной защиты учётной записи.</p>
+
+        <a href="{% url 'two-factor-setup' %}" class="btn btn-primary btn-sm">Настроить 2FA</a>
+
+        {% endif %}
+
+      </div>
+
+    </div>
+
+    <div class="card">
+
+      <h5 class="card-header">Активные сессии</h5>
+
+      <div class="table-responsive">
+
+        <table class="table mb-0">
+
+          <thead>
+
+            <tr>
+
+              <th>Клиент</th>
+
+              <th>IP</th>
+
+              <th>Последняя активность</th>
+
+              <th></th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for s in sessions %}
+
+            <tr>
+
+              <td>{{ s.label }}{% if s.is_current %} <span class="badge bg-label-success">Текущая</span>{% endif %}{% if not s.is_active %} <span class="badge bg-label-secondary">Завершена</span>{% endif %}</td>
+
+              <td class="small">{{ s.ip_address }}</td>
+
+              <td class="small">{{ s.last_seen_at|date:"d.m.Y H:i" }}</td>
+
+              <td class="text-end">
+
+                {% if s.is_active and not s.is_current %}
+
+                <form method="post" action="{% url 'platform-cabinet-session-revoke' %}" class="d-inline">{% csrf_token %}
+
+                  <input type="hidden" name="session_key" value="{{ s.session_key }}">
+
+                  <button type="submit" class="btn btn-sm btn-link text-danger">Завершить</button>
+
+                </form>
+
+                {% endif %}
+
+              </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr><td colspan="4" class="text-muted text-center py-3">Сессий пока нет</td></tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+

@@ -1,0 +1,88 @@
+{% extends "platform/_page.html" %}
+{% load static %}
+{% block title %}Учёт нуждающихся{% endblock %}
+{% block header_actions %}
+<div class="d-flex gap-2 flex-wrap">
+  {% if can_create %}
+  <a href="{% url 'uzhv-create-hub' %}" class="btn btn-outline-primary btn-sm"><i class="ri-magic-line"></i> Мастер</a>
+  <a href="{% url 'uzhv-case-create' %}" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> Новое дело</a>
+  {% endif %}
+  {% if can_recalc_queue %}
+  <form method="post" action="{% url 'uzhv-queue-recalc' %}" class="d-inline">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button type="submit" class="btn btn-outline-primary btn-sm" title="PY-05"><i class="ri-sort-asc"></i> Пересчитать очередь</button>
+  </form>
+  {% endif %}
+  <form method="get" class="d-flex gap-2 uzhv-filter-form flex-wrap">
+    <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" placeholder="Поиск…">
+    <select name="registry" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все реестры</option>
+      <option value="municipal"{% if filter_registry == "municipal" %} selected{% endif %}>Муниципальная подведомственность</option>
+      <option value="special"{% if filter_registry == "special" %} selected{% endif %}>Отдельная категория</option>
+    </select>
+    <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все категории</option>
+      {% for val, label in category_choices %}
+      <option value="{{ val }}"{% if filter_category == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все статусы</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}"{% if request.GET.status == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="assignee" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">Все исполнители</option>
+      <option value="me"{% if filter_assignee == "me" %} selected{% endif %}>Мои</option>
+      {% for u in case_assignee_users %}
+      <option value="{{ u.pk }}"{% if filter_assignee == u.pk|stringformat:"s" %} selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+{% endblock %}
+{% block card_body %}
+{% include "platform/uzhv/_bulk_toolbar.html" %}
+<div class="table-responsive uzhv-table-wrap">
+  <table class="table table-hover align-middle uzhv-bulk-table">
+    <thead>
+      <tr>
+        <th style="width:2.5rem"><input type="checkbox" class="form-check-input uzhv-select-all" title="Выбрать все"></th>
+        <th>№ дела</th>
+        <th>Гражданин</th>
+        <th>Категория</th>
+        <th>Статус</th>
+        <th>На учёте с</th>
+        <th>Очерёдность</th>
+        <th>Исполнитель</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in cases %}
+      <tr data-modal-url="{% url 'uzhv-case-modal' c.pk %}" data-modal-title="Дело {{ c.case_number }}"{% if request.GET.open == c.pk|stringformat:"s" %} data-auto-open-modal{% endif %}>
+        <td><input type="checkbox" class="form-check-input uzhv-row-check" value="{{ c.pk }}"></td>
+        <td><strong>{{ c.case_number }}</strong></td>
+        <td>{{ c.citizen.full_name }}</td>
+        <td>{{ c.get_category_display }}</td>
+        <td><span class="badge bg-label-primary">{{ c.get_status_display }}</span></td>
+        <td>{{ c.registered_at|date:"d.m.Y" }}</td>
+        <td>{{ c.queue_position|default:"—" }}</td>
+        <td>{% if c.assignee %}{{ c.assignee.get_full_name|default:c.assignee.username }}{% else %}—{% endif %}</td>
+        <td class="text-end text-nowrap">
+          <button type="button" class="btn btn-sm btn-icon btn-text-secondary uzhv-open" data-modal-url="{% url 'uzhv-case-modal' c.pk %}" title="Просмотр"><i class="ri-eye-line"></i></button>
+          {% if can_change %}<a href="{% url 'uzhv-case-edit' c.pk %}" class="btn btn-sm btn-icon btn-text-secondary" title="Редактировать"><i class="ri-pencil-line"></i></a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" class="text-muted text-center py-4">Учётные дела не найдены</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "platform/uzhv/_pagination.html" %}
+{% include "platform/uzhv/_list_modal.html" with modal_title="Учётное дело" %}
+{% endblock %}
+{% block page_js %}{{ block.super }}{% include "platform/uzhv/_list_modal_js.html" %}{% endblock %}

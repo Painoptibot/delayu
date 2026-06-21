@@ -1,0 +1,44 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ai/_nav.html" %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">Политика (M66)</div>
+      <div class="card-body">
+        <p class="small text-muted">Использовано сегодня: <strong>{{ usage_today }}</strong> / {{ policy.max_requests_per_day }}</p>
+        {% if can_change %}
+        <form method="post">{% csrf_token %}
+          {% for field in form %}<div class="mb-3"><label class="form-label">{{ field.label }}</label>{{ field }}</div>{% endfor %}
+          <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+        </form>
+        {% else %}
+        <p class="small mb-0">Модель: {{ policy.model_name }}, ПДн: {% if policy.allow_pii %}разрешены{% else %}запрещены{% endif %}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">Журнал запросов</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Модуль</th><th>Пользователь</th><th>Промпт</th><th></th></tr></thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td><code>{{ log.module_code }}</code></td>
+              <td class="small">{{ log.user|default:"—" }}</td>
+              <td class="small">{{ log.prompt|truncatechars:40 }}</td>
+              <td class="small text-muted">{{ log.created_at|date:"d.m H:i" }}</td>
+            </tr>
+            {% empty %}<tr><td colspan="4" class="text-muted text-center py-3">Пусто</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

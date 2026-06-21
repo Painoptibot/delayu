@@ -1,0 +1,113 @@
+{% load delayu_access %}
+<div class="uzhv-modal-card">
+  <div class="uzhv-modal-hero uzhv-modal-hero--citizen">
+    <div class="uzhv-modal-avatar uzhv-modal-avatar--citizen" aria-hidden="true">{{ citizen.first_name|slice:":1" }}{{ citizen.last_name|slice:":1" }}</div>
+    <div class="uzhv-modal-hero-body">
+      <h6 class="uzhv-modal-hero-title">{{ citizen.full_name|mask_name:request.user }}</h6>
+      <p class="uzhv-modal-hero-sub">
+        {% if citizen.birth_date %}Дата рождения: {{ citizen.birth_date|date:"d.m.Y" }}{% else %}Гражданин реестра УЖВ{% endif %}
+      </p>
+      <div class="uzhv-modal-badges">
+        {% if cases %}<span class="badge bg-label-primary">{{ cases|length }} дел</span>{% endif %}
+        {% if contracts %}<span class="badge bg-label-success">{{ contracts|length }} дог.</span>{% endif %}
+        {% if appeals_count %}<span class="badge bg-label-warning">{{ appeals_count }} обр.</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-2 uzhv-modal-stats">
+    <div class="col-6 col-md-4">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">СНИЛС</span>
+        <span class="uzhv-modal-stat-value">{{ citizen.snils|mask_pii:request.user|default:"—" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-4">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Телефон</span>
+        <span class="uzhv-modal-stat-value">{{ citizen.phone|mask_pii:request.user|default:"—" }}</span>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">E-mail</span>
+        <span class="uzhv-modal-stat-value text-truncate d-block">{{ citizen.email|mask_pii:request.user|default:"—" }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="uzhv-modal-actions">
+    {% if can_change %}
+    <a href="{% url 'uzhv-citizen-edit' citizen.pk %}" class="btn btn-sm btn-primary"><i class="ri-pencil-line"></i> Редактировать</a>
+    {% endif %}
+    {% if can_create_case %}
+    <a href="{% url 'uzhv-case-create' %}?citizen={{ citizen.pk }}" class="btn btn-sm btn-outline-primary"><i class="ri-folder-add-line"></i> Новое дело</a>
+    {% endif %}
+    {% if can_create_appeal %}
+    <a href="{% url 'uzhv-appeal-create' %}?citizen={{ citizen.pk }}" class="btn btn-sm btn-outline-warning"><i class="ri-mail-add-line"></i> Обращение</a>
+    {% endif %}
+    {% include "platform/uzhv/_modal_qr_btn.html" with qr_entity="citizens" qr_pk=citizen.pk qr_hint="Откроет карточку гражданина в реестре" %}
+  </div>
+
+  {% if citizen.passport_series or citizen.passport_number or citizen.reg_address %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-passport-line"></i> Документы и адрес</div>
+    <div class="uzhv-modal-section-body">
+      <dl class="uzhv-modal-kv">
+        {% if citizen.passport_series or citizen.passport_number %}
+        <dt>Паспорт</dt>
+        <dd>
+          {{ citizen.passport_series|mask_pii:request.user }} {{ citizen.passport_number|mask_pii:request.user }}
+          {% if citizen.passport_issued_at %}<span class="text-muted"> · {{ citizen.passport_issued_at|date:"d.m.Y" }}</span>{% endif %}
+        </dd>
+        {% endif %}
+        {% if citizen.passport_issued_by %}
+        <dt>Кем выдан</dt><dd>{{ citizen.passport_issued_by|mask_pii:request.user|truncatechars:120 }}</dd>
+        {% endif %}
+        <dt>Регистрация</dt><dd>{{ citizen.reg_address|mask_pii:request.user|default:"—" }}</dd>
+      </dl>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if cases %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-folder-line"></i> Учётные дела</div>
+    <ul class="uzhv-modal-related">
+      {% for c in cases %}
+      <li>
+        <a href="#" class="uzhv-modal-link" data-modal-url="{% url 'uzhv-case-modal' c.pk %}" data-modal-title="Дело {{ c.case_number }}">
+          <span><code>{{ c.case_number }}</code> — {{ c.get_category_display }}</span>
+          <span class="badge bg-label-primary">{{ c.get_status_display }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if contracts %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-file-text-line"></i> Договоры</div>
+    <ul class="uzhv-modal-related">
+      {% for ct in contracts %}
+      <li>
+        <a href="#" class="uzhv-modal-link" data-modal-url="{% url 'uzhv-contract-modal' ct.pk %}" data-modal-title="Договор {{ ct.contract_number }}">
+          <span><code>{{ ct.contract_number }}</code> — {{ ct.get_contract_type_display }}</span>
+          {% if ct.is_active %}<span class="badge bg-label-success">Действует</span>{% else %}<span class="badge bg-label-secondary">Закрыт</span>{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if timeline %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-time-line"></i> Хронология</div>
+    {% include "platform/uzhv/_timeline.html" %}
+  </div>
+  {% elif not cases and not contracts %}
+  <p class="small text-muted mb-0">Событий и связей пока нет.</p>
+  {% endif %}
+</div>

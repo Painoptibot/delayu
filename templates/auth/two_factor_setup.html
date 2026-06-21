@@ -1,0 +1,41 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Настройка 2FA — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'vendor/css/pages/page-auth.css' %}" />{% endblock %}
+{% block content %}
+<div class="authentication-wrapper authentication-cover">
+  <div class="authentication-inner row m-0">
+    <div class="d-flex col-12 col-lg-6 align-items-center authentication-bg position-relative py-sm-12 px-12 py-6 mx-auto">
+      <div class="w-px-500 mx-auto">
+        <h4 class="mb-2">Подключение 2FA (TOTP)</h4>
+        {% if requires_2fa %}<div class="alert alert-warning small">Для вашей роли двухфакторная аутентификация обязательна.</div>{% endif %}
+        {% if totp_unavailable %}
+        <div class="alert alert-danger">Модуль pyotp не установлен. Выполните: pip install pyotp</div>
+        {% else %}
+        <p class="text-muted">1. Откройте Google Authenticator, Яндекс.Ключ или аналог.<br>2. Добавьте аккаунт по секрету или ссылке.<br>3. Введите текущий код для подтверждения.</p>
+        {% if totp_secret %}
+        <div class="mb-3 p-3 bg-light rounded">
+          <div class="small text-muted mb-1">Секрет (Base32)</div>
+          <code class="user-select-all">{{ totp_secret }}</code>
+          {% if totp_uri %}
+          <div class="small mt-2"><a href="{{ totp_uri }}">otpauth:// ссылка</a></div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if messages %}{% for message in messages %}
+        <div class="alert alert-danger">{{ message }}</div>
+        {% endfor %}{% endif %}
+        <form method="post">{% csrf_token %}
+          <div class="mb-4">
+            <label class="form-label" for="code">Код подтверждения</label>
+            <input class="form-control" id="code" name="code" inputmode="numeric" maxlength="6" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Включить 2FA</button>
+          {% if not requires_2fa %}<a href="{% url 'platform-cabinet-security' %}" class="btn btn-link">Отмена</a>{% endif %}
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

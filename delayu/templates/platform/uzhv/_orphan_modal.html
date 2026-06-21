@@ -1,0 +1,55 @@
+<div class="uzhv-modal-card">
+  <div class="uzhv-modal-hero uzhv-modal-hero--orphan">
+    <div class="uzhv-modal-avatar uzhv-modal-avatar--orphan" aria-hidden="true"><i class="ri-user-heart-line fs-4"></i></div>
+    <div class="uzhv-modal-hero-body">
+      <h6 class="uzhv-modal-hero-title">Дети-сироты</h6>
+      <p class="uzhv-modal-hero-sub mb-0">
+        <a href="#" class="uzhv-modal-link text-body" data-modal-url="{% url 'uzhv-case-modal' record.case_id %}" data-modal-title="Дело {{ record.case.case_number }}"><code>{{ record.case.case_number }}</code></a>
+        — {{ record.case.citizen.full_name }}
+      </p>
+      <div class="uzhv-modal-badges">
+        <span class="badge bg-label-primary">{{ record.get_housing_status_display }}</span>
+        <span class="badge bg-label-info">{{ record.case.get_status_display }}</span>
+        {% if record.mintrud_decision_number %}<span class="badge bg-label-success">Решение Минтруда</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-2 uzhv-modal-stats">
+    <div class="col-6 col-md-4">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">№ решения Минтруда</span>
+        <span class="uzhv-modal-stat-value">{{ record.mintrud_decision_number|default:"—" }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-4">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Дата решения</span>
+        <span class="uzhv-modal-stat-value">{{ record.mintrud_decision_date|date:"d.m.Y"|default:"—" }}</span>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="uzhv-modal-stat">
+        <span class="uzhv-modal-stat-label">Статус обеспечения</span>
+        <span class="uzhv-modal-stat-value">{{ record.get_housing_status_display }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="uzhv-modal-actions">
+    <a href="{% url 'uzhv-case-zip' record.case.pk %}" class="btn btn-sm btn-outline-secondary"><i class="ri-folder-zip-line"></i> ZIP</a>
+    {% if can_change %}
+    <a href="{% url 'uzhv-orphan-edit' record.case.pk %}" class="btn btn-sm btn-primary"><i class="ri-pencil-line"></i> Редактировать</a>
+    {% endif %}
+    <a href="#" class="btn btn-sm btn-outline-secondary uzhv-modal-link" data-modal-url="{% url 'uzhv-case-modal' record.case_id %}" data-modal-title="Дело {{ record.case.case_number }}"><i class="ri-folder-line"></i> Учётное дело</a>
+    <a href="#" class="btn btn-sm btn-outline-secondary uzhv-modal-link" data-modal-url="{% url 'uzhv-citizen-modal' record.case.citizen_id %}" data-modal-title="{{ record.case.citizen.full_name }}"><i class="ri-user-line"></i> Гражданин</a>
+    {% include "platform/uzhv/_modal_qr_btn.html" with qr_entity="orphans" qr_pk=record.case.pk qr_hint="Откроет карточку в реестре детей-сирот" %}
+  </div>
+
+  {% if record.notes %}
+  <div class="uzhv-modal-section">
+    <div class="uzhv-modal-section-title"><i class="ri-sticky-note-line"></i> Примечание</div>
+    <p class="uzhv-modal-quote mb-0">{{ record.notes|truncatechars:400 }}</p>
+  </div>
+  {% endif %}
+</div>

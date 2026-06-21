@@ -1,0 +1,176 @@
+{% extends layout_path %}
+
+{% load static %}
+
+{% block title %}Личный кабинет — профиль{% endblock %}
+
+{% block vendor_css %}{{ block.super }}
+
+<link rel="stylesheet" href="{% static 'vendor/libs/select2/select2.css' %}" />
+
+<link rel="stylesheet" href="{% static 'vendor/libs/flatpickr/flatpickr.css' %}" />
+
+{% endblock %}
+
+{% block vendor_js %}{{ block.super }}
+
+<script src="{% static 'vendor/libs/select2/select2.js' %}"></script>
+
+<script src="{% static 'vendor/libs/flatpickr/flatpickr.js' %}"></script>
+
+{% endblock %}
+
+{% block page_js %}{{ block.super }}
+
+<script src="{% static 'js/delayu-flatpickr.js' %}"></script>
+<script>window.DELAYU_CABINET_LAYOUT = {{ cabinet_layout_json|safe }};</script>
+<script src="{% static 'js/delayu-cabinet-layout.js' %}"></script>
+
+<script>
+
+document.querySelectorAll('input[name="avatar_preset"]').forEach(function (r) {
+
+  r.addEventListener('change', function () {
+
+    var img = document.getElementById('cabinetAvatarPreview');
+
+    var next = r.parentElement && r.parentElement.querySelector('img');
+
+    if (img && next) img.src = next.src;
+
+  });
+
+});
+
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+{% include "platform/workplace/_cabinet_nav.html" %}
+
+{% include "platform/workplace/_cabinet_widgets.html" %}
+
+<div class="card mb-6">
+
+  <div class="card-body">
+
+    {% if can_change %}
+
+    <form method="post" action="{% url 'platform-cabinet' %}" enctype="multipart/form-data" id="formAccountSettings">
+
+      {% csrf_token %}
+
+      <div class="d-flex align-items-start align-items-sm-center gap-6 flex-wrap mb-4">
+
+        <img src="{{ avatar_url }}" alt="Аватар" class="rounded-4" width="100" height="100" id="cabinetAvatarPreview" />
+
+        <div class="flex-grow-1">
+
+          <h5 class="mb-1 delayu-pii">{{ profile.full_name }}</h5>
+
+          <p class="mb-1 text-muted delayu-pii">{{ request.user.username }} · {{ active_role }}{% if active_org %} · {{ active_org }}{% endif %}</p>
+
+          <span class="badge bg-label-{% if request.user.is_active %}success{% else %}secondary{% endif %}">{% if request.user.is_active %}Активен{% else %}Неактивен{% endif %}</span>
+
+        </div>
+
+      </div>
+
+      <h6 class="mb-3">Фото и аватар</h6>
+
+      <div class="d-flex flex-wrap gap-2 mb-3">
+
+        {% for preset in avatar_presets %}
+
+        <label class="cursor-pointer">
+
+          <input type="radio" name="avatar_preset" value="{{ preset }}" class="d-none avatar-preset-radio" {% if preset == avatar_preset_active %}checked{% endif %} />
+
+          <img src="{% static preset %}" alt="" class="rounded-circle border border-2 {% if preset == avatar_preset_active %}border-primary{% else %}border-transparent{% endif %}" width="48" height="48" />
+
+        </label>
+
+        {% endfor %}
+
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-4 pb-4 border-bottom">
+
+        <input type="file" name="avatar" class="form-control form-control-sm w-auto" accept="image/png,image/jpeg,image/webp" />
+
+        <p class="text-muted small mb-0 w-100">Выберите готовый аватар или загрузите JPG/PNG/WebP. Сохраните кнопкой внизу страницы.</p>
+
+      </div>
+
+      {% for group in profile_field_groups %}
+
+      <h6 class="text-primary mb-4 mt-2">{{ group.title }}</h6>
+
+      <div class="row g-5 mb-2">
+
+        {% for item in group.items %}
+
+        <div class="col-md-6">
+
+          {% if item.readonly %}
+
+          <label class="form-label text-muted">{{ item.label }}</label>
+
+          <p class="form-control-plaintext fw-medium mb-0">{{ item.value }}</p>
+
+          {% else %}
+
+          <label class="form-label" for="{{ item.field.id_for_label }}">{{ item.field.label }}</label>
+
+          {{ item.field }}
+
+          {% if item.field.errors %}<div class="text-danger small">{{ item.field.errors.0 }}</div>{% endif %}
+
+          {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+      </div>
+
+      {% endfor %}
+
+      <div class="mt-4">
+
+        <button type="submit" class="btn btn-primary me-3">Сохранить</button>
+
+        <button type="reset" class="btn btn-outline-secondary">Сброс</button>
+
+      </div>
+
+    </form>
+
+    {% else %}
+
+    <div class="d-flex align-items-start align-items-sm-center gap-6 flex-wrap">
+
+      <img src="{{ avatar_url }}" alt="Аватар" class="rounded-4" width="100" height="100" />
+
+      <div class="flex-grow-1">
+
+        <h5 class="mb-1 delayu-pii">{{ profile.full_name }}</h5>
+
+        <p class="mb-1 text-muted">{{ request.user.username }} · {{ active_role }}{% if active_org %} · {{ active_org }}{% endif %}</p>
+
+      </div>
+
+    </div>
+
+    <p class="text-muted small mb-0 mt-4">Редактирование профиля недоступно для вашей роли.</p>
+
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}
+
