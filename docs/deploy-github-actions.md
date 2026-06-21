@@ -1,28 +1,39 @@
 # GitHub Actions — автодеплой на Jino VPS
 
-## 1. SSH-ключ для Actions (рекомендуется)
+## 1. SSH-ключ для Actions (обязательно)
 
-Jino часто **не пускает root по паролю** с IP GitHub. Надёжнее ключ.
+Jino **не пускает root по паролю** с IP GitHub. Нужен ключ **для входа root**, не ключ git (`/opt/delayu/.ssh/id_ed25519`).
 
 На **VPS** (от root):
 
 ```bash
-ssh-keygen -t ed25519 -f /root/.ssh/github_actions_deploy -N ""
-cat /root/.ssh/github_actions_deploy.pub >> /root/.ssh/authorized_keys
-chmod 700 /root/.ssh
-chmod 600 /root/.ssh/authorized_keys /root/.ssh/github_actions_deploy
-cat /root/.ssh/github_actions_deploy
+sudo bash /opt/delayu/deploy/setup-github-actions-ssh.sh
 ```
 
-Скопируйте **весь** вывод (от `-----BEGIN` до `-----END`).
+Скрипт выведет fingerprint и `LOCAL_OK`, если sshd принимает ключ.
 
-GitHub → **Settings → Secrets → New secret**:
+GitHub → **Settings → Secrets**:
 
 | Name | Значение |
 |------|----------|
-| `DEPLOY_SSH_KEY` | приватный ключ целиком |
+| `DEPLOY_SSH_KEY` | приватный ключ целиком (`-----BEGIN OPENSSH PRIVATE KEY-----` …) |
+
+Если многострочная вставка ломается — используйте **одну строку base64** из вывода скрипта:
+
+| Name | Значение |
+|------|----------|
+| `DEPLOY_SSH_KEY_B64` | строка base64 без переносов |
 
 `DEPLOY_PASSWORD` можно удалить.
+
+### Ошибка `attempted methods [none password publickey]`
+
+Ключ до GitHub доходит, но **не совпадает** с `authorized_keys` на сервере.
+
+1. Заново: `sudo bash /opt/delayu/deploy/setup-github-actions-ssh.sh`
+2. Обновите secret (не путать с git-ключом delayu)
+3. В логе Actions смотрите **Key fingerprint** — должен совпадать с fingerprint на VPS
+4. `DEPLOY_USER` = `root`, `DEPLOY_HOST` = `dab7798018f1.vps.myjino.ru` (без `https://`)
 
 ---
 

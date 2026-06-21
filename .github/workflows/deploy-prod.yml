@@ -1,10 +1,9 @@
 # Деплой на VPS по push в main.
 #
-# Secrets (Settings → Actions):
-#   DEPLOY_HOST       dab7798018f1.vps.myjino.ru
-#   DEPLOY_USER       root
-#   DEPLOY_SSH_KEY    приватный ключ (рекомендуется, см. docs/deploy-github-actions.md)
-#   DEPLOY_PASSWORD   пароль root (если без ключа)
+# Secrets:
+#   DEPLOY_HOST, DEPLOY_USER (root)
+#   DEPLOY_SSH_KEY — приватный ключ (см. deploy/setup-github-actions-ssh.sh)
+#   DEPLOY_SSH_KEY_B64 — тот же ключ в base64 (если многострочная вставка ломается)
 
 name: Deploy production
 
@@ -18,20 +17,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: 22
-          script_stop: true
-          command_timeout: 15m
-          script: |
-            set -euo pipefail
-            cd /opt/delayu
-            sudo -u delayu git config --global --add safe.directory /opt/delayu
-            sudo -u delayu git pull --ff-only origin main
-            bash /opt/delayu/deploy/deploy-app.sh
-            sudo -u delayu bash -c 'cd /opt/delayu && .venv/bin/python manage.py link_superusers'
-            systemctl is-active delayu
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KEY_B64: ${{ secrets.DEPLOY_SSH_KEY_B64 }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          KEY=~/.ssh/deploy_key
+
+          if [[ -n "${DEPLOY_SSH_KEY_B64:-}" ]]; then
+            echo "${DEPLOY_SSH_KEY_B64}" | base64 -d > "${KEY}"
+          elif [[ -n "${DEPLOY_SSH_KEY:-}" ]]; then
+            printf '%s\n' "${DEPLOY_SSH_KEY}" | tr -d '\r' > "${KEY}"
+          else
+            echo "Missing DEPLOY_SSH_KEY or DEPLOY_SSH_KEY_B64"
+            exit 1
+          fi
+          chmod 600 "${KEY}"
+
+          echo "Key fingerprint (must match VPS setup script):"
+          ssh-keygen -lf "${KEY}"
+
+          ssh -i "${KEY}" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" << 'REMOTE'
+          set -euo pipefail
+          cd /opt/delayu
+          sudo -u delayu git config --global --add safe.directory /opt/delayu
+          sudo -u delayu git pull --ff-only origin main
+          bash /opt/delayu/deploy/deploy-app.sh
+          sudo -u delayu bash -c 'cd /opt/delayu && .venv/bin/python manage.py link_superusers'
+          systemctl is-active delayu
+          REMOTE
