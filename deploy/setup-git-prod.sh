@@ -37,8 +37,8 @@ echo "==> fetch (нужен доступ: SSH-ключ deploy или HTTPS token
 sudo -u delayu git -C "${APP_DIR}" fetch origin || {
   echo ""
   echo "!!! Не удалось fetch. Настройте доступ:"
-  echo "  SSH: ssh-keygen -t ed25519 -f /home/delayu/.ssh/id_ed25519 -N ''"
-  echo "       cat /home/delayu/.ssh/id_ed25519.pub  → Deploy key в GitHub"
+  echo "  SSH: ssh-keygen -t ed25519 -f ${APP_DIR}/.ssh/id_ed25519 -N ''"
+  echo "       cat ${APP_DIR}/.ssh/id_ed25519.pub  → Deploy key в GitHub"
   echo "  HTTPS: git remote set-url origin https://TOKEN@github.com/USER/REPO.git"
   exit 1
 }

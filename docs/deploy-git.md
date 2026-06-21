@@ -31,10 +31,11 @@ git push -u origin main
 ## Шаг 2 — первичная настройка на VPS
 
 ```bash
-# SSH deploy-ключ для пользователя delayu
-sudo -u delayu mkdir -p /home/delayu/.ssh
-sudo -u delayu ssh-keygen -t ed25519 -f /home/delayu/.ssh/id_ed25519 -N ""
-sudo cat /home/delayu/.ssh/id_ed25519.pub
+# HOME пользователя delayu = /opt/delayu (не /home/delayu)
+sudo -u delayu mkdir -p /opt/delayu/.ssh
+sudo chmod 700 /opt/delayu/.ssh
+sudo -u delayu ssh-keygen -t ed25519 -f /opt/delayu/.ssh/id_ed25519 -N ""
+sudo cat /opt/delayu/.ssh/id_ed25519.pub
 ```
 
 Скопируйте ключ в GitHub: **Repo → Settings → Deploy keys → Add** (Read-only достаточно).
