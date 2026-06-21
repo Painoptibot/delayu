@@ -1,9 +1,8 @@
-# Деплой на prod по push в main.
-# Jino блокирует SSH с IP GitHub → триггер через HTTPS webhook на сайт.
+# Деплой prod: job выполняется НА VPS (self-hosted runner).
+# Jino блокирует inbound SSH и HTTPS с IP GitHub — runner ходит к GitHub сам.
 #
-# Secrets:
-#   DEPLOY_URL            https://delau.tech
-#   DEPLOY_WEBHOOK_TOKEN  тот же, что DEPLOY_WEBHOOK_TOKEN в /opt/delayu/.env
+# Настройка: deploy/setup-github-runner.sh
+# Запасной вариант без runner: cron deploy/cron-git-autodeploy.sh (каждые 5 мин)
 
 name: Deploy production
 
@@ -14,21 +13,9 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, delayu]
     steps:
-      - name: Trigger deploy webhook
-        env:
-          DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
-          DEPLOY_WEBHOOK_TOKEN: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}
+      - name: Pull and deploy on server
         run: |
           set -euo pipefail
-          if [[ -z "${DEPLOY_URL:-}" || -z "${DEPLOY_WEBHOOK_TOKEN:-}" ]]; then
-            echo "Missing DEPLOY_URL or DEPLOY_WEBHOOK_TOKEN secrets"
-            exit 1
-          fi
-          BASE="${DEPLOY_URL%/}"
-          curl -fsS -X POST "${BASE}/internal/deploy/" \
-            -H "Authorization: Bearer ${DEPLOY_WEBHOOK_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --max-time 60
-          echo "Deploy webhook accepted (runs on server in background)"
+          sudo -n bash /opt/delayu/deploy/run-deploy.sh

@@ -1,73 +1,89 @@
 # GitHub Actions — автодеплой на Jino VPS
 
-## Почему не SSH
+## Почему не работает «облачный» runner
 
-Jino **блокирует входящий SSH (порт 22)** с IP GitHub Actions (`Connection timed out`).
-Ключ при этом может быть настроен правильно — до сервера пакет не доходит.
+Jino **блокирует входящие соединения** с IP GitHub (и SSH :22, и HTTPS :443):
 
-**Решение:** GitHub вызывает **HTTPS webhook** на вашем сайте (`delau.tech:443`), сервер сам делает `git pull` и перезапуск.
+| Способ | Ошибка |
+|--------|--------|
+| SSH с Actions | `Connection timed out` |
+| HTTPS webhook | `curl: (28) Connection timed out` |
+
+С вашего ПК сайт и SSH открываются — блокируются только **диапазоны IP дата-центров GitHub**.
 
 ---
 
-## 1. Однократная настройка на VPS
+## Решение A — self-hosted runner (рекомендуется)
 
-После `git pull` с новым кодом:
+Runner на VPS **сам подключается к GitHub** (исходящий трафик). Inbound не нужен.
+
+### 1. На GitHub
+
+`Settings → Actions → Runners → **New self-hosted runner** → Linux`
+
+Скопируйте **registration token** (действует ~1 час).
+
+### 2. На VPS
 
 ```bash
 cd /opt/delayu
 sudo -u delayu git pull
-sudo bash deploy/setup-webhook-deploy.sh
+sudo bash deploy/setup-github-runner.sh ВАШ_TOKEN
 ```
 
-Скрипт:
+В Runners должен появиться **delayu-vps** со статусом **Online**.
 
-- установит `sudoers` для `webhook-run.sh`
-- создаст `DEPLOY_WEBHOOK_TOKEN` в `.env`
-- перезапустит gunicorn
-- выведет значения для GitHub Secrets
+### 3. Деплой
 
-Проверка с VPS:
+Любой push в `main` → workflow **Deploy production** выполняется **на сервере**.
+
+Secrets (`DEPLOY_URL`, SSH и т.д.) **не нужны**.
+
+---
+
+## Решение B — cron (без runner)
+
+Если runner не ставите — каждые **5 минут** cron проверяет `origin/main` и деплоит при новых коммитах:
 
 ```bash
-curl -fsS -X POST "https://delau.tech/internal/deploy/" \
-  -H "Authorization: Bearer ВАШ_ТОКЕН"
-# {"status": "accepted"}
-tail -f /opt/delayu/logs/deploy-webhook.log
+sudo cp /opt/delayu/deploy/cron/delayu /etc/cron.d/delayu
+sudo chmod 644 /etc/cron.d/delayu
 ```
 
----
+Лог: `/opt/delayu/logs/cron-deploy.log`
 
-## 2. GitHub Secrets
-
-**Settings → Secrets and variables → Actions**
-
-| Name | Значение |
-|------|----------|
-| `DEPLOY_URL` | `https://delau.tech` |
-| `DEPLOY_WEBHOOK_TOKEN` | из `.env` на сервере |
-
-Старые `DEPLOY_HOST`, `DEPLOY_SSH_KEY`, `DEPLOY_PASSWORD` больше не нужны.
+После `git push` подождите до 5 минут.
 
 ---
 
-## 3. Запуск
+## Webhook (локально с VPS)
 
-**Actions → Deploy production → Run workflow**
+`POST /internal/deploy/` работает **с самого сервера** (для ручного триггера):
 
-или любой push в `main`.
+```bash
+sudo bash deploy/setup-webhook-deploy.sh
+curl -fsS -X POST "https://delau.tech/internal/deploy/" \
+  -H "Authorization: Bearer ТОКЕН_ИЗ_ENV"
+```
 
-Лог деплоя на сервере: `/opt/delayu/logs/deploy-webhook.log`
-
----
-
-## 4. CI (красный) — отдельно
-
-Workflow **CI** (pytest/ruff) не влияет на сайт.
+С GitHub Actions этот URL **не достучать** — только runner или cron.
 
 ---
 
-## 5. Ручной деплой
+## Ручной деплой
 
 ```bash
 sudo bash /opt/delayu/deploy/update-prod.sh
 ```
+
+или
+
+```bash
+sudo bash /opt/delayu/deploy/run-deploy.sh
+```
+
+---
+
+## CI (красный) — отдельно
+
+Workflow **CI** (pytest/ruff) на `ubuntu-latest` — не связан с деплоем на Jino.

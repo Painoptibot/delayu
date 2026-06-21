@@ -13,3 +13,6 @@ PATH=/usr/local/bin:/usr/bin:/bin
 
 # Резервная копия БД — ежедневно в 04:00
 0 4 * * * delayu bash /opt/delayu/deploy/backup.sh >> logs/backup.log 2>&1
+
+# Автодеплой с GitHub (если нет self-hosted runner) — каждые 5 мин
+*/5 * * * * root bash /opt/delayu/deploy/cron-git-autodeploy.sh

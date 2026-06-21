@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Запуск только от root: sudo /opt/delayu/deploy/webhook-run.sh
-# (gunicorn user delayu → sudoers NOPASSWD)
+# Webhook: фоновый деплой с lock и логом. Запуск: sudo /opt/delayu/deploy/webhook-run.sh
 set -euo pipefail
 
 APP_DIR="/opt/delayu"
@@ -16,12 +15,6 @@ echo "=== $(date -Is) deploy start pid=$$ ==="
     echo "deploy already running, skip"
     exit 0
   }
-
-  cd "${APP_DIR}"
-  sudo -u delayu git config --global --add safe.directory "${APP_DIR}"
-  sudo -u delayu git pull --ff-only origin main
-  bash "${APP_DIR}/deploy/deploy-app.sh"
-  sudo -u delayu bash -c "cd '${APP_DIR}' && .venv/bin/python manage.py link_superusers"
-  systemctl is-active delayu
+  bash "${APP_DIR}/deploy/run-deploy.sh"
   echo "=== $(date -Is) deploy done ==="
 ) 9>"${LOCK}"
