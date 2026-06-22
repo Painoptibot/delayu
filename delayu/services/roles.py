@@ -119,5 +119,11 @@ def copy_role(source_role, new_code, new_name):
             can_create=p.can_create,
             can_change=p.can_change,
             can_delete=p.can_delete,
+            can_view_pii=p.can_view_pii,
+            can_export_pii=p.can_export_pii,
+            can_approve=p.can_approve,
+            can_sign=p.can_sign,
+            can_archive=p.can_archive,
+            can_bulk=p.can_bulk,
         )
     return new_role

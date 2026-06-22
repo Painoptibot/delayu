@@ -37,8 +37,9 @@
   <div class="col-lg-7">
     <div class="card">
       <div class="card-header">Журнал СМЭВ</div>
+      <div class="table-responsive">
       <table class="table table-sm mb-0">
-        <thead><tr><th>Время</th><th>Напр.</th><th>Статус</th><th>ID</th></tr></thead>
+        <thead><tr><th>Время</th><th>Напр.</th><th>Статус</th><th>ID</th><th>Детали</th></tr></thead>
         <tbody>
           {% for m in messages %}
           <tr>
@@ -46,10 +47,32 @@
             <td>{{ m.get_direction_display }}</td>
             <td>{{ m.get_status_display }}</td>
             <td class="small"><code>{{ m.external_id|default:"—" }}</code></td>
+            <td class="small">
+              {% if m.payload.smev_envelope or m.payload.smev_response or m.payload.smev_response_text %}
+              <details>
+                <summary class="text-primary" style="cursor:pointer">Конверт</summary>
+                {% if m.payload.smev_envelope %}
+                <div class="mt-1"><span class="text-muted">Тип:</span> {{ m.payload.smev_envelope.message_type|default:"—" }}
+                {% if m.payload.smev_envelope.transport %} · {{ m.payload.smev_envelope.transport }}{% endif %}</div>
+                {% endif %}
+                {% if m.payload.smev_http_status %}
+                <div><span class="text-muted">HTTP:</span> {{ m.payload.smev_http_status }}</div>
+                {% endif %}
+                {% if m.payload.smev_response %}
+                <pre class="small bg-body-secondary p-2 rounded mt-1 mb-0" style="max-height:8rem;overflow:auto">{{ m.payload.smev_response }}</pre>
+                {% elif m.payload.smev_response_text %}
+                <pre class="small bg-body-secondary p-2 rounded mt-1 mb-0" style="max-height:8rem;overflow:auto">{{ m.payload.smev_response_text }}</pre>
+                {% endif %}
+              </details>
+              {% else %}
+              <span class="text-muted">—</span>
+              {% endif %}
+            </td>
           </tr>
-          {% empty %}<tr><td colspan="4" class="text-muted text-center py-3">Пусто</td></tr>{% endfor %}
+          {% empty %}<tr><td colspan="5" class="text-muted text-center py-3">Пусто</td></tr>{% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </div>

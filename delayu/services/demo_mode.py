@@ -19,6 +19,9 @@ def subsystem_demo_enabled(subsystem) -> bool:
 
 
 def is_demo_mode(request) -> bool:
+    user = getattr(request, "user", None)
+    if user and user.is_authenticated and user.is_superuser:
+        return False
     if global_demo_enabled():
         return True
     from delayu.menu import get_active_membership

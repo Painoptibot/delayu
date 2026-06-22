@@ -86,6 +86,9 @@ def provision_subsystem(subsystem, module_codes, creator_user=None):
             role=admin_role,
             defaults={"is_default": False},
         )
+    from delayu.services.studio_setup import init_setup_for_new_subsystem
+
+    init_setup_for_new_subsystem(subsystem)
     return subsystem
 
 
@@ -136,4 +139,7 @@ def clone_subsystem(source, new_code, new_name):
             code=org.code,
             defaults={"name": org.name, "is_active": org.is_active},
         )
+    from delayu.services.studio_setup import init_setup_for_new_subsystem
+
+    init_setup_for_new_subsystem(new_sub)
     return new_sub

@@ -136,6 +136,11 @@ def process_outbound(message: IntegrationMessage):
     ):
         return _process_http_outbound(message)
 
+    if ep.endpoint_type == IntegrationEndpoint.EndpointType.SMEV:
+        from delayu.services.smev_runtime import process_smev_message
+
+        return process_smev_message(message)
+
     if message.retry_count >= ep.max_retries:
         message.status = IntegrationMessage.Status.DEAD_LETTER
         message.error_text = "Превышено число повторов"

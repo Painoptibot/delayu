@@ -7,13 +7,19 @@ from . import (
     views,
     views_dadata,
     views_deploy,
+    views_landing,
     views_public,
     views_qr,
     views_uzhv_wizard,
+    views_welcome,
 )
 
 urlpatterns = [
     path("internal/deploy/", views_deploy.deploy_webhook, name="deploy-webhook"),
+    path("landing/", views_landing.LandingView.as_view(), name="platform-landing"),
+    path("welcome", views_welcome.WelcomeRedirectView.as_view()),
+    path("welcome/", views_welcome.WelcomeView.as_view(), name="platform-welcome"),
+    path("presentation/<path:asset_path>", views_welcome.PresentationAssetView.as_view(), name="presentation-asset"),
     # Остатки демо-шаблона Materio (часто попадают в ?next= после входа)
     path("index/", RedirectView.as_view(pattern_name="platform-home", permanent=False)),
     path("dashboard/", RedirectView.as_view(pattern_name="platform-dashboard", permanent=False)),
@@ -94,7 +100,18 @@ urlpatterns = [
         views.AuditSnapshotCreateView.as_view(),
         name="platform-audit-snapshot",
     ),
+    path(
+        "administration/audit/siem/",
+        views.SiemExportConfigView.as_view(),
+        name="platform-audit-siem",
+    ),
+    path(
+        "administration/audit/siem/push/",
+        views.SiemExportPushView.as_view(),
+        name="platform-audit-siem-push",
+    ),
     # M02-M04
+    path("administration/users/import/", views.UserBulkImportView.as_view(), name="platform-users-import"),
     path("administration/users/", views.UsersAdminView.as_view(), name="platform-users"),
     path("administration/users/new/", views.UserWizardCreateView.as_view(), name="platform-user-create"),
     path(
@@ -659,12 +676,14 @@ urlpatterns = [
     path("platform/onboarding/", views.OnboardingChecklistView.as_view(), name="platform-onboarding-checklist"),
     # Studio — визуальные конструкторы
     path("studio/", views.StudioHubView.as_view(), name="platform-studio"),
+    path("studio/preview/", views.StudioPreviewView.as_view(), name="platform-studio-preview"),
     path("studio/forms/", views.StudioFormBuilderView.as_view(), name="platform-studio-forms"),
     path("studio/forms/<int:pk>/", views.StudioFormBuilderView.as_view(), name="platform-studio-form-edit"),
     path("studio/bpm/", views.StudioBpmEditorView.as_view(), name="platform-studio-bpm"),
     path("studio/bpm/<int:pk>/", views.StudioBpmEditorView.as_view(), name="platform-studio-bpm-edit"),
     path("studio/menu/", views.StudioMenuEditorView.as_view(), name="platform-studio-menu"),
     path("studio/dashboard/", views.StudioDashboardEditorView.as_view(), name="platform-studio-dashboard"),
+    path("studio/today/", views.StudioTodayEditorView.as_view(), name="platform-studio-today"),
     path("studio/correspondence/", views.StudioCorrespondenceEditorView.as_view(), name="platform-studio-correspondence"),
     path("studio/print/", views.StudioPrintEditorView.as_view(), name="platform-studio-print"),
     path("studio/print/<int:pk>/", views.StudioPrintEditorView.as_view(), name="platform-studio-print-edit"),
@@ -673,8 +692,266 @@ urlpatterns = [
     path("studio/nsi/<int:pk>/", views.StudioNsiEditorView.as_view(), name="platform-studio-nsi-edit"),
     path("studio/integration/", views.StudioIntegrationEditorView.as_view(), name="platform-studio-integration"),
     path("studio/integration/<int:pk>/", views.StudioIntegrationEditorView.as_view(), name="platform-studio-integration-edit"),
+    path("studio/policies/", views.StudioPoliciesEditorView.as_view(), name="platform-studio-policies"),
+    path("studio/setup/", views.StudioSetupWizardView.as_view(), name="platform-studio-setup"),
     path("studio/cabinet/", views.StudioCabinetEditorView.as_view(), name="platform-studio-cabinet"),
     path("studio/api/<slug:editor>/save/", views.StudioSaveApiView.as_view(), name="platform-studio-save"),
+    path("studio/api/publish/", views.StudioPublishApiView.as_view(), name="platform-studio-publish"),
+    path(
+        "studio/api/publish/default-tags/",
+        views.StudioDefaultPublishTagsApiView.as_view(),
+        name="platform-studio-publish-default-tags",
+    ),
+    path(
+        "studio/api/publish/pending-tags/clear/",
+        views.StudioClearPendingPublishTagsApiView.as_view(),
+        name="platform-studio-clear-pending-tags",
+    ),
+    path(
+        "studio/api/publish/dry-run/",
+        views.StudioPublishDryRunApiView.as_view(),
+        name="platform-studio-publish-dry-run",
+    ),
+    path("studio/api/discard-draft/", views.StudioDiscardDraftApiView.as_view(), name="platform-studio-discard-draft"),
+    path("studio/api/bpm/simulate/", views.StudioBpmSimulateApiView.as_view(), name="platform-studio-bpm-simulate"),
+    path("studio/api/bpm/metrics/", views.StudioBpmMetricsApiView.as_view(), name="platform-studio-bpm-metrics"),
+    path("studio/api/export/", views.StudioExportConfigView.as_view(), name="platform-studio-export"),
+    path(
+        "studio/api/audit/export.csv",
+        views.StudioAuditExportView.as_view(),
+        name="platform-studio-audit-export",
+    ),
+    path(
+        "studio/api/audit/forced/export.csv",
+        views.StudioForcedAuditExportView.as_view(),
+        name="platform-studio-forced-audit-export",
+    ),
+    path(
+        "studio/api/compliance/export.zip",
+        views.StudioComplianceExportView.as_view(),
+        name="platform-studio-compliance-export",
+    ),
+    path(
+        "studio/api/compliance/schedule/",
+        views.StudioComplianceScheduleApiView.as_view(),
+        name="platform-studio-compliance-schedule",
+    ),
+    path("studio/api/import/", views.StudioImportConfigApiView.as_view(), name="platform-studio-import"),
+    path(
+        "studio/api/revisions/compare/",
+        views.StudioRevisionCompareApiView.as_view(),
+        name="platform-studio-revision-compare",
+    ),
+    path(
+        "studio/api/revisions/compare/export.csv",
+        views.StudioRevisionCompareExportView.as_view(),
+        name="platform-studio-revision-compare-export",
+    ),
+    path(
+        "studio/api/revisions/<int:revision_id>/export/",
+        views.StudioRevisionExportView.as_view(),
+        name="platform-studio-revision-export",
+    ),
+    path(
+        "studio/api/summary/",
+        views.StudioSummaryApiView.as_view(),
+        name="platform-studio-summary",
+    ),
+    path(
+        "studio/api/activity/",
+        views.StudioActivityDigestView.as_view(),
+        name="platform-studio-activity",
+    ),
+    path(
+        "studio/api/activity/export.csv",
+        views.StudioActivityExportView.as_view(),
+        name="platform-studio-activity-export",
+    ),
+    path(
+        "studio/api/activity/notify/",
+        views.StudioActivityNotifyView.as_view(),
+        name="platform-studio-activity-notify",
+    ),
+    path(
+        "studio/api/activity/schedule/",
+        views.StudioActivityScheduleApiView.as_view(),
+        name="platform-studio-activity-schedule",
+    ),
+    path(
+        "studio/api/revisions/",
+        views.StudioRevisionsListApiView.as_view(),
+        name="platform-studio-revisions-list",
+    ),
+    path(
+        "studio/api/revisions/tags/",
+        views.StudioRevisionTagsApiView.as_view(),
+        name="platform-studio-revision-tags",
+    ),
+    path(
+        "studio/api/revisions/export.zip",
+        views.StudioRevisionsBulkExportView.as_view(),
+        name="platform-studio-revisions-export",
+    ),
+    path(
+        "studio/api/blueprints/compare/",
+        views.StudioBlueprintCompareApiView.as_view(),
+        name="platform-studio-blueprint-compare",
+    ),
+    path(
+        "studio/api/blueprints/compare/live/",
+        views.StudioBlueprintCompareLiveApiView.as_view(),
+        name="platform-studio-blueprint-compare-live",
+    ),
+    path(
+        "studio/api/blueprints/compare/package/",
+        views.StudioBlueprintPackageCompareApiView.as_view(),
+        name="platform-studio-blueprint-package-compare",
+    ),
+    path(
+        "studio/api/blueprints/compare/package/live/",
+        views.StudioBlueprintPackageCompareLiveApiView.as_view(),
+        name="platform-studio-blueprint-package-compare-live",
+    ),
+    path(
+        "studio/api/revisions/prune/",
+        views.StudioRevisionPruneApiView.as_view(),
+        name="platform-studio-revision-prune",
+    ),
+    path(
+        "studio/api/revisions/pin/",
+        views.StudioRevisionPinApiView.as_view(),
+        name="platform-studio-revision-pin",
+    ),
+    path(
+        "studio/api/revisions/meta/",
+        views.StudioRevisionMetaApiView.as_view(),
+        name="platform-studio-revision-meta",
+    ),
+    path(
+        "studio/api/revisions/tags/bulk/",
+        views.StudioRevisionBulkTagsApiView.as_view(),
+        name="platform-studio-revision-bulk-tags",
+    ),
+    path(
+        "studio/api/publish/schedule/dry-run/",
+        views.StudioSchedulePublishDryRunApiView.as_view(),
+        name="platform-studio-schedule-dry-run",
+    ),
+    path(
+        "studio/api/revisions/restore/",
+        views.StudioRestoreRevisionApiView.as_view(),
+        name="platform-studio-revision-restore",
+    ),
+    path(
+        "studio/api/revisions/restore/dry-run/",
+        views.StudioRestoreDryRunApiView.as_view(),
+        name="platform-studio-revision-restore-dry-run",
+    ),
+    path(
+        "studio/api/blueprints/apply/",
+        views.StudioBlueprintApplyApiView.as_view(),
+        name="platform-studio-blueprint-apply",
+    ),
+    path(
+        "studio/api/blueprints/preview/",
+        views.StudioBlueprintPreviewApiView.as_view(),
+        name="platform-studio-blueprint-preview",
+    ),
+    path(
+        "studio/api/blueprints/dry-run/",
+        views.StudioBlueprintDryRunApiView.as_view(),
+        name="platform-studio-blueprint-dry-run",
+    ),
+    path(
+        "studio/api/blueprints/validate/",
+        views.StudioBlueprintValidateApiView.as_view(),
+        name="platform-studio-blueprint-validate",
+    ),
+    path(
+        "studio/api/package/diff/",
+        views.StudioPackageDiffApiView.as_view(),
+        name="platform-studio-package-diff",
+    ),
+    path(
+        "studio/api/package/validate/",
+        views.StudioPackageValidateApiView.as_view(),
+        name="platform-studio-package-validate",
+    ),
+    path(
+        "studio/api/blueprints/<slug:blueprint_id>/export/",
+        views.StudioBlueprintExportApiView.as_view(),
+        name="platform-studio-blueprint-export",
+    ),
+    path(
+        "studio/api/forms/diff/",
+        views.StudioFormSchemaDiffApiView.as_view(),
+        name="platform-studio-form-diff",
+    ),
+    path(
+        "studio/api/menu/diff/",
+        views.StudioMenuDiffApiView.as_view(),
+        name="platform-studio-menu-diff",
+    ),
+    path(
+        "studio/api/bpm/diff/",
+        views.StudioBpmDiffApiView.as_view(),
+        name="platform-studio-bpm-diff",
+    ),
+    path(
+        "studio/api/correspondence/diff/",
+        views.StudioCorrespondenceDiffApiView.as_view(),
+        name="platform-studio-correspondence-diff",
+    ),
+    path(
+        "studio/api/policies/diff/",
+        views.StudioPoliciesDiffApiView.as_view(),
+        name="platform-studio-policies-diff",
+    ),
+    path(
+        "studio/api/print/diff/",
+        views.StudioPrintDiffApiView.as_view(),
+        name="platform-studio-print-diff",
+    ),
+    path(
+        "studio/api/nsi/diff/",
+        views.StudioNsiDiffApiView.as_view(),
+        name="platform-studio-nsi-diff",
+    ),
+    path(
+        "studio/api/integration/diff/",
+        views.StudioIntegrationDiffApiView.as_view(),
+        name="platform-studio-integration-diff",
+    ),
+    path(
+        "studio/api/clone/",
+        views.StudioCloneConfigApiView.as_view(),
+        name="platform-studio-clone",
+    ),
+    path(
+        "studio/api/schedule-publish/",
+        views.StudioSchedulePublishApiView.as_view(),
+        name="platform-studio-schedule-publish",
+    ),
+    path(
+        "studio/api/integration/dry-run/",
+        views.StudioIntegrationDryRunApiView.as_view(),
+        name="platform-studio-integration-dry-run",
+    ),
+    path(
+        "studio/api/integration/run/",
+        views.StudioIntegrationRunApiView.as_view(),
+        name="platform-studio-integration-run",
+    ),
+    path(
+        "studio/api/setup/",
+        views.StudioSetupApiView.as_view(),
+        name="platform-studio-setup-api",
+    ),
+    path(
+        "platform/api/registry-lookup/",
+        views.RegistryLookupApiView.as_view(),
+        name="platform-registry-lookup",
+    ),
     # АИС УЖВ
     path("uzhv/bulk/", views.UzhvBulkActionView.as_view(), name="uzhv-bulk"),
     path("uzhv/deadlines/", views.UzhvDeadlinesCalendarView.as_view(), name="uzhv-deadlines"),

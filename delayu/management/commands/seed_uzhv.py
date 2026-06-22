@@ -353,18 +353,29 @@ class Command(BaseCommand):
 
         SsoProvider.objects.update_or_create(
             subsystem=subsystem,
-            name="ЕСИА (демо)",
+            client_id="demo-esia-fl",
             defaults={
+                "name": "ЕСИА (демо)",
                 "provider_type": SsoProvider.ProviderType.ESIA,
-                "client_id": "demo",
                 "is_active": True,
-                "metadata": {"demo": True},
+                "metadata": {"demo": True, "profile": "fl"},
             },
         )
         SsoProvider.objects.update_or_create(
             subsystem=subsystem,
-            name="Active Directory (OIDC)",
+            client_id="demo-esia-org",
             defaults={
+                "name": "ЕСИА (демо)",
+                "provider_type": SsoProvider.ProviderType.ESIA,
+                "is_active": True,
+                "metadata": {"demo": True, "profile": "org"},
+            },
+        )
+        SsoProvider.objects.update_or_create(
+            subsystem=subsystem,
+            client_id="demo-ad-oidc",
+            defaults={
+                "name": "Active Directory (OIDC)",
                 "provider_type": SsoProvider.ProviderType.OIDC,
                 "client_id": "",
                 "is_active": False,

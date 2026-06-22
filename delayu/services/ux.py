@@ -98,6 +98,22 @@ def get_dashboard_layout(user, subsystem):
 
 
 def dashboard_widgets_for_user(user, subsystem) -> list:
+    from delayu.models import SubsystemMembership, RoleStudioLayout
+
+    membership = (
+        SubsystemMembership.objects.filter(user=user, subsystem=subsystem)
+        .select_related("role")
+        .first()
+    )
+    if membership and membership.role_id:
+        raw = RoleStudioLayout.objects.filter(
+            subsystem=subsystem,
+            role=membership.role,
+            kind=RoleStudioLayout.Kind.DASHBOARD,
+        ).first()
+        if raw and raw.widgets:
+            return studio.normalize_dashboard_widgets(raw.widgets)
+
     layout = get_dashboard_layout(user, subsystem)
     if layout and layout.widgets:
         return studio.normalize_dashboard_widgets(layout.widgets)

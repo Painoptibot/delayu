@@ -8,8 +8,47 @@ FORM_FIELD_TYPES = [
     {"type": "textarea", "label": "Многострочный", "icon": "ri-file-text-line"},
     {"type": "date", "label": "Дата", "icon": "ri-calendar-line"},
     {"type": "select", "label": "Список (НСИ)", "icon": "ri-list-check"},
+    {"type": "lookup", "label": "Связь с реестром", "icon": "ri-links-line"},
     {"type": "number", "label": "Число", "icon": "ri-hashtag"},
     {"type": "file", "label": "Файл", "icon": "ri-attachment-line"},
+    {"type": "section", "label": "Секция / вкладка", "icon": "ri-layout-row-line"},
+]
+
+FIELD_LIBRARY_BLOCKS = [
+    {
+        "name": "Адрес",
+        "fields": [
+            {"key": "addr_region", "label": "Регион", "type": "text"},
+            {"key": "addr_city", "label": "Город", "type": "text"},
+            {"key": "addr_street", "label": "Улица", "type": "text"},
+            {"key": "addr_house", "label": "Дом", "type": "text"},
+        ],
+    },
+    {
+        "name": "Контрагент",
+        "fields": [
+            {"key": "org_name", "label": "Наименование", "type": "text", "required": True},
+            {"key": "org_inn", "label": "ИНН", "type": "text", "pattern": "^\\d{10,12}$"},
+            {"key": "org_phone", "label": "Телефон", "type": "text"},
+        ],
+    },
+    {
+        "name": "Реквизиты",
+        "fields": [
+            {"key": "bank_name", "label": "Банк", "type": "text"},
+            {"key": "bank_bik", "label": "БИК", "type": "text"},
+            {"key": "bank_account", "label": "Р/с", "type": "text"},
+        ],
+    },
+]
+
+MENU_BADGE_OPTIONS = [
+    {"key": "", "label": "Без счётчика"},
+    {"key": "inbox", "label": "Входящие"},
+    {"key": "approvals", "label": "Согласования"},
+    {"key": "overdue", "label": "Просрочки"},
+    {"key": "notifications", "label": "Уведомления"},
+    {"key": "tasks", "label": "Задачи"},
 ]
 
 BPM_NODE_TYPES = [
@@ -75,15 +114,76 @@ INTEGRATION_PIPELINE_NODES = [
     {"type": "map", "label": "Маппинг полей", "icon": "ri-arrow-left-right-line"},
     {"type": "transform", "label": "Трансформация", "icon": "ri-code-line"},
     {"type": "validate", "label": "Валидация", "icon": "ri-shield-check-line"},
+    {"type": "smev", "label": "СМЭВ 3.x (stub)", "icon": "ri-government-line"},
     {"type": "endpoint", "label": "Endpoint", "icon": "ri-plug-line"},
     {"type": "dry_run", "label": "Dry-run", "icon": "ri-play-circle-line"},
 ]
 
+PERM_EXTRA_ACTIONS = ("approve", "sign", "archive", "bulk")
+
 PERM_PRESETS = {
-    "operator": {"view": True, "create": True, "change": True, "delete": False},
-    "viewer": {"view": True, "create": False, "change": False, "delete": False},
-    "admin": {"view": True, "create": True, "change": True, "delete": True},
+    "operator": {
+        "view": True,
+        "create": True,
+        "change": True,
+        "delete": False,
+        "approve": False,
+        "sign": False,
+        "archive": False,
+        "bulk": False,
+    },
+    "viewer": {
+        "view": True,
+        "create": False,
+        "change": False,
+        "delete": False,
+        "approve": False,
+        "sign": False,
+        "archive": False,
+        "bulk": False,
+    },
+    "admin": {
+        "view": True,
+        "create": True,
+        "change": True,
+        "delete": True,
+        "approve": True,
+        "sign": True,
+        "archive": True,
+        "bulk": True,
+    },
 }
+
+
+def normalize_menu_item(item):
+    if isinstance(item, str):
+        return {"url": item, "roles": []}
+    if isinstance(item, dict):
+        url = item.get("url") or item.get("url_name") or ""
+        roles = item.get("roles") or []
+        if isinstance(roles, str):
+            roles = [r.strip() for r in roles.split(",") if r.strip()]
+        out = {"url": url, "roles": list(roles)}
+        badge = item.get("badge")
+        if badge:
+            out["badge"] = str(badge).strip()
+        if item.get("pinned"):
+            out["pinned"] = True
+        return out
+    return None
+
+
+def normalize_menu_layout(layout):
+    out = []
+    for block in layout or []:
+        items = []
+        for raw in block.get("items") or []:
+            norm = normalize_menu_item(raw)
+            if norm and norm["url"]:
+                items.append(norm)
+        if items:
+            out.append({"header": block.get("header", ""), "items": items})
+    return out
 
 STUDIO_DASHBOARD_IDS = {w["id"] for w in DASHBOARD_WIDGETS}
 
@@ -144,7 +244,18 @@ def cabinet_widgets_for_profile(profile) -> list[str]:
     return [w["id"] for w in CABINET_WIDGETS]
 
 
-def today_widgets_for_profile(profile) -> list[str]:
+def today_widgets_for_profile(profile, *, subsystem=None, role=None) -> list[str]:
+    from delayu.models import RoleStudioLayout
+
+    if subsystem and role:
+        raw = RoleStudioLayout.objects.filter(
+            subsystem=subsystem, role=role, kind=RoleStudioLayout.Kind.TODAY
+        ).first()
+        if raw and raw.widgets:
+            if isinstance(raw.widgets[0], str):
+                return list(raw.widgets)
+            return [_widget_id(w) for w in raw.widgets if _widget_id(w)]
+
     prefs = profile.theme_prefs or {}
     widgets = prefs.get("today_widgets")
     if widgets and isinstance(widgets, list):
@@ -182,6 +293,112 @@ def flat_menu_items():
     return items
 
 
+STUDIO_BLUEPRINTS = [
+    {
+        "id": "operator_daily",
+        "name": "Оператор: ежедневная работа",
+        "description": "Меню для специалиста: главная, дела, входящие, «сегодня».",
+        "menu": [
+            {
+                "header": "Ежедневная работа",
+                "items": [
+                    {"url": "platform-home", "roles": []},
+                    {"url": "platform-cases", "roles": []},
+                    {"url": "platform-inbox", "roles": [], "badge": "inbox"},
+                    {"url": "platform-today", "roles": []},
+                ],
+            },
+            {
+                "header": "Документы",
+                "items": [
+                    {"url": "platform-correspondence", "roles": []},
+                    {"url": "platform-documents", "roles": []},
+                ],
+            },
+        ],
+        "correspondence": {
+            "steps": ["register", "assign", "execute", "review", "archive"],
+            "sla_days": {"register": 1, "assign": 2, "execute": 10, "review": 3},
+        },
+        "role_layouts": [
+            {
+                "role_code": "operator",
+                "kind": "today",
+                "widgets": ["kpi_today", "kpi_overdue", "tasks_table", "quick_inbox"],
+            },
+            {
+                "role_code": "operator",
+                "kind": "dashboard",
+                "widgets": ["kpi_cases", "kpi_corr", "chart_tasks", "feed_activity"],
+            },
+        ],
+    },
+    {
+        "id": "manager_control",
+        "name": "Руководитель: контроль",
+        "description": "Дашборд, просрочки, согласования и отчёты.",
+        "menu": [
+            {
+                "header": "Контроль",
+                "items": [
+                    {"url": "platform-dashboard", "roles": []},
+                    {"url": "platform-cases", "roles": []},
+                    {"url": "platform-bpm-approvals", "roles": [], "badge": "approvals"},
+                    {"url": "platform-sla", "roles": []},
+                ],
+            },
+            {
+                "header": "Аналитика",
+                "items": [
+                    {"url": "platform-reports", "roles": []},
+                    {"url": "platform-search", "roles": []},
+                ],
+            },
+        ],
+        "correspondence": {
+            "steps": ["register", "assign", "execute", "review", "archive"],
+            "sla_days": {"register": 1, "assign": 1, "execute": 7, "review": 2},
+        },
+        "role_layouts": [
+            {
+                "role_code": "manager",
+                "kind": "dashboard",
+                "widgets": ["kpi_cases", "kpi_bpm", "table_overdue", "chart_cases"],
+            },
+            {
+                "role_code": "manager",
+                "kind": "today",
+                "widgets": ["kpi_overdue", "kpi_priority", "tasks_table"],
+            },
+        ],
+    },
+    {
+        "id": "admin_studio",
+        "name": "Администратор подсистемы",
+        "description": "Настройка, пользователи, Студия, аудит.",
+        "menu": [
+            {
+                "header": "Администрирование",
+                "items": [
+                    {"url": "platform-subsystems", "roles": ["admin"]},
+                    {"url": "platform-users", "roles": ["admin"]},
+                    {"url": "platform-roles", "roles": ["admin"]},
+                    {"url": "platform-studio", "roles": ["admin"]},
+                    {"url": "platform-audit", "roles": ["admin"]},
+                ],
+            },
+        ],
+        "role_layouts": [
+            {
+                "role_code": "admin",
+                "kind": "dashboard",
+                "widgets": ["kpi_cases", "kpi_tasks", "kpi_bpm", "feed_activity"],
+            },
+        ],
+    },
+]
+
+
 def default_menu_layout():
     layout = []
     for section in MENU_SECTIONS:
@@ -204,11 +421,20 @@ def menu_layout_to_menu_json(layout, membership):
     enabled = _enabled_codes(membership)
     allowed = _role_view_codes(membership)
     is_admin = membership.user.is_superuser
+    role_code = membership.role.code if membership.role_id else ""
     menu = []
+    pinned_items: list[dict] = []
     for block in layout or []:
         header = block.get("header", "")
         section_items = []
-        for url_name in block.get("items") or []:
+        for raw in block.get("items") or []:
+            norm = normalize_menu_item(raw)
+            if not norm:
+                continue
+            url_name = norm["url"]
+            role_filter = norm.get("roles") or []
+            if role_filter and role_code not in role_filter and not is_admin:
+                continue
             item = flat.get(url_name)
             if not item:
                 continue
@@ -218,18 +444,25 @@ def menu_layout_to_menu_json(layout, membership):
             href = reverse(item["url_name"])
             if item.get("url_query"):
                 href += item["url_query"]
-            section_items.append(
-                {
-                    "url": item["url_name"],
-                    "url_href": href,
-                    "icon": f"menu-icon icon-base ri {item['icon']}",
-                    "name": item["label"],
-                    "slug": item["url_name"],
-                }
-            )
+            row = {
+                "url": item["url_name"],
+                "url_href": href,
+                "icon": f"menu-icon icon-base ri {item['icon']}",
+                "name": item["label"],
+                "slug": item["url_name"],
+            }
+            if norm.get("badge"):
+                row["badge_key"] = norm["badge"]
+            if norm.get("pinned"):
+                pinned_items.append(dict(row))
+            section_items.append(row)
         if section_items:
             menu.append({"menu_header": header})
             menu.extend(section_items)
+    if pinned_items:
+        from delayu.services.menu_badges import inject_pinned_section
+
+        menu = inject_pinned_section(menu, pinned_items)
     return menu
 
 
@@ -252,13 +485,18 @@ def diagram_to_bpm_steps(diagram: dict) -> list:
         if not node or node.get("type") in ("start", "end"):
             pass
         elif node.get("type") in ("task", "approval"):
-            order.append(
-                {
-                    "id": nid,
-                    "name": node.get("label") or nid,
-                    "assignee_id": node.get("assignee_id"),
-                }
-            )
+            step = {
+                "id": nid,
+                "name": node.get("label") or nid,
+                "assignee_id": node.get("assignee_id"),
+            }
+            if node.get("form_schema_code"):
+                step["form_schema_code"] = node["form_schema_code"]
+            if node.get("escalate_after_hours"):
+                step["escalate_after_hours"] = int(node["escalate_after_hours"])
+            if node.get("escalate_to_role"):
+                step["escalate_to_role"] = node["escalate_to_role"]
+            order.append(step)
         for e in edges:
             if e.get("from") == nid and e.get("to") not in seen:
                 queue.append(e["to"])

@@ -152,6 +152,26 @@ def notify_bpm_task_assigned(task):
     )
 
 
+def notify_bpm_task_escalated(task, *, from_user, role_code: str):
+    assignee = task.assignee
+    if not assignee:
+        return
+    case = task.instance.case
+    subsystem = task.instance.template.subsystem
+    dispatch_event(
+        subsystem,
+        "bpm_step_escalated",
+        [assignee],
+        {
+            "case": f"{case.number} — {case.title}" if case else "—",
+            "step_name": task.step_name,
+            "from_user": from_user.get_full_name() or from_user.username,
+            "role": role_code,
+            "link": "/bpm/approvals/",
+        },
+    )
+
+
 def notify_bpm_finished(instance, *, approved: bool):
     subsystem = instance.template.subsystem
     case = instance.case

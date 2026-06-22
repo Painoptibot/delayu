@@ -1,0 +1,261 @@
+/* Анимированная сцена «Добро пожаловать» — внутри карточки, без переполнения */
+
+.delayu-welcome-scene-host {
+  overflow: hidden;
+  max-height: 186px;
+  min-height: 186px;
+}
+
+.delayu-welcome-scene {
+  position: relative;
+  width: 100%;
+  max-width: 220px;
+  height: 176px;
+  margin-inline: auto;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.delayu-welcome-scene__semicircle-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.delayu-welcome-scene__semicircle {
+  position: absolute;
+  left: 50%;
+  top: 10%;
+  width: 78%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: linear-gradient(168deg, #eef0f6 0%, #e3e6ef 45%, #d6dae5 100%);
+  box-shadow:
+    inset 0 8px 20px rgba(255, 255, 255, 0.7),
+    0 8px 20px rgba(38, 43, 67, 0.06);
+  animation: delayu-welcome-bg-breathe 7s ease-in-out infinite;
+}
+
+[data-bs-theme="dark"] .delayu-welcome-scene__semicircle {
+  background: linear-gradient(168deg, #3c4158 0%, #343848 50%, #2c3042 100%);
+  box-shadow:
+    inset 0 6px 14px rgba(255, 255, 255, 0.05),
+    0 6px 18px rgba(0, 0, 0, 0.24);
+}
+
+.delayu-welcome-scene__layer {
+  position: absolute;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.delayu-welcome-scene__layer--stars {
+  left: 4%;
+  bottom: 26%;
+  width: 22%;
+  z-index: 2;
+}
+
+.delayu-welcome-scene__inner--stars {
+  animation: delayu-welcome-stars-float 5.2s ease-in-out infinite;
+}
+
+.delayu-welcome-scene__layer--lightning {
+  right: 6%;
+  top: 6%;
+  width: 26%;
+  z-index: 3;
+}
+
+.delayu-welcome-scene__inner--lightning {
+  animation: delayu-welcome-lightning-float 4s ease-in-out infinite;
+}
+
+.delayu-welcome-scene__layer--man {
+  right: 0;
+  left: auto;
+  bottom: 0;
+  height: 92%;
+  width: auto;
+  z-index: 4;
+  transform: translateX(8%);
+}
+
+.delayu-welcome-scene__inner--man {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  animation: delayu-welcome-man-enter 1s cubic-bezier(0.22, 1, 0.36, 1) both,
+    delayu-welcome-man-float 5.5s ease-in-out 1s infinite;
+}
+
+.delayu-welcome-scene__man {
+  width: auto;
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
+  object-position: right bottom;
+  filter: drop-shadow(0 8px 14px rgba(38, 43, 67, 0.12));
+}
+
+/* В карточке «Добро пожаловать» — человек у правого края, без обрезки */
+.delayu-welcome-card .delayu-welcome-scene__layer--man {
+  transform: none;
+  height: 100%;
+  bottom: 0;
+  right: -4px;
+}
+
+.delayu-welcome-card .delayu-welcome-scene__man {
+  height: 108%;
+  max-height: none;
+}
+
+.delayu-welcome-scene__stars,
+.delayu-welcome-scene__lightning {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  user-select: none;
+}
+
+.delayu-welcome-scene__twinkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px 2px rgba(255, 214, 0, 0.9);
+  opacity: 0;
+  animation: delayu-welcome-twinkle 2.2s ease-in-out infinite;
+}
+
+.delayu-welcome-scene__twinkle--1 {
+  left: 20%;
+  top: 10%;
+}
+
+.delayu-welcome-scene__twinkle--2 {
+  left: 55%;
+  bottom: 14%;
+  animation-delay: 1.1s;
+}
+
+.delayu-welcome-scene__lightning-glow {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 82%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(144, 85, 253, 0.55) 0%,
+    rgba(105, 108, 255, 0.18) 52%,
+    transparent 72%
+  );
+  animation: delayu-welcome-lightning-pulse 2.1s ease-in-out infinite;
+  z-index: 0;
+}
+
+.delayu-welcome-scene__lightning {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes delayu-welcome-bg-breathe {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.02) translateY(-2px);
+  }
+}
+
+@keyframes delayu-welcome-stars-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-2deg);
+  }
+}
+
+@keyframes delayu-welcome-lightning-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-3px) scale(1.02);
+  }
+  70% {
+    transform: translateY(1px) scale(0.99);
+  }
+}
+
+@keyframes delayu-welcome-man-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes delayu-welcome-man-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes delayu-welcome-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes delayu-welcome-lightning-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .delayu-welcome-scene__semicircle,
+  .delayu-welcome-scene__inner,
+  .delayu-welcome-scene__twinkle,
+  .delayu-welcome-scene__lightning-glow {
+    animation: none !important;
+  }
+
+  .delayu-welcome-scene__inner--man {
+    opacity: 1;
+    transform: none;
+  }
+}

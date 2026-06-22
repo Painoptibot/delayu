@@ -35,6 +35,32 @@
 </div>
 {% endif %}
 
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <h6 class="mb-2">Экспорт в SIEM</h6>
+    <form method="post" action="{% url 'platform-audit-siem' %}" class="row g-2 align-items-end">
+      {% csrf_token %}
+      <div class="col-md-2">
+        <div class="form-check">
+          {{ siem_form.enabled }}
+          <label class="form-check-label small" for="{{ siem_form.enabled.id_for_label }}">Включён</label>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small mb-0">Webhook</label>
+        {{ siem_form.webhook_url }}
+      </div>
+      <div class="col-md-4 d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-sm btn-outline-primary">Сохранить</button>
+        <button type="submit" formaction="{% url 'platform-audit-siem-push' %}" class="btn btn-sm btn-primary">Отправить сейчас</button>
+      </div>
+    </form>
+    {% if siem_config.last_pushed_at %}
+    <p class="small text-muted mb-0 mt-2">Последняя отправка: {{ siem_config.last_pushed_at|date:"d.m.Y H:i" }}{% if siem_config.last_error %} · <span class="text-danger">{{ siem_config.last_error }}</span>{% endif %}</p>
+    {% endif %}
+  </div>
+</div>
+
 <form method="get" class="mb-3 row g-2 align-items-end">
 
   <div class="col-md-6">

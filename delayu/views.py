@@ -57,9 +57,17 @@ class LoginView(AuthView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        from delayu.models import SsoProvider
         from delayu.services.sso import active_sso_providers
 
-        ctx["sso_providers"] = list(active_sso_providers())
+        ctx["sso_providers"] = [
+            p
+            for p in active_sso_providers()
+            if p.provider_type == SsoProvider.ProviderType.ESIA and (p.metadata or {}).get("demo")
+        ]
+        from delayu.login_scene import LOGIN_SCENE_BADGES
+
+        ctx["login_scene_badges"] = LOGIN_SCENE_BADGES
         return ctx
 
     def get(self, request):

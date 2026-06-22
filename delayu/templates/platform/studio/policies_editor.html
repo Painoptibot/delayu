@@ -1,0 +1,77 @@
+{% extends "platform/studio/_base.html" %}
+{% load static %}
+{% block studio_content %}
+<div id="studioPoliciesPanel" data-diff-url="{{ studio_policies_diff_url }}">
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><h6 class="mb-0">Политика хранения архива</h6></div>
+      <div class="card-body">
+        <p class="small text-muted">Сроки хранения дел после архивирования (M06 / M78).</p>
+        {% if retention_expired_count %}
+        <div class="alert alert-warning py-2 small">Просрочено по сроку: {{ retention_expired_count }} дел</div>
+        {% endif %}
+        {% if retention_alerts %}
+        <ul class="small mb-3">
+          {% for c in retention_alerts %}
+          <li>{{ c.number }} — до {{ c.retention_until|date:"d.m.Y" }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="form_kind" value="retention">
+          {{ retention_form.as_p }}
+          <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><h6 class="mb-0">Экспорт аудита в SIEM</h6></div>
+      <div class="card-body">
+        <p class="small text-muted">Webhook для событий журнала (M12). Подробнее — в разделе «Журнал аудита».</p>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="form_kind" value="siem">
+          <div class="mb-2 form-check">
+            {{ siem_form.enabled }}
+            <label class="form-check-label" for="{{ siem_form.enabled.id_for_label }}">Включить экспорт</label>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small">Webhook URL</label>
+            {{ siem_form.webhook_url }}
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="card mt-4">
+  <div class="card-body d-flex flex-wrap gap-2 align-items-center justify-content-between">
+    <div>
+      <h6 class="mb-1">Сравнение с ревизией</h6>
+      <p class="small text-muted mb-0">Текущие политики vs опубликованный снимок.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      {% if studio_policy_revisions %}
+      <select class="form-select form-select-sm w-auto" id="studioPoliciesDiffRevision">
+        <option value="">Последняя публикация</option>
+        {% for rev in studio_policy_revisions %}
+        <option value="{{ rev.pk }}">{{ rev.version_label }} — {{ rev.created_at|date:"d.m.Y H:i" }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="studioPoliciesDiff">Сравнить</button>
+    </div>
+    <div id="studioPoliciesDiffResult" class="w-100 small text-muted mt-2"></div>
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{% block studio_js %}
+<script src="{% static 'js/delayu-studio-admin.js' %}"></script>
+{% endblock %}

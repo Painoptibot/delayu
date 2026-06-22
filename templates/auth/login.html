@@ -20,12 +20,14 @@
 {% block page_css %}
 {{ block.super }}
 <link rel="stylesheet" href="{% static 'vendor/css/pages/page-auth.css' %}" />
+<link rel="stylesheet" href="{% static 'css/delayu-login-scene.css' %}" />
 {% endblock page_css %}
 
 {% block page_js %}
 {{ block.super }}
 <script src="{% static 'js/authentication.js' %}"></script>
 <script src="{% static 'js/ui-popover.js' %}"></script>
+<script src="{% static 'js/delayu-login-scene.js' %}"></script>
 {% endblock page_js %}
 
 {% block content %}
@@ -37,12 +39,9 @@
   </a>
   <!-- /Logo -->
   <div class="authentication-inner row m-0">
-    <!-- /Left Section -->
-    <div class="d-none d-lg-flex col-lg-7 col-xl-8 align-items-center justify-content-center p-12 pb-2">
-      <img src="{% static 'img/illustrations/auth-login-illustration-' %}{{ COOKIES.theme|default:theme }}.png" class="auth-cover-illustration w-100" alt="auth-illustration" data-app-light-img="illustrations/auth-login-illustration-light.png" data-app-dark-img="illustrations/auth-login-illustration-dark.png" />
-      <img alt="mask" src="{% static 'img/illustrations/auth-basic-login-mask-' %}{{ COOKIES.theme|default:theme }}.png" class="authentication-image d-none d-lg-block" data-app-light-img="illustrations/auth-basic-login-mask-light.png" data-app-dark-img="illustrations/auth-basic-login-mask-dark.png" />
+    <div class="d-none d-lg-flex col-lg-7 col-xl-8 align-items-stretch justify-content-center p-0 position-relative delayu-login-col">
+      {% include "partials/delayu_login_scene.html" %}
     </div>
-    <!-- /Left Section -->
 
     <!-- Login -->
     <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg position-relative py-sm-12 px-12 py-6">
@@ -103,7 +102,9 @@
         {% endfor %}
         {% endif %}
         <p class="text-center mt-4 mb-0">
-          <a href="#" class="text-muted small" data-bs-toggle="modal" data-bs-target="#tzModal">Техническое задание</a>
+          <a href="{% url 'platform-landing' %}" class="text-muted small me-3">О платформе</a>
+          <a href="{% url 'platform-welcome' %}" class="text-muted small me-3">Презентация</a>
+          <a href="#" class="text-muted small" data-bs-toggle="modal" data-bs-target="#tzModal">Техническое описание</a>
         </p>
 
       </div>

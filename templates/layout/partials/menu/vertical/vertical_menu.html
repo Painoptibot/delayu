@@ -25,7 +25,7 @@
 
     {% comment %} Menu Header {% endcomment %}
     {% if "menu_header" in item %}
-    {% include './partials/menu_header_template.html' with header_text=item.menu_header %}
+    {% include './partials/menu_header_template.html' with header_text=item.menu_header header_class=item.menu_header_class %}
     {% else %}
 
     {% comment %} Menu Item {% endcomment %}

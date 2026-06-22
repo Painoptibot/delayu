@@ -116,3 +116,49 @@ def update_user_membership(
 def deactivate_user(user):
     user.is_active = False
     user.save(update_fields=["is_active"])
+
+
+def bulk_import_users_from_rows(*, subsystem, rows, default_password: str = "ChangeMe1!"):
+    """Импорт пользователей из списка dict (CSV)."""
+    from delayu.models import Organization, Role
+
+    orgs = {o.code: o for o in Organization.objects.filter(subsystem=subsystem, is_active=True)}
+    roles = {r.code: r for r in Role.objects.filter(subsystem=subsystem)}
+    created = 0
+    errors = []
+
+    for idx, row in enumerate(rows, start=2):
+        username = (row.get("username") or "").strip()
+        if not username:
+            errors.append(f"Строка {idx}: пустой логин")
+            continue
+        if User.objects.filter(username=username).exists():
+            errors.append(f"Строка {idx}: логин {username} уже существует")
+            continue
+        role_code = (row.get("role_code") or row.get("role") or "").strip()
+        org_code = (row.get("org_code") or row.get("organization") or "main").strip()
+        role = roles.get(role_code)
+        org = orgs.get(org_code) or next(iter(orgs.values()), None)
+        if not role:
+            errors.append(f"Строка {idx}: роль «{role_code}» не найдена")
+            continue
+        if not org:
+            errors.append(f"Строка {idx}: организация не найдена")
+            continue
+        try:
+            create_user_with_membership(
+                subsystem=subsystem,
+                username=username,
+                email=(row.get("email") or "").strip(),
+                password=default_password,
+                first_name=(row.get("first_name") or "").strip(),
+                last_name=(row.get("last_name") or "").strip(),
+                organization=org,
+                role=role,
+                profile_data={},
+            )
+            created += 1
+        except Exception as exc:
+            errors.append(f"Строка {idx}: {exc}")
+
+    return {"created": created, "errors": errors}

@@ -1,7 +1,5 @@
 {% load i18n %}
 
-{% if not item.permission or request.user|has_permission:item.permission %}
-<li class="menu-header small mt-5">
+<li class="menu-header small mt-5{% if header_class %} {{ header_class }}{% endif %}">
   <span class="menu-header-text">{% trans header_text %}</span>
 </li>
-{% endif %}

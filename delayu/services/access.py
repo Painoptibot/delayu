@@ -5,7 +5,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 
 from delayu.menu import get_active_membership
-from delayu.models import ModuleCatalog, RoleModulePermission, SubsystemModule
+from delayu.models import ModuleCatalog, SubsystemModule
 
 
 def user_can(user, module_code: str, action: str = "view") -> bool:
@@ -26,22 +26,9 @@ def user_can(user, module_code: str, action: str = "view") -> bool:
         module = ModuleCatalog.objects.get(code=module_code)
     except ModuleCatalog.DoesNotExist:
         return False
-    perm = RoleModulePermission.objects.filter(role=membership.role, module=module).first()
-    if not perm:
-        return False
-    if action == "view":
-        return perm.can_view
-    if action == "create":
-        return perm.can_create
-    if action == "change":
-        return perm.can_change
-    if action == "delete":
-        return perm.can_delete
-    if action == "view_pii":
-        return perm.can_view_pii
-    if action == "export_pii":
-        return perm.can_export_pii
-    return False
+    from delayu.services.role_inheritance import role_has_action
+
+    return role_has_action(membership.role, module, action)
 
 
 def require_module(module_code: str, action: str = "view"):

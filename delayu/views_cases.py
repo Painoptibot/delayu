@@ -58,7 +58,9 @@ class CaseListView(ModulePermissionMixin, TemplateView):
         ).distinct().order_by("username")
         ctx["can_create"] = user_can(self.request.user, "M22", "create")
         ctx["can_change"] = can_change
-        ctx["can_bulk"] = can_change and not ctx.get("demo_mode", False)
+        ctx["can_bulk"] = user_can(self.request.user, "M22", "bulk") and not ctx.get(
+            "demo_mode", False
+        )
         return ctx
 
 
@@ -66,7 +68,7 @@ class CaseBulkView(CriticalReauthMixin, ModulePermissionMixin, View):
     """#33 — массовые операции из реестра дел."""
 
     module_code = "M22"
-    required_action = "change"
+    required_action = "bulk"
 
     def post(self, request):
         m = _ctx_membership(self)
@@ -154,6 +156,7 @@ class CaseDetailView(ModulePermissionMixin, DetailView):
         ctx["ai_summary"] = ai.summarize_case(self.object)
         ctx["ai_risk"] = ai.risk_overdue(self.object)
         ctx["can_m06_change"] = user_can(self.request.user, "M06", "change")
+        ctx["can_archive"] = user_can(self.request.user, "M06", "archive")
         ctx["can_change"] = user_can(self.request.user, "M22", "change")
         ctx["status_choices"] = CaseFile.Status.choices
         ctx["active_tab"] = self.request.GET.get("tab", "overview")

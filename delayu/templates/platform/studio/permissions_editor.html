@@ -3,13 +3,21 @@
 <div class="card" data-studio="permissions" data-save-url="{% url 'platform-studio-save' 'permissions' %}">
   <div class="card-header d-flex flex-wrap gap-2 align-items-center">
     <h5 class="mb-0">Матрица прав</h5>
-    <select class="form-select form-select-sm w-auto" onchange="location.search='role='+this.value">
+    <select class="form-select form-select-sm w-auto" id="studioPermRoleSelect" onchange="location.search='role='+this.value">
       {% for r in roles %}
       <option value="{{ r.pk }}" {% if active_role and active_role.pk == r.pk %}selected{% endif %}>{{ r.name }}</option>
       {% endfor %}
     </select>
+    <label class="small text-muted mb-0 ms-2">Наследует от</label>
+    <select class="form-select form-select-sm w-auto" id="studioPermParentRole">
+      <option value="">— нет —</option>
+      {% for r in parent_role_options %}
+      <option value="{{ r.pk }}" {% if active_role and active_role.parent_role_id == r.pk %}selected{% endif %}>{{ r.name }}</option>
+      {% endfor %}
+    </select>
   </div>
   <div class="card-body">
+    <p class="small text-muted">Галочки — собственные права роли. Значок ↓ — унаследовано от родительской роли.</p>
     <div class="mb-3 d-flex flex-wrap gap-2">
       <span class="small text-muted me-2">Пресеты:</span>
       <button type="button" class="btn btn-sm btn-outline-secondary studio-preset" data-preset="viewer">Только просмотр</button>
@@ -18,7 +26,14 @@
     </div>
     <div class="table-responsive">
       <table class="table table-sm" id="studioPermTable">
-        <thead><tr><th>Модуль</th><th>Просмотр</th><th>Создание</th><th>Изменение</th><th>Удаление</th><th>ПДн</th><th>Экспорт ПДн</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Модуль</th>
+            <th>Просмотр</th><th>Создание</th><th>Изменение</th><th>Удаление</th>
+            <th>ПДн</th><th>Экспорт ПДн</th>
+            <th>Соглас.</th><th>Подпись</th><th>Архив</th><th>Массовые</th>
+          </tr>
+        </thead>
         <tbody></tbody>
       </table>
     </div>

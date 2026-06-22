@@ -56,6 +56,7 @@ class ArchiveCasesListView(ModulePermissionMixin, ListView):
         ctx["filter_legal_hold"] = self.request.GET.get("legal_hold", "")
         ctx["filter_expiring"] = self.request.GET.get("expiring", "")
         ctx["can_change"] = user_can(self.request.user, "M06", "change")
+        ctx["can_archive"] = user_can(self.request.user, "M06", "archive")
         ctx["can_delete"] = user_can(self.request.user, "M06", "delete")
         ctx["expired_count"] = retention_expired(m.subsystem)
         ctx["can_purge"] = ctx["can_delete"] and ctx["expired_count"] > 0
@@ -101,6 +102,7 @@ class ArchiveCaseModalView(ModulePermissionMixin, View):
         ctx = {
             "case": case,
             "can_change": user_can(request.user, "M06", "change"),
+            "can_archive": user_can(request.user, "M06", "archive"),
         }
         return render(request, "platform/archive/_case_modal.html", ctx)
 
@@ -134,7 +136,7 @@ class ArchiveCaseLegalHoldView(ModulePermissionMixin, View):
 
 class ArchiveCaseRestoreView(ModulePermissionMixin, View):
     module_code = "M06"
-    required_action = "change"
+    required_action = "archive"
 
     def post(self, request, pk):
         m = _ctx_membership(self)

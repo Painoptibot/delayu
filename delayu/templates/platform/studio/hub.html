@@ -1,24 +1,671 @@
 {% extends "platform/studio/_base.html" %}
+{% load static %}
 {% block studio_content %}
-<div class="card">
-  <div class="card-body">
-    <h4 class="mb-2">Студия ДелаЮ</h4>
-    <p class="text-muted mb-4">Визуальные конструкторы с drag-and-drop для настройки подсистемы без программирования.</p>
-    <div class="row g-3">
-      {% for ed in studio_editors %}
-      <div class="col-md-6">
-        <a href="{{ ed.url }}" class="card border h-100 text-decoration-none studio-tile">
-          <div class="card-body d-flex align-items-start gap-3">
-            <span class="avatar avatar-sm"><span class="avatar-initial rounded bg-label-primary"><i class="ri {{ ed.icon }}"></i></span></span>
-            <div>
-              <h6 class="mb-1">{{ ed.title }}</h6>
-              <small class="text-muted">Модуль {{ ed.module }}</small>
-            </div>
-          </div>
-        </a>
+{% if studio_publish_tag_suggestions %}
+<datalist id="studioPublishTagsList">
+  {% for tag in studio_publish_tag_suggestions %}<option value="{{ tag }}">{% endfor %}
+</datalist>
+{% endif %}
+
+<div class="studio-hub">
+
+  {# —— Статус: черновик, расписание, мастер —— #}
+  {% if studio_has_draft %}
+  <div class="card studio-hub-status studio-hub-status--draft mb-3" id="studioDraftBanner"
+       data-publish-url="{% url 'platform-studio-publish' %}"
+       data-discard-url="{% url 'platform-studio-discard-draft' %}"
+       data-schedule-url="{{ studio_schedule_url }}"
+       data-publish-dry-run-url="{{ studio_publish_dry_run_url }}"
+       data-schedule-dry-run-url="{{ studio_schedule_dry_run_url }}">
+    <div class="card-body">
+      <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+        <div>
+          <div class="studio-hub-status__label text-warning"><i class="ri-draft-line me-1"></i>Черновик не опубликован</div>
+          <p class="text-muted small mb-0">Есть изменения меню или маршрута СЭД. Проверьте diff и опубликуйте или запланируйте.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-sm btn-outline-warning" id="studioPublishDryRunBtn"><i class="ri-search-eye-line me-1"></i>Проверить</button>
+          <button type="button" class="btn btn-sm btn-outline-warning" id="studioScheduleDryRunBtn"><i class="ri-calendar-check-line me-1"></i>Проверить план</button>
+          <button type="button" class="btn btn-sm btn-primary" id="studioPublishBtn"><i class="ri-upload-cloud-line me-1"></i>Опубликовать</button>
+        </div>
       </div>
-      {% endfor %}
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label small text-muted mb-1" for="studioPublishComment">Комментарий</label>
+          <input type="text" id="studioPublishComment" class="form-control form-control-sm" placeholder="Необязательно" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small text-muted mb-1" for="studioPublishTags">Теги</label>
+          <input type="text" id="studioPublishTags" class="form-control form-control-sm" placeholder="prod, release"{% if studio_publish_tag_suggestions %} list="studioPublishTagsList"{% endif %} />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small text-muted mb-1" for="studioScheduleAt">Отложенная публикация</label>
+          <input type="datetime-local" id="studioScheduleAt" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-2 d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1" id="studioScheduleBtn">Запланировать</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="studioDiscardBtn" title="Сбросить черновик"><i class="ri-delete-bin-line"></i></button>
+        </div>
+      </div>
+      <div id="studioPublishDryRunResult" class="studio-hub-dryrun small mt-3 d-none"></div>
     </div>
   </div>
+  {% endif %}
+
+  {% if studio_scheduled_publish %}
+  <div class="card studio-hub-status studio-hub-status--scheduled mb-3" id="studioScheduledBanner" data-schedule-url="{{ studio_schedule_url }}">
+    <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="small">
+        <i class="ri-time-line me-1 text-info"></i>
+        <span class="text-muted">Запланирована публикация</span>
+        <strong class="ms-1">{{ studio_scheduled_publish.at|slice:":16"|default:studio_scheduled_publish.at }}</strong>
+        {% if studio_scheduled_publish.comment %}<span class="text-muted">— {{ studio_scheduled_publish.comment }}</span>{% endif %}
+        {% if studio_scheduled_publish.publish_tags_preview %}
+        <span class="badge bg-label-info ms-1">{{ studio_scheduled_publish.publish_tags_preview|join:", " }}</span>
+        {% endif %}
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="studioCancelScheduleBtn">Отменить</button>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if studio_setup and not studio_setup.complete and not studio_setup.dismissed %}
+  <div class="card studio-hub-status studio-hub-status--setup mb-3">
+    <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="small">
+        <i class="ri-magic-line me-1 text-primary"></i>
+        Мастер настройки: <strong>{{ studio_setup.done }}/{{ studio_setup.total }}</strong> шагов ({{ studio_setup.percent }}%)
+      </div>
+      <a href="{{ studio_setup_url }}" class="btn btn-sm btn-primary">Продолжить</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {# —— Обзор: версия + готовность —— #}
+  <div class="row g-3 mb-4">
+    <div class="col-lg-4">
+      <div class="card h-100 studio-hub-metric">
+        <div class="card-body">
+          <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+            <div>
+              <div class="text-muted small text-uppercase fw-medium studio-hub-metric__label">Версия</div>
+              <div class="studio-hub-metric__value">{{ studio_config_version }}</div>
+            </div>
+            {% if studio_stats.has_draft %}<span class="badge bg-label-warning">Черновик</span>{% endif %}
+          </div>
+          <p class="small text-muted mb-3">
+            {% if studio_published_at %}Опубликовано {{ studio_published_at|date:"d.m.Y H:i" }}{% else %}Ещё не публиковалось{% endif %}
+          </p>
+          {% if studio_stats %}
+          <div class="d-flex flex-wrap gap-1 mb-3">
+            <span class="badge bg-label-secondary">Ревизий {{ studio_stats.revisions }}</span>
+            {% if studio_stats.pinned_revisions %}<span class="badge bg-label-info">Закреп. {{ studio_stats.pinned_revisions }}</span>{% endif %}
+            {% if studio_stats.activity_7d %}<span class="badge bg-label-secondary">7д {{ studio_stats.activity_7d }}</span>{% endif %}
+            <span class="badge bg-label-secondary">Журнал {{ studio_stats.audit_total }}</span>
+            {% if studio_stats.forced_ops %}<span class="badge bg-label-warning">Forced {{ studio_stats.forced_ops }}</span>{% endif %}
+          </div>
+          {% endif %}
+          <div class="border-top pt-3" id="studioDefaultTagsPanel" data-default-tags-url="{{ studio_publish_default_tags_url }}">
+            <label class="form-label small text-muted mb-1" for="studioDefaultPublishTags">Теги по умолчанию при публикации</label>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control" id="studioDefaultPublishTags"
+                     value="{% for t in studio_default_publish_tags %}{{ t }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+                     placeholder="prod, release"{% if studio_publish_tag_suggestions %} list="studioPublishTagsList"{% endif %} />
+              <button type="button" class="btn btn-outline-secondary" id="studioDefaultTagsSaveBtn">Сохранить</button>
+            </div>
+            {% if studio_pending_publish_tags %}
+            <div class="mt-2 small d-flex align-items-center gap-1 flex-wrap">
+              <span class="text-muted">Pending:</span>
+              <span class="badge bg-label-info" id="studioPendingTagsBadge">{{ studio_pending_publish_tags|join:", " }}</span>
+              <button type="button" class="btn btn-sm btn-link text-muted py-0 px-1" id="studioClearPendingTagsBtn"
+                      data-clear-pending-url="{{ studio_clear_pending_tags_url }}" title="Сбросить">×</button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="card h-100">
+        <div class="card-header py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <h6 class="mb-0">Готовность подсистемы</h6>
+          <div class="d-flex gap-2">
+            <span class="badge bg-label-success">{{ studio_health_summary.ok }} ок</span>
+            <span class="badge bg-label-warning">{{ studio_health_summary.warn }} внимание</span>
+            <span class="badge bg-label-danger">{{ studio_health_summary.fail }} критично</span>
+          </div>
+        </div>
+        <div class="card-body pt-2">
+          <div class="row g-2">
+            {% for check in studio_health_checks %}
+            <div class="col-md-6">
+              <div class="studio-hub-health-item d-flex align-items-start gap-2 small p-2 rounded">
+                {% if check.status == "ok" %}<i class="ri-checkbox-circle-line text-success mt-1"></i>
+                {% elif check.status == "warn" %}<i class="ri-error-warning-line text-warning mt-1"></i>
+                {% else %}<i class="ri-close-circle-line text-danger mt-1"></i>{% endif %}
+                <div class="flex-grow-1 min-w-0">
+                  <div class="fw-medium text-truncate">
+                    {% if check.url %}<a href="{{ check.url }}" class="text-body">{{ check.label }}</a>{% else %}{{ check.label }}{% endif %}
+                  </div>
+                  <div class="text-muted">{{ check.detail }}</div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# —— Конструкторы —— #}
+  <section class="card mb-4" id="studioAdminPanel">
+    <div class="card-header py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <h5 class="mb-0">Конструкторы</h5>
+        <p class="small text-muted mb-0 mt-1">Визуальная настройка подсистемы без программирования</p>
+      </div>
+      <a href="{% url 'platform-studio-preview' %}" class="btn btn-sm btn-primary">
+        <i class="ri-eye-line me-1"></i>Просмотр как роль
+      </a>
+    </div>
+    <div class="card-body pt-2">
+      <div class="row g-3">
+        {% for ed in studio_editors %}
+        {% if ed.slug != "preview" %}
+        <div class="col-sm-6 col-xl-4">
+          <a href="{{ ed.url }}" class="card studio-hub-editor-tile h-100 text-decoration-none">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+              <span class="avatar avatar-md">
+                <span class="avatar-initial rounded-2 bg-label-primary"><i class="ri {{ ed.icon }} ri-lg"></i></span>
+              </span>
+              <div class="min-w-0">
+                <h6 class="mb-0 text-body">{{ ed.title }}</h6>
+                <small class="text-muted">Модуль {{ ed.module }}</small>
+              </div>
+              <i class="ri-arrow-right-s-line text-muted ms-auto"></i>
+            </div>
+          </a>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# —— Вкладки: ревизии, экспорт, шаблоны, журнал —— #}
+  <ul class="nav nav-tabs studio-hub-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab-revisions-btn" data-bs-toggle="tab" data-bs-target="#tab-revisions" type="button" role="tab">
+        <i class="ri-history-line me-1"></i>Ревизии{% if studio_revisions %} <span class="badge rounded-pill bg-label-primary ms-1">{{ studio_revisions|length }}</span>{% endif %}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-export-btn" data-bs-toggle="tab" data-bs-target="#tab-export" type="button" role="tab">
+        <i class="ri-download-2-line me-1"></i>Экспорт и перенос
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-blueprints-btn" data-bs-toggle="tab" data-bs-target="#tab-blueprints" type="button" role="tab">
+        <i class="ri-layout-grid-line me-1"></i>Шаблоны
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-journal-btn" data-bs-toggle="tab" data-bs-target="#tab-journal" type="button" role="tab">
+        <i class="ri-file-list-3-line me-1"></i>Журнал
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content studio-hub-tab-panels mb-4">
+
+    {# —— Ревизии —— #}
+    <div class="tab-pane fade show active" id="tab-revisions" role="tabpanel">
+      {% if studio_revisions %}
+      <div class="card border-top-0 rounded-top-0 mb-0" id="studioRevisionCompare"
+           data-compare-url="{{ studio_compare_url }}" data-compare-export-url="{{ studio_compare_export_url }}">
+        <div class="card-body border-bottom bg-body-secondary bg-opacity-25">
+          <h6 class="mb-3">Сравнение версий</h6>
+          <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label small mb-1" for="studioCompareA">Версия A</label>
+              <select class="form-select form-select-sm" id="studioCompareA">
+                <option value="live">Текущая (опубликованная)</option>
+                <option value="draft">С черновиком</option>
+                {% for rev in studio_revisions %}
+                <option value="{{ rev.pk }}">{{ rev.version_label }} — {{ rev.created_at|date:"d.m.Y H:i" }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small mb-1" for="studioCompareB">Версия B</label>
+              <select class="form-select form-select-sm" id="studioCompareB">
+                {% for rev in studio_revisions %}
+                <option value="{{ rev.pk }}"{% if forloop.first %} selected{% endif %}>{{ rev.version_label }} — {{ rev.created_at|date:"d.m.Y H:i" }}</option>
+                {% endfor %}
+                <option value="live">Текущая (опубликованная)</option>
+              </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-primary" id="studioCompareBtn">Сравнить</button>
+              <a href="#" class="btn btn-sm btn-outline-secondary d-none" id="studioCompareExportBtn" target="_blank" rel="noopener">CSV</a>
+            </div>
+          </div>
+          <div id="studioCompareResult" class="small text-muted mt-3">Выберите две версии и нажмите «Сравнить».</div>
+        </div>
+        <div class="card-header py-3">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h6 class="mb-0">История публикаций</h6>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <form method="get" class="d-flex align-items-center gap-1 mb-0">
+                {% if studio_revision_tag_filter %}<input type="hidden" name="rev_tag" value="{{ studio_revision_tag_filter }}" />{% endif %}
+                <input type="search" name="rev_q" class="form-control form-control-sm" value="{{ studio_revision_q_filter }}" placeholder="Поиск…" style="width: 8rem;" />
+                <button type="submit" class="btn btn-sm btn-outline-primary">OK</button>
+              </form>
+              {% if studio_revision_tag_list %}
+              <select class="form-select form-select-sm" id="studioRevisionTagFilter" style="width: auto; min-width: 7rem;"
+                      onchange="if(this.value){window.location='?rev_tag='+encodeURIComponent(this.value);}else{window.location='{% url 'platform-studio' %}';}">
+                <option value="">Все теги</option>
+                {% for tag in studio_revision_tag_list %}
+                <option value="{{ tag }}"{% if studio_revision_tag_filter == tag|lower %} selected{% endif %}>{{ tag }}</option>
+                {% endfor %}
+              </select>
+              {% endif %}
+            </div>
+          </div>
+          <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top" id="studioRevisionInlineCompare"
+               data-compare-url="{{ studio_compare_url }}" data-compare-export-url="{{ studio_compare_export_url }}">
+            <span class="small text-muted me-1">Быстрое сравнение:</span>
+            <select class="form-select form-select-sm" id="studioRevCompareA" style="width: auto; min-width: 6rem;">
+              {% for rev in studio_revisions %}
+              <option value="{{ rev.pk }}"{% if forloop.last %} selected{% endif %}>{{ rev.version_label }}</option>
+              {% endfor %}
+              <option value="live">Текущая</option>
+            </select>
+            <span class="small text-muted">vs</span>
+            <select class="form-select form-select-sm" id="studioRevCompareB" style="width: auto; min-width: 6rem;">
+              {% for rev in studio_revisions %}
+              <option value="{{ rev.pk }}"{% if forloop.first %} selected{% endif %}>{{ rev.version_label }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="studioRevInlineCompareBtn">Сравнить</button>
+            <a href="#" class="btn btn-sm btn-outline-secondary d-none" id="studioRevInlineExportBtn" target="_blank" rel="noopener">CSV</a>
+            <div class="ms-auto d-flex flex-wrap gap-2">
+              <input type="number" class="form-control form-control-sm" id="studioPruneKeep" value="50" min="5" max="500" style="width: 4.5rem;" title="Сколько оставить" />
+              <button type="button" class="btn btn-sm btn-outline-danger" id="studioPruneBtn" data-prune-url="{{ studio_revision_prune_url }}">Очистить</button>
+              <a href="{{ studio_revisions_export_url }}" class="btn btn-sm btn-outline-secondary">ZIP все</a>
+              {% if studio_stats.pinned_revisions %}
+              <a href="{{ studio_revisions_pinned_export_url }}" class="btn btn-sm btn-outline-secondary">ZIP 📌</a>
+              {% endif %}
+              {% if studio_revision_tag_list %}
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="studioRevisionBulkTagsBtn" data-bulk-tags-url="{{ studio_revision_bulk_tags_url }}">Массовый тег</button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div id="studioRevInlineCompareResult" class="small text-muted px-3 py-2 d-none border-bottom bg-body-secondary bg-opacity-10"></div>
+        <div class="table-responsive">
+          <table class="table table-hover table-sm mb-0 studio-hub-rev-table" id="studioRevisionTable"
+                 data-restore-url="{{ studio_restore_url }}" data-restore-dry-run-url="{{ studio_restore_dry_run_url }}"
+                 data-pin-url="{{ studio_revision_pin_url }}" data-meta-url="{{ studio_revision_meta_url }}"
+                 data-bulk-tags-url="{{ studio_revision_bulk_tags_url }}">
+            <thead class="table-light">
+              <tr><th>Версия</th><th>Дата</th><th>Автор</th><th>Комментарий</th><th>Теги</th><th class="text-end">Действия</th></tr>
+            </thead>
+            <tbody>
+              {% for rev in studio_revisions %}
+              <tr>
+                <td class="text-nowrap">
+                  {% if rev.pk in studio_pinned_revision_ids %}<i class="ri-pushpin-fill text-warning me-1" title="Закреплена"></i>{% endif %}
+                  <span class="badge bg-label-primary">{{ rev.version_label }}</span>
+                </td>
+                <td class="small text-nowrap">{{ rev.created_at|date:"d.m.Y H:i" }}</td>
+                <td class="small">{{ rev.published_by.get_full_name|default:rev.published_by.username|default:"—" }}</td>
+                <td class="small text-muted studioRevCommentCell" data-revision-id="{{ rev.pk }}">{{ rev.comment|default:"—" }}</td>
+                <td class="small studioRevTagsCell" data-revision-id="{{ rev.pk }}">
+                  {% for tag in rev.studio_tags %}
+                  <span class="badge bg-label-secondary me-1">{{ tag }}</span>
+                  {% empty %}<span class="text-muted">—</span>{% endfor %}
+                </td>
+                <td class="text-end text-nowrap">
+                  <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary studioRevMetaBtn" data-revision-id="{{ rev.pk }}" data-comment="{{ rev.comment|default:'' }}" data-tags="{% for tag in rev.studio_tags %}{{ tag }}{% if not forloop.last %}, {% endif %}{% endfor %}" title="Метаданные">✎</button>
+                    <button type="button" class="btn btn-outline-secondary studioRevPinBtn" data-revision-id="{{ rev.pk }}" data-pinned="{% if rev.pk in studio_pinned_revision_ids %}1{% else %}0{% endif %}">{% if rev.pk in studio_pinned_revision_ids %}📌{% else %}📍{% endif %}</button>
+                    <a href="{% url 'platform-studio-revision-export' rev.pk %}" class="btn btn-outline-secondary" title="JSON">⬇</a>
+                  </div>
+                  <div class="btn-group btn-group-sm ms-1">
+                    <button type="button" class="btn btn-outline-info studioRestorePreviewBtn" data-revision-id="{{ rev.pk }}" data-version="{{ rev.version_label }}">Просмотр</button>
+                    <button type="button" class="btn btn-outline-secondary studioRestoreDraftBtn" data-revision-id="{{ rev.pk }}" data-version="{{ rev.version_label }}">Черновик</button>
+                    <button type="button" class="btn btn-outline-warning studioRestoreApplyBtn" data-revision-id="{{ rev.pk }}" data-version="{{ rev.version_label }}">Откат</button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div id="studioRestorePreviewResult" class="small text-muted p-3 border-top d-none"></div>
+        </div>
+      </div>
+      {% else %}
+      <div class="card border-top-0 rounded-top-0">
+        <div class="card-body text-center text-muted py-5">
+          <i class="ri-history-line ri-2x mb-2 d-block opacity-50"></i>
+          Ревизий пока нет. Опубликуйте первую версию конфигурации.
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {# —— Экспорт —— #}
+    <div class="tab-pane fade" id="tab-export" role="tabpanel">
+      <div class="card border-top-0 rounded-top-0 mb-0" id="studioPackagePanel"
+           data-export-url="{% url 'platform-studio-export' %}" data-import-url="{% url 'platform-studio-import' %}"
+           data-package-diff-url="{{ studio_package_diff_url }}" data-package-validate-url="{{ studio_package_validate_url }}">
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-lg-6">
+              <h6 class="mb-2"><i class="ri-file-code-line me-1 text-primary"></i>Пакет конфигурации</h6>
+              <p class="small text-muted mb-3">JSON для переноса между контурами (dev → prod).</p>
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                <a href="{% url 'platform-studio-export' %}" class="btn btn-sm btn-primary" id="studioExportBtn">Скачать JSON</a>
+                <label class="btn btn-sm btn-outline-secondary mb-0">
+                  Импорт JSON
+                  <input type="file" id="studioImportFile" accept="application/json,.json" hidden />
+                </label>
+              </div>
+              {% if studio_revisions %}
+              <div class="d-flex flex-wrap align-items-end gap-2">
+                <div class="flex-grow-1" style="min-width: 10rem;">
+                  <label class="form-label small mb-1" for="studioPackageDiffRevision">Сравнить с ревизией</label>
+                  <select class="form-select form-select-sm" id="studioPackageDiffRevision">
+                    <option value="">— выберите —</option>
+                    {% for rev in studio_revisions %}
+                    <option value="{{ rev.pk }}">{{ rev.version_label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="studioPackageDiffBtn">Сравнить</button>
+              </div>
+              {% endif %}
+              <div id="studioPackageDiffResult" class="small text-muted mt-2"></div>
+              <div id="studioImportRiskPanel" class="mt-2 d-none"></div>
+              <div id="studioImportStatus" class="small text-muted mt-2"></div>
+            </div>
+            <div class="col-lg-6">
+              <h6 class="mb-2"><i class="ri-shield-check-line me-1 text-secondary"></i>Compliance</h6>
+              <p class="small text-muted mb-3">ZIP: конфигурация, журнал studio.*, реестр ревизий.</p>
+              <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                <a href="{{ studio_compliance_export_url }}" class="btn btn-sm btn-outline-primary" id="studioComplianceExportBtn">Compliance ZIP</a>
+                {% if studio_revision_tag_list %}
+                <div>
+                  <label class="form-label small mb-1" for="studioComplianceTagFilter">Фильтр ревизий</label>
+                  <select class="form-select form-select-sm" id="studioComplianceTagFilter">
+                    <option value="">Все</option>
+                    {% for tag in studio_revision_tag_list %}
+                    <option value="{{ tag }}">{{ tag }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                {% endif %}
+              </div>
+              <div class="studio-hub-inline-form small p-3 rounded" id="studioComplianceSchedulePanel" data-compliance-schedule-url="{{ studio_compliance_schedule_url }}">
+                <div class="fw-medium mb-2">Авто-экспорт compliance</div>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <div class="form-check mb-0">
+                    <input type="checkbox" class="form-check-input" id="studioComplianceScheduleEnabled"{% if studio_compliance_export_schedule and studio_compliance_export_schedule.enabled %} checked{% endif %} />
+                    <label class="form-check-label" for="studioComplianceScheduleEnabled">Включить</label>
+                  </div>
+                  <span class="text-muted">каждые</span>
+                  <input type="number" class="form-control form-control-sm" id="studioComplianceScheduleInterval" value="{% if studio_compliance_export_schedule %}{{ studio_compliance_export_schedule.interval_days|default:30 }}{% else %}30{% endif %}" min="1" max="365" style="width: 4rem;" />
+                  <span class="text-muted">дн.</span>
+                  <input type="text" class="form-control form-control-sm" id="studioComplianceScheduleTag" value="{% if studio_compliance_export_schedule %}{{ studio_compliance_export_schedule.revision_tag|default:'' }}{% endif %}" placeholder="тег" style="width: 5rem;" />
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="studioComplianceScheduleSaveBtn">Сохранить</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% if studio_clone_targets %}
+      <div class="card mt-0 border-top" id="studioClonePanel" data-clone-url="{{ studio_clone_url }}">
+        <div class="card-body">
+          <h6 class="mb-2"><i class="ri-file-copy-line me-1"></i>Клонирование</h6>
+          <p class="small text-muted mb-3">Скопировать конфигурацию в другой контур, к которому у вас есть доступ.</p>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <select class="form-select form-select-sm" id="studioCloneTarget" style="min-width: 14rem; max-width: 20rem;">
+              {% for t in studio_clone_targets %}
+              <option value="{{ t.code }}">{{ t.name }} ({{ t.code }})</option>
+              {% endfor %}
+            </select>
+            <label class="form-check-label small mb-0">
+              <input type="checkbox" class="form-check-input" id="studioCloneIncludeDraft" /> с черновиком
+            </label>
+            <button type="button" class="btn btn-sm btn-primary" id="studioCloneBtn">Клонировать</button>
+          </div>
+          <div id="studioCloneStatus" class="small text-muted mt-2"></div>
+          {% if studio_clone_log %}
+          <div class="mt-3 pt-3 border-top">
+            <div class="small text-muted mb-2">Журнал клонирования</div>
+            <ul class="list-unstyled small mb-0 studio-hub-clone-log">
+              {% for entry in studio_clone_log %}
+              <li class="py-1 border-bottom border-light">
+                <span class="text-muted">{{ entry.created_at|date:"d.m.Y H:i" }}</span>
+                — {{ entry.action }}
+                {% if entry.payload.source and entry.payload.target %}
+                <code>{{ entry.payload.source }}</code> → <code>{{ entry.payload.target }}</code>
+                {% endif %}
+                <span class="text-muted">({{ entry.user.username|default:"—" }})</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {# —— Шаблоны —— #}
+    <div class="tab-pane fade" id="tab-blueprints" role="tabpanel">
+      <div class="card border-top-0 rounded-top-0 mb-0" id="studioBlueprintsPanel"
+           data-blueprint-url="{{ studio_blueprint_url }}" data-blueprint-preview-url="{{ studio_blueprint_preview_url }}"
+           data-blueprint-dry-run-url="{% url 'platform-studio-blueprint-dry-run' %}"
+           data-blueprint-validate-url="{{ studio_blueprint_validate_url }}"
+           data-blueprint-compare-url="{{ studio_blueprint_compare_url }}"
+           data-blueprint-compare-live-url="{{ studio_blueprint_compare_live_url }}"
+           data-blueprint-package-compare-url="{{ studio_blueprint_package_compare_url }}"
+           data-blueprint-package-compare-live-url="{% url 'platform-studio-blueprint-package-compare-live' %}">
+        <div class="card-body">
+          <p class="small text-muted mb-3">Готовые раскладки меню, СЭД и дашбордов. Меню/СЭД — в черновик, раскладки ролей — сразу.</p>
+          {% if studio_revisions %}
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-3 p-2 rounded studio-hub-inline-form">
+            <label class="small text-muted mb-0" for="studioBlueprintCompareRev">Сравнение с ревизией:</label>
+            <select class="form-select form-select-sm" id="studioBlueprintCompareRev" style="max-width: 14rem;">
+              {% for rev in studio_revisions %}
+              <option value="{{ rev.pk }}">{{ rev.version_label }}{% if rev.pk in studio_pinned_revision_ids %} 📌{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          <div class="row g-3">
+            {% for bp in studio_blueprints_enriched %}
+            <div class="col-md-6 col-xl-4">
+              <div class="card h-100 studio-hub-blueprint">
+                <div class="card-body d-flex flex-column">
+                  <h6 class="mb-1">{{ bp.name }}</h6>
+                  <p class="small text-muted flex-grow-1">{{ bp.description }}</p>
+                  {% if bp.role_codes %}
+                  <div class="studioBpRoleMap small mb-2" data-blueprint-id="{{ bp.id }}">
+                    <div class="text-muted mb-1">Роли:</div>
+                    {% for rc in bp.role_codes %}
+                    <div class="d-flex align-items-center gap-1 mb-1">
+                      <code class="small">{{ rc }}</code>
+                      <span class="text-muted">→</span>
+                      <select class="form-select form-select-sm studioBpRoleSelect py-0" data-from="{{ rc }}">
+                        {% for role in studio_roles %}
+                        <option value="{{ role.code }}" {% if role.code == rc %}selected{% endif %}>{{ role.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                  <div class="d-flex flex-wrap gap-1 mt-auto pt-2">
+                    <button type="button" class="btn btn-sm btn-primary studioBlueprintBtn" data-blueprint-id="{{ bp.id }}">Применить</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary studioBlueprintPreviewBtn" data-blueprint-id="{{ bp.id }}">Просмотр</button>
+                    <div class="dropdown">
+                      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Ещё</button>
+                      <ul class="dropdown-menu dropdown-menu-end">
+                        <li><button type="button" class="dropdown-item studioBlueprintDryRunBtn" data-blueprint-id="{{ bp.id }}">Dry-run</button></li>
+                        <li><button type="button" class="dropdown-item studioBlueprintCompareLiveBtn" data-blueprint-id="{{ bp.id }}">vs текущая</button></li>
+                        <li><button type="button" class="dropdown-item studioBlueprintCompareBtn" data-blueprint-id="{{ bp.id }}">vs ревизия</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'platform-studio-blueprint-export' bp.id %}">Скачать JSON</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div id="studioBlueprintPreview" class="small border rounded p-3 mt-3 d-none bg-body-secondary bg-opacity-25"></div>
+          <div id="studioBlueprintStatus" class="small text-muted mt-2"></div>
+          <div class="mt-3 pt-3 border-top">
+            <label class="btn btn-sm btn-outline-secondary mb-0">
+              <i class="ri-upload-2-line me-1"></i>Импорт шаблона JSON
+              <input type="file" id="studioBlueprintImportFile" accept="application/json,.json" hidden />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# —— Журнал —— #}
+    <div class="tab-pane fade" id="tab-journal" role="tabpanel">
+      <div class="card border-top-0 rounded-top-0 mb-0" id="studioAuditPanel">
+        <div class="card-header py-3">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h6 class="mb-0">Журнал Студии</h6>
+            <form method="get" class="d-flex flex-wrap align-items-center gap-2 mb-0">
+              {% if studio_revision_tag_filter %}<input type="hidden" name="rev_tag" value="{{ studio_revision_tag_filter }}" />{% endif %}
+              <select name="audit_action" class="form-select form-select-sm" style="min-width: 12rem;" onchange="this.form.submit()">
+                {% for code, label in studio_audit_actions %}
+                <option value="{{ code }}"{% if studio_audit_filter == code %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <label class="form-check-label small mb-0">
+                <input type="checkbox" class="form-check-input" name="forced" value="1"{% if studio_audit_forced_only %} checked{% endif %} onchange="this.form.submit()" /> forced
+              </label>
+              {% if studio_revision_tag_list %}
+              <select name="audit_rev_tag" class="form-select form-select-sm" style="max-width: 8rem;" onchange="this.form.submit()">
+                <option value="">Все теги</option>
+                {% for tag in studio_revision_tag_list %}
+                <option value="{{ tag }}"{% if studio_audit_rev_tag == tag %} selected{% endif %}>{{ tag }}</option>
+                {% endfor %}
+              </select>
+              {% endif %}
+              {% if studio_audit_filter or studio_audit_forced_only or studio_audit_rev_tag %}
+              <a href="{% url 'platform-studio' %}" class="btn btn-sm btn-outline-secondary">Сброс</a>
+              {% endif %}
+              <a href="{{ studio_audit_export_filtered_url }}" class="btn btn-sm btn-primary">CSV</a>
+              <a href="{{ studio_audit_url }}" class="btn btn-sm btn-outline-secondary">Полный журнал</a>
+            </form>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light"><tr><th>Когда</th><th>Пользователь</th><th>Действие</th><th>Детали</th></tr></thead>
+            <tbody>
+              {% for entry in studio_audit_log %}
+              <tr>
+                <td class="text-nowrap small">{{ entry.created_at|date:"d.m.Y H:i" }}</td>
+                <td class="small">{{ entry.user.username|default:"—" }}</td>
+                <td><code class="small">{{ entry.action }}</code></td>
+                <td class="small text-muted">{% if entry.payload.version %}v{{ entry.payload.version }}{% elif entry.payload.from %}← {{ entry.payload.from }}{% else %}—{% endif %}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-muted small text-center py-4">Записей нет{% if studio_audit_filter %} для фильтра{% endif %}.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {% if studio_forced_log %}
+      <div class="card border-top mt-0" id="studioForcedLogPanel">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">Принудительные операции</h6>
+          <a href="{{ studio_forced_export_url }}" class="btn btn-sm btn-outline-primary">CSV</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light"><tr><th>Когда</th><th>Кто</th><th>Операция</th><th>Детали</th></tr></thead>
+            <tbody>
+              {% for entry in studio_forced_log %}
+              <tr>
+                <td class="text-nowrap small">{{ entry.created_at|date:"d.m.Y H:i" }}</td>
+                <td class="small">{{ entry.user.username|default:"—" }}</td>
+                <td><code class="small">{{ entry.action }}</code></td>
+                <td class="small text-muted">
+                  {% if entry.action == "studio.restore" %}
+                  ← {{ entry.payload.from|default:"?" }}{% if entry.payload.mode %} ({{ entry.payload.mode }}){% endif %}
+                  {% elif entry.payload.stats %}
+                  импорт{% if entry.payload.stats.forms %} · форм {{ entry.payload.stats.forms }}{% endif %}
+                  {% else %}—{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if studio_activity_digest %}
+      <div class="card border-top mt-0" id="studioActivityPanel" data-activity-schedule-url="{{ studio_activity_schedule_url }}">
+        <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <h6 class="mb-0">Активность за {{ studio_activity_digest.days }} дн.</h6>
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="badge bg-label-secondary">{{ studio_activity_digest.total }} событий</span>
+            {% if studio_activity_digest.forced_count %}<span class="badge bg-label-warning">{{ studio_activity_digest.forced_count }} forced</span>{% endif %}
+            <a href="{{ studio_activity_export_url }}" class="btn btn-sm btn-outline-primary">CSV</a>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="studioActivityNotifyBtn" data-notify-url="{{ studio_activity_notify_url }}">Уведомить</button>
+          </div>
+        </div>
+        <div class="card-body py-3 border-bottom studio-hub-inline-form">
+          <div class="d-flex flex-wrap align-items-center gap-2 small">
+            <div class="form-check mb-0">
+              <input type="checkbox" class="form-check-input" id="studioActivityScheduleEnabled"{% if studio_activity_digest_schedule and studio_activity_digest_schedule.enabled %} checked{% endif %} />
+              <label class="form-check-label" for="studioActivityScheduleEnabled">Авто-рассылка каждые</label>
+            </div>
+            <input type="number" class="form-control form-control-sm" id="studioActivityScheduleInterval" value="{% if studio_activity_digest_schedule %}{{ studio_activity_digest_schedule.interval_days|default:7 }}{% else %}7{% endif %}" min="1" max="90" style="width: 4rem;" />
+            <span class="text-muted">дн.</span>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="studioActivityScheduleSaveBtn">Сохранить</button>
+            {% if studio_activity_digest_schedule and studio_activity_digest_schedule.last_sent_at %}
+            <span class="text-muted ms-2">последняя: {{ studio_activity_digest_schedule.last_sent_at|slice:":16" }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <ul class="list-group list-group-flush small">
+          {% for entry in studio_activity_digest.entries %}
+          <li class="list-group-item d-flex justify-content-between gap-2 py-2">
+            <span><code>{{ entry.action }}</code>{% if entry.forced %} <span class="badge bg-label-warning">forced</span>{% endif %}{% if entry.detail %} · {{ entry.detail }}{% endif %}</span>
+            <span class="text-muted text-nowrap">{{ entry.at }} · {{ entry.user|default:"—" }}</span>
+          </li>
+          {% empty %}
+          <li class="list-group-item text-muted text-center py-4">Нет событий за период.</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
 </div>
+{% endblock %}
+
+{% block studio_js %}
+<script src="{% static 'js/delayu-studio-admin.js' %}"></script>
 {% endblock %}

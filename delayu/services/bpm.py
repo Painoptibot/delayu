@@ -62,6 +62,7 @@ def start_process(template: BPMTemplate, case: CaseFile, initiator):
         step_id=first.get("id", "step1"),
         step_name=first.get("name", "Согласование"),
         assignee=assignee,
+        assigned_at=timezone.now(),
     )
     from delayu.services.notify_dispatch import notify_bpm_task_assigned
 
@@ -109,6 +110,7 @@ def advance_process(task: BPMTask, approved: bool, comment: str = ""):
         step_id=nxt.get("id", ""),
         step_name=nxt.get("name", "Шаг"),
         assignee=assignee,
+        assigned_at=timezone.now(),
     )
     from delayu.services.notify_dispatch import notify_bpm_task_assigned
 

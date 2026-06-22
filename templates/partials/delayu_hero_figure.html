@@ -1,0 +1,26 @@
+{% load static %}
+{% if variant == "login" %}
+<div class="delayu-hero-figure delayu-hero-figure--login delayu-hero-figure--{{ size|default:"lg" }}{% if wow %} delayu-hero-figure--wow{% endif %} w-100" aria-hidden="true">
+  <img
+    src="{% static 'img/illustrations/auth-login-illustration-' %}{{ COOKIES.theme|default:theme }}.png"
+    class="delayu-hero-figure__img delayu-hero-figure__img--main auth-cover-illustration w-100"
+    alt=""
+    data-app-light-img="illustrations/auth-login-illustration-light.png"
+    data-app-dark-img="illustrations/auth-login-illustration-dark.png" />
+  <img
+    src="{% static 'img/illustrations/auth-basic-login-mask-' %}{{ COOKIES.theme|default:theme }}.png"
+    class="delayu-hero-figure__mask authentication-image d-none d-lg-block"
+    alt=""
+    data-app-light-img="illustrations/auth-basic-login-mask-light.png"
+    data-app-dark-img="illustrations/auth-basic-login-mask-dark.png" />
+</div>
+{% else %}
+<figure class="delayu-hero-figure delayu-hero-figure--home delayu-hero-figure--{{ size|default:"md" }}{% if wow %} delayu-hero-figure--wow{% endif %}" aria-hidden="true">
+  <img
+    src="{% static 'img/illustrations/illustration-john-' %}{{ COOKIES.theme|default:theme }}.png"
+    class="delayu-hero-figure__img scaleX-n1-rtl"
+    alt=""
+    data-app-light-img="illustrations/illustration-john-light.png"
+    data-app-dark-img="illustrations/illustration-john-dark.png" />
+</figure>
+{% endif %}

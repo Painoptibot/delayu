@@ -1,0 +1,53 @@
+{% load static %}
+
+<div class="delayu-login-scene" data-delayu-login-scene aria-hidden="true">
+  <canvas class="delayu-login-scene__network" data-delayu-login-network aria-hidden="true"></canvas>
+
+  <div class="delayu-login-scene__mesh" aria-hidden="true"></div>
+  <div class="delayu-login-scene__vignette" aria-hidden="true"></div>
+
+  <div class="delayu-login-scene__copy">
+    <p class="delayu-login-scene__eyebrow">
+      <span class="delayu-login-scene__eyebrow-dot"></span>
+      Корпоративная платформа
+    </p>
+    <h2 class="delayu-login-scene__title">Дела под контролем</h2>
+    <p class="delayu-login-scene__lead">Документооборот · BPM · Аналитика · ИИ · СМЭВ</p>
+  </div>
+
+  <div class="delayu-login-scene__badges" aria-hidden="true">
+    {% for badge in login_scene_badges %}
+    <div
+      class="delayu-login-scene__badge"
+      data-depth="{{ badge.depth }}"
+      style="--bx: {{ badge.x }}%; --by: {{ badge.y }}%; --bdelay: {{ badge.delay }}s; --bfloat: {{ badge.float }}s;">
+      <span class="delayu-login-scene__badge-inner">
+        <i class="icon-base {{ badge.icon }}"></i>
+        <span>{{ badge.label }}</span>
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="delayu-login-scene__stage" data-delayu-login-stage>
+    <div class="delayu-login-scene__semicircle-wrap" data-depth="0.08">
+      <div class="delayu-login-scene__semicircle"></div>
+    </div>
+
+    <div class="delayu-login-scene__glow" data-depth="0.18" aria-hidden="true"></div>
+
+    <div class="delayu-login-scene__layer delayu-login-scene__layer--hero" data-depth="0.55">
+      <div class="delayu-login-scene__inner delayu-login-scene__inner--hero">
+        <img
+          src="{% static 'img/illustrations/login-layers/login-hero.png' %}"
+          alt=""
+          draggable="false"
+          class="delayu-login-scene__hero" />
+      </div>
+    </div>
+  </div>
+
+  <div class="delayu-login-scene__ring delayu-login-scene__ring--1" aria-hidden="true"></div>
+  <div class="delayu-login-scene__ring delayu-login-scene__ring--2" aria-hidden="true"></div>
+  <div class="delayu-login-scene__ring delayu-login-scene__ring--3" aria-hidden="true"></div>
+</div>

@@ -1,0 +1,42 @@
+{% extends "platform/studio/_base.html" %}
+{% block studio_content %}
+<div class="card" data-studio="today" data-save-url="{% url 'platform-studio-save' 'today' %}">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h5 class="mb-0">Конструктор «Мне на сегодня»</h5>
+    {% if roles %}
+    <form method="get" class="d-flex align-items-center gap-2">
+      <label class="small text-muted mb-0" for="studioTodayRole">Роль</label>
+      <select id="studioTodayRole" name="role" class="form-select form-select-sm" onchange="this.form.submit()">
+        {% for r in roles %}
+        <option value="{{ r.pk }}"{% if active_role.pk == r.pk %} selected{% endif %}>{{ r.name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <p class="small text-muted">Шаблон виджетов для роли. Пользователь может переопределить в «Мне на сегодня».</p>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <p class="small text-muted">Каталог</p>
+        <div id="studioTodayPalette" class="studio-palette">
+          {% for w in today_catalog %}
+          <div class="studio-palette-item" draggable="true" data-widget-id="{{ w.id }}" data-widget-label="{{ w.label }}" data-widget-icon="{{ w.icon }}">
+            <i class="ri {{ w.icon }} me-2"></i>{{ w.label }}
+          </div>
+          {% empty %}
+          <p class="small text-muted mb-0">Нет виджетов в каталоге.</p>
+          {% endfor %}
+        </div>
+        {{ today_catalog|json_script:"studioTodayCatalog" }}
+      </div>
+      <div class="col-md-8">
+        <div id="studioTodayCanvas" class="studio-palette border rounded p-3 min-h-120"></div>
+        {{ widgets|json_script:"studioTodayJson" }}
+        <input type="hidden" id="studioTodayRoleId" value="{{ active_role.pk|default:'' }}" />
+        <div class="text-end mt-3"><button type="button" class="btn btn-primary" id="studioTodaySave">Сохранить для роли</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends layout_path %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}ДелаЮ — платформа управления делами{% endblock %}
+
+{% block page_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/delayu-landing.css' %}" />
+{% endblock page_css %}
+
+{% block page_js %}
+{{ block.super }}
+<script src="{% static 'js/delayu-landing.js' %}"></script>
+{% endblock page_js %}
+
+{% block content %}
+<div class="delayu-landing">
+  <header class="delayu-landing__nav">
+    <div class="container delayu-landing__nav-inner">
+      <a href="{% url 'platform-landing' %}" class="delayu-landing__brand">
+        <span class="app-brand-logo demo">{% include 'partials/logo.html' %}</span>
+        <span>{% get_theme_variables 'template_name' %}</span>
+      </a>
+      <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'platform-welcome' %}" class="btn btn-sm btn-outline-secondary d-none d-sm-inline-flex">Презентация</a>
+        <a href="{% url 'login' %}" class="btn btn-sm btn-primary">Войти</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="delayu-landing__hero">
+    <div class="delayu-landing__mesh" aria-hidden="true"></div>
+    <div class="delayu-landing__grid" aria-hidden="true"></div>
+    <div class="delayu-landing__orb delayu-landing__orb--1" aria-hidden="true"></div>
+    <div class="delayu-landing__orb delayu-landing__orb--2" aria-hidden="true"></div>
+    <div class="delayu-landing__orb delayu-landing__orb--3" aria-hidden="true"></div>
+
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6 delayu-landing__hero-content">
+          <div class="delayu-landing__eyebrow">
+            <span class="delayu-landing__eyebrow-dot"></span>
+            Корпоративная платформа
+          </div>
+          <h1 class="delayu-landing__title">
+            Дела под контролем — <span>ДелаЮ</span>
+          </h1>
+          <p class="delayu-landing__lead">
+            Единая среда для документооборота, процессов, аналитики и отраслевых подсистем.
+            Модульная архитектура, интеграции с госсервисами и ИИ-инструменты — в одном контуре.
+          </p>
+          <div class="delayu-landing__cta">
+            <a href="{% url 'login' %}" class="btn btn-primary btn-lg delayu-landing__btn-glow">Начать работу</a>
+            <a href="{% url 'platform-welcome' %}" class="btn btn-outline-primary btn-lg">Интерактивный обзор</a>
+          </div>
+        </div>
+        <div class="col-lg-6 delayu-landing__hero-visual">
+          <div class="delayu-landing__dashboard-mock">
+            <div class="delayu-landing__mock-bar">
+              <span class="delayu-landing__mock-dot"></span>
+              <span class="delayu-landing__mock-dot"></span>
+              <span class="delayu-landing__mock-dot"></span>
+            </div>
+            <div class="delayu-landing__mock-grid">
+              <div class="delayu-landing__mock-card">
+                <div class="delayu-landing__mock-line delayu-landing__mock-line--short"></div>
+                <div class="delayu-landing__mock-line"></div>
+              </div>
+              <div class="delayu-landing__mock-card">
+                <div class="delayu-landing__mock-line delayu-landing__mock-line--short"></div>
+                <div class="delayu-landing__mock-line"></div>
+              </div>
+              <div class="delayu-landing__mock-card">
+                <div class="delayu-landing__mock-line delayu-landing__mock-line--short"></div>
+                <div class="delayu-landing__mock-line"></div>
+              </div>
+              <div class="delayu-landing__mock-card delayu-landing__mock-card--wide">
+                <div class="delayu-landing__mock-line delayu-landing__mock-line--short"></div>
+                <div class="delayu-landing__mock-chart"></div>
+              </div>
+            </div>
+            <div class="delayu-landing__float-badge delayu-landing__float-badge--1">
+              <i class="ri-checkbox-circle-line text-success me-1"></i> SLA 98%
+            </div>
+            <div class="delayu-landing__float-badge delayu-landing__float-badge--2">
+              <i class="ri-robot-line text-primary me-1"></i> ИИ-ассистент
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="delayu-landing__stats">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-6 col-lg-3">
+          <div class="delayu-landing__stat">
+            <div class="delayu-landing__stat-value"><span data-count="70">0</span>+</div>
+            <div class="delayu-landing__stat-label">модулей платформы</div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="delayu-landing__stat">
+            <div class="delayu-landing__stat-value"><span data-count="12">0</span></div>
+            <div class="delayu-landing__stat-label">блоков меню</div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="delayu-landing__stat">
+            <div class="delayu-landing__stat-value"><span data-count="5">0</span></div>
+            <div class="delayu-landing__stat-label">уровней аналитики</div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="delayu-landing__stat">
+            <div class="delayu-landing__stat-value">24/7</div>
+            <div class="delayu-landing__stat-label">эксплуатация контура</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="delayu-landing__section">
+    <div class="container">
+      <h2 class="delayu-landing__section-title">Всё, что нужно организации</h2>
+      <p class="delayu-landing__section-lead">
+        Платформа собирает ежедневную работу, документы, процессы и аналитику в едином интерфейсе —
+        с чёткой иерархией подсистем и прав доступа.
+      </p>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-4">
+          <article class="delayu-landing__pillar">
+            <div class="delayu-landing__pillar-icon"><i class="ri-mail-line"></i></div>
+            <h3 class="h5 mb-2">Документооборот</h3>
+            <p class="text-body-secondary mb-0 small">Корреспонденция, журналы, печатные формы, ЭП и Госключ в одном контуре.</p>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <article class="delayu-landing__pillar">
+            <div class="delayu-landing__pillar-icon"><i class="ri-git-branch-line"></i></div>
+            <h3 class="h5 mb-2">BPM и согласования</h3>
+            <p class="text-body-secondary mb-0 small">Маршруты, SLA, регламенты сроков и конструктор процессов без кода.</p>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <article class="delayu-landing__pillar">
+            <div class="delayu-landing__pillar-icon"><i class="ri-bar-chart-line"></i></div>
+            <h3 class="h5 mb-2">Аналитика</h3>
+            <p class="text-body-secondary mb-0 small">Дашборды, отчёты, просрочки и регламентная отчётность в реальном времени.</p>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <article class="delayu-landing__pillar">
+            <div class="delayu-landing__pillar-icon"><i class="ri-robot-line"></i></div>
+            <h3 class="h5 mb-2">ИИ-слой</h3>
+            <p class="text-body-secondary mb-0 small">Ассистент, семантический поиск, база знаний и политики применения ИИ.</p>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <article class="delayu-landing__pillar">
+            <div class="delayu-landing__pillar-icon"><i class="ri-shield-keyhole-line"></i></div>
+            <h3 class="h5 mb-2">Безопасность</h3>
+            <p class="text-body-secondary mb-0 small">SSO, ЕСИА, 2FA, роли и разграничение по подсистемам и модулям.</p>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <article class="delayu-landing__pillar">
+            <div class="delayu-landing__pillar-icon"><i class="ri-plug-line"></i></div>
+            <h3 class="h5 mb-2">Интеграции</h3>
+            <p class="text-body-secondary mb-0 small">ETL, Data Hub, геопортал, мессенджеры и портал гражданина.</p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="delayu-landing__section pt-0">
+    <div class="container">
+      <div class="delayu-landing__uzhv">
+        <div class="delayu-landing__uzhv-glow" aria-hidden="true"></div>
+        <div class="row align-items-center g-4">
+          <div class="col-lg-7 delayu-landing__uzhv-content">
+            <span class="delayu-landing__tag">Отраслевая подсистема</span>
+            <h2 class="h3 mb-3">АИС УЖВ</h2>
+            <p class="mb-0 opacity-75">
+              Специализированный контур для учёта жилищного фонда: реестры, обращения граждан,
+              инспекции, начисления и отчётность — поверх общей платформы «ДелаЮ».
+            </p>
+            <div class="delayu-landing__integrations">
+              <span class="delayu-landing__integration">Реестр МКД</span>
+              <span class="delayu-landing__integration">Обращения</span>
+              <span class="delayu-landing__integration">Начисления</span>
+              <span class="delayu-landing__integration">ГИС ЖКХ</span>
+            </div>
+          </div>
+          <div class="col-lg-5 text-lg-end">
+            <a href="{% url 'login' %}" class="btn btn-light btn-lg">Демо: uzhv_admin</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="delayu-landing__cta-band">
+      <h2 class="h4 mb-2">Готовы увидеть систему в действии?</h2>
+      <p class="text-body-secondary mb-4">Войдите в демо-контур или откройте интерактивную презентацию.</p>
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Войти в систему</a>
+        <a href="{% url 'platform-welcome' %}" class="btn btn-outline-primary btn-lg">Презентация</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="delayu-landing__footer">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span>© {% now "Y" %} {% get_theme_variables 'template_name' %}</span>
+      <a href="#" class="text-muted" data-bs-toggle="modal" data-bs-target="#tzModal">Техническое описание</a>
+    </div>
+  </footer>
+</div>
+{% endblock content %}

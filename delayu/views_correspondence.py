@@ -597,7 +597,9 @@ class SignatureCenterView(ModulePermissionMixin, TemplateView):
         ctx["signature_requests"] = SignatureRequest.objects.filter(
             document__subsystem=m.subsystem
         ).select_related("document", "requester")[:30]
-        ctx["can_sign"] = user_can(self.request.user, "M30", "change") or user_can(
+        ctx["can_sign"] = user_can(self.request.user, "M30", "sign") or user_can(
+            self.request.user, "M05", "sign"
+        ) or user_can(self.request.user, "M30", "change") or user_can(
             self.request.user, "M05", "change"
         )
         ctx["nav_active"] = "signatures"
@@ -606,7 +608,9 @@ class SignatureCenterView(ModulePermissionMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         m = _ctx_membership(self)
         if not (
-            user_can(request.user, "M30", "change")
+            user_can(request.user, "M30", "sign")
+            or user_can(request.user, "M05", "sign")
+            or user_can(request.user, "M30", "change")
             or user_can(request.user, "M05", "change")
         ):
             messages.error(request, "Нет прав на подписание.")

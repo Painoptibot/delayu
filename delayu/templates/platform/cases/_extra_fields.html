@@ -1,17 +1,42 @@
 {% if form_schema %}
-<div class="card mb-4 border-primary border-opacity-25">
+<div class="card mb-4 border-primary border-opacity-25" id="delayuExtraFieldsCard">
   <div class="card-header py-2">
     <span class="small text-primary"><i class="ri-layout-4-line me-1"></i>Доп. поля (M74 · {{ form_schema.name|default:form_schema.code }})</span>
   </div>
   <div class="card-body">
-    {% if extra_form %}
-    {% for field in extra_form %}
-    <div class="mb-3">
-      <label class="form-label">{{ field.label }}</label>
-      {{ field }}
-      {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+    {% if extra_fields_by_section %}
+    {% if extra_fields_by_section|length > 1 %}
+    <ul class="nav nav-tabs nav-tabs-sm mb-3" role="tablist">
+      {% for sec in extra_fields_by_section %}
+      <li class="nav-item" role="presentation">
+        <button class="nav-link {% if forloop.first %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#extraSec{{ forloop.counter }}" type="button">{{ sec.title }}</button>
+      </li>
+      {% endfor %}
+    </ul>
+    <div class="tab-content">
+      {% for sec in extra_fields_by_section %}
+      <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="extraSec{{ forloop.counter }}">
+        {% for row in sec.rows %}
+        <div class="mb-3 delayu-schema-field" data-field-key="{{ row.spec.key }}">
+          <label class="form-label">{{ row.field.label }}</label>
+          {{ row.field }}
+          {% if row.field.errors %}<div class="text-danger small">{{ row.field.errors }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
     </div>
+    {% else %}
+    {% for sec in extra_fields_by_section %}
+      {% for row in sec.rows %}
+      <div class="mb-3 delayu-schema-field" data-field-key="{{ row.spec.key }}">
+        <label class="form-label">{{ row.field.label }}</label>
+        {{ row.field }}
+        {% if row.field.errors %}<div class="text-danger small">{{ row.field.errors }}</div>{% endif %}
+      </div>
+      {% endfor %}
     {% endfor %}
+    {% endif %}
     {% elif extra_display %}
     <dl class="row mb-0 small">
       {% for label, value in extra_display %}
@@ -21,4 +46,61 @@
     {% endif %}
   </div>
 </div>
+{% if extra_fields_by_section %}
+<script>
+(function () {
+  var card = document.getElementById('delayuExtraFieldsCard');
+  if (!card) return;
+  function fieldValue(key) {
+    var el = document.querySelector('[name="extra_' + key + '"]');
+    return el ? el.value : '';
+  }
+  function setFieldValue(key, val) {
+    var el = document.querySelector('[name="extra_' + key + '"]');
+    if (el) {
+      el.value = val == null ? '' : val;
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+  function applyVisibility() {
+    card.querySelectorAll('.delayu-schema-field').forEach(function (wrap) {
+      var input = wrap.querySelector('input, select, textarea');
+      if (!input) return;
+      var vf = input.getAttribute('data-visible-field');
+      if (!vf) return;
+      var show = true;
+      if (input.getAttribute('data-visible-filled') === '1') {
+        show = !!String(fieldValue(vf)).trim();
+      } else if (input.hasAttribute('data-visible-equals')) {
+        show = String(fieldValue(vf)) === input.getAttribute('data-visible-equals');
+      }
+      wrap.style.display = show ? '' : 'none';
+      if (!show) input.required = false;
+    });
+  }
+  card.addEventListener('input', applyVisibility);
+  card.addEventListener('change', function (e) {
+    applyVisibility();
+    var t = e.target;
+    if (!t || !t.getAttribute || !t.getAttribute('data-fill-map')) return;
+    var map = {};
+    try { map = JSON.parse(t.getAttribute('data-fill-map') || '{}'); } catch (err) { return; }
+    var reg = t.getAttribute('data-lookup-registry');
+    var rid = t.value;
+    if (!reg || !rid) return;
+    fetch('/platform/api/registry-lookup/?registry=' + encodeURIComponent(reg) + '&id=' + encodeURIComponent(rid), {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res.ok || !res.record) return;
+        Object.keys(map).forEach(function (src) {
+          setFieldValue(map[src], res.record[src] || '');
+        });
+      });
+  });
+  applyVisibility();
+})();
+</script>
+{% endif %}
 {% endif %}

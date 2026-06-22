@@ -1,0 +1,66 @@
+{% extends "platform/studio/_base.html" %}
+{% load static %}
+{% block studio_content %}
+<div class="card mb-4" id="studioSetupWizard" data-setup-url="{{ studio_setup_api_url }}">
+  <div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+      <div>
+        <h4 class="mb-1">Первичная настройка подсистемы</h4>
+        <p class="text-muted mb-0">Пошаговый мастер: шаблон → роли → пользователи → публикация → СМЭВ.</p>
+      </div>
+      <div class="text-end">
+        <div class="small text-muted mb-1">Готовность {{ studio_setup.percent }}%</div>
+        <div class="progress" style="width: 12rem; height: 8px;">
+          <div class="progress-bar" role="progressbar" style="width: {{ studio_setup.percent }}%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="list-group mb-4">
+      {% for step in studio_setup.steps %}
+      <div class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 {% if step.done %}list-group-item-success{% endif %}">
+        <div class="d-flex align-items-start gap-2">
+          <span class="badge rounded-pill {% if step.done %}bg-success{% else %}bg-label-secondary{% endif %}">{{ step.index }}</span>
+          <div>
+            <div class="fw-medium">{{ step.title }}</div>
+            <div class="small text-muted">{{ step.hint }}</div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          {% if step.action == "blueprint" and not step.done %}
+          <select class="form-select form-select-sm w-auto studioSetupBlueprintSelect">
+            {% for bp in studio_blueprints %}
+            <option value="{{ bp.id }}">{{ bp.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="button" class="btn btn-sm btn-primary studioSetupActionBtn" data-action="blueprint">Применить шаблон</button>
+          {% elif step.action == "publish" and not step.done %}
+          <button type="button" class="btn btn-sm btn-primary studioSetupActionBtn" data-action="publish">Опубликовать черновик</button>
+          {% elif step.action == "smev_stub" and not step.done %}
+          <button type="button" class="btn btn-sm btn-outline-primary studioSetupActionBtn" data-action="smev_stub">Создать СМЭВ stub</button>
+          {% elif step.url and not step.done %}
+          <a href="{{ step.url }}" class="btn btn-sm btn-outline-secondary">Перейти</a>
+          {% elif step.done %}
+          <span class="badge bg-label-success"><i class="ri-check-line"></i> Готово</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+      <div id="studioSetupStatus" class="small text-muted"></div>
+      <div class="d-flex gap-2">
+        {% if studio_setup.complete %}
+        <a href="{% url 'platform-studio' %}" class="btn btn-primary">К Студии</a>
+        {% endif %}
+        <button type="button" class="btn btn-outline-secondary" id="studioSetupDismiss">Скрыть мастер</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block studio_js %}
+<script src="{% static 'js/delayu-studio-admin.js' %}"></script>
+{% endblock %}

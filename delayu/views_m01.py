@@ -283,6 +283,12 @@ class AuditLogAdminView(ModulePermissionMixin, ListView):
         from delayu.services.audit import list_audit_snapshots
 
         ctx["audit_snapshots"] = list_audit_snapshots(subsystem_code=m.subsystem.code, limit=8)
+        from delayu.forms_exploitation import SiemExportConfigForm
+        from delayu.services.siem_export import get_or_create_siem_config
+
+        siem = get_or_create_siem_config(m.subsystem)
+        ctx["siem_config"] = siem
+        ctx["siem_form"] = SiemExportConfigForm(instance=siem)
         return ctx
 
 
@@ -312,6 +318,49 @@ class AuditLogExportView(CriticalReauthMixin, ModulePermissionMixin, View):
         mask = request.GET.get("mask_pii") == "1"
         action = request.GET.get("action", "").strip()
         return export_audit_csv(m.subsystem, action=action, mask_pii=mask)
+
+
+class SiemExportConfigView(CriticalReauthMixin, ModulePermissionMixin, View):
+    module_code = "M01"
+
+    def post(self, request):
+        m = _ctx_membership(self)
+        from delayu.forms_exploitation import SiemExportConfigForm
+        from delayu.services.siem_export import get_or_create_siem_config
+
+        cfg = get_or_create_siem_config(m.subsystem)
+        form = SiemExportConfigForm(request.POST, instance=cfg)
+        if form.is_valid():
+            form.save()
+            audit.log_action(
+                request.user,
+                m.subsystem,
+                "siem.config.update",
+                "SiemExportConfig",
+                cfg.pk,
+                request=request,
+            )
+            messages.success(request, "Настройки экспорта в SIEM сохранены.")
+        else:
+            messages.error(request, "Проверьте URL webhook SIEM.")
+        return redirect("platform-audit")
+
+
+class SiemExportPushView(CriticalReauthMixin, ModulePermissionMixin, View):
+    module_code = "M01"
+
+    def post(self, request):
+        m = _ctx_membership(self)
+        from delayu.services.siem_export import push_siem_events
+
+        result = push_siem_events(m.subsystem)
+        if result.get("skipped"):
+            messages.warning(request, "Экспорт в SIEM отключён или не настроен webhook.")
+        elif result.get("ok"):
+            messages.success(request, f"Отправлено событий: {result.get('pushed', 0)}.")
+        else:
+            messages.error(request, f"Ошибка SIEM: {result.get('error', 'неизвестно')}")
+        return redirect("platform-audit")
 
 
 class AuditLogModalView(ModulePermissionMixin, View):

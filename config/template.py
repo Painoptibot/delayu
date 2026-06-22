@@ -32,8 +32,7 @@ TEMPLATE_CONFIG = {
         'layoutNavbarOptions', # Enable/Disable navbar options in customizer
         'headerType', # Enable/Disable header type selection in customizer
         'contentLayout', # Enable/Disable content layout options in customizer
-        'rtl'
-    ],  # To show/hide customizer options
+    ],  # To show/hide customizer options (rtl / направление текста отключено)
 }
 
 

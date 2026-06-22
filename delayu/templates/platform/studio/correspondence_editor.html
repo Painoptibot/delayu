@@ -1,8 +1,14 @@
 {% extends "platform/studio/_base.html" %}
 {% block studio_content %}
-<div class="card" data-studio="correspondence" data-save-url="{% url 'platform-studio-save' 'correspondence' %}">
-  <div class="card-header"><h5 class="mb-0">Маршрут корреспонденции (СЭД)</h5></div>
+<div class="card" data-studio="correspondence" data-save-url="{% url 'platform-studio-save' 'correspondence' %}" data-diff-url="{{ studio_corr_diff_url }}">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Маршрут корреспонденции (СЭД)</h5>
+    {% if corr_is_draft %}<span class="badge bg-label-warning">Черновик</span>{% endif %}
+  </div>
   <div class="card-body">
+    {% if corr_is_draft %}
+    <p class="small text-warning">Изменения в черновике — опубликуйте в <a href="{% url 'platform-studio' %}">обзоре Студии</a>.</p>
+    {% endif %}
     <p class="text-muted small">Перетащите этапы в нужном порядке. Укажите SLA (дней) для каждого этапа.</p>
     <div class="row g-3">
       <div class="col-md-4">
@@ -17,7 +23,19 @@
       <div class="col-md-8">
         <ol id="studioCorrCanvas" class="studio-corr-steps list-group list-group-numbered"></ol>
         <script type="application/json" id="studioCorrJson">{{ workflow_json|safe }}</script>
-        <div class="text-end mt-3"><button type="button" class="btn btn-primary" id="studioCorrSave">Сохранить маршрут</button></div>
+        <div class="d-flex flex-wrap gap-2 justify-content-end align-items-center mt-3">
+          {% if studio_corr_revisions %}
+          <select class="form-select form-select-sm w-auto" id="studioCorrDiffRevision">
+            <option value="">Последняя публикация</option>
+            {% for rev in studio_corr_revisions %}
+            <option value="{{ rev.pk }}">{{ rev.version_label }} — {{ rev.created_at|date:"d.m.Y H:i" }}</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+          <button type="button" class="btn btn-outline-secondary" id="studioCorrDiff">Сравнить с ревизией</button>
+          <button type="button" class="btn btn-primary" id="studioCorrSave">Сохранить маршрут</button>
+        </div>
+        <div id="studioCorrDiffResult" class="small text-muted mt-2"></div>
       </div>
     </div>
   </div>

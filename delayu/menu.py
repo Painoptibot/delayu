@@ -211,9 +211,11 @@ def build_menu_for_membership(membership: SubsystemMembership) -> list[dict]:
     if layout:
         custom = studio.menu_layout_to_menu_json(layout, membership)
         if custom:
+            from delayu.services.menu_badges import apply_menu_badges
             from delayu.services.scope import filter_menu_for_user
 
-            return filter_menu_for_user(custom, membership.user)
+            filtered = filter_menu_for_user(custom, membership.user)
+            return apply_menu_badges(filtered, membership.user, membership.subsystem)
     enabled = _enabled_codes(membership)
     allowed = _role_view_codes(membership)
     is_admin = membership.user.is_superuser
@@ -246,9 +248,25 @@ def build_menu_for_membership(membership: SubsystemMembership) -> list[dict]:
                 }
             )
         if section_items:
-            menu.append({"menu_header": section["header"]})
+            header_class = _section_header_class(section)
+            item_class = _section_item_class(header_class)
+            for entry in section_items:
+                entry["menu_li_class"] = item_class
+            menu.append({"menu_header": section["header"], "menu_header_class": header_class})
             menu.extend(section_items)
     return menu
+
+
+def _section_header_class(section: dict) -> str:
+    if section.get("template"):
+        return "menu-header--subsystem"
+    return ""
+
+
+def _section_item_class(header_class: str) -> str:
+    if header_class == "menu-header--subsystem":
+        return "menu-item--subsystem"
+    return ""
 
 
 def _lookup_membership(user, subsystem_id=None) -> SubsystemMembership | None:

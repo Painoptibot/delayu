@@ -205,7 +205,7 @@ class BPMApprovalsListView(ModulePermissionMixin, TemplateView):
 
 class BPMTaskDecisionView(ModulePermissionMixin, TemplateView):
     module_code = "M34"
-    required_action = "change"
+    required_action = "approve"
     template_name = "platform/bpm/task_decision.html"
 
     def get_context_data(self, **kwargs):
@@ -249,7 +249,7 @@ class CaseBpmDecisionView(ModulePermissionMixin, View):
     """Быстрое решение с карточки дела."""
 
     module_code = "M34"
-    required_action = "change"
+    required_action = "approve"
 
     def post(self, request, pk):
         task = get_object_or_404(BPMTask, pk=pk, assignee=request.user)

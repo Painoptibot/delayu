@@ -849,6 +849,9 @@ class BPMTask(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     comment = models.TextField(blank=True)
     decided_at = models.DateTimeField(null=True, blank=True)
+    assigned_at = models.DateTimeField("Назначена", null=True, blank=True)
+    is_escalated = models.BooleanField("Эскалирована", default=False)
+    escalated_at = models.DateTimeField("Эскалация", null=True, blank=True)
 
     class Meta:
         verbose_name = "Задача согласования"
@@ -1762,6 +1765,21 @@ class DataRetentionPolicy(models.Model):
         verbose_name = "Политика хранения данных"
 
 
+class SiemExportConfig(models.Model):
+    """Экспорт журнала аудита в SIEM (webhook)."""
+
+    subsystem = models.OneToOneField(
+        "Subsystem", on_delete=models.CASCADE, related_name="siem_export"
+    )
+    enabled = models.BooleanField("Экспорт в SIEM", default=False)
+    webhook_url = models.URLField("Webhook SIEM", max_length=500, blank=True)
+    last_pushed_at = models.DateTimeField("Последняя отправка", null=True, blank=True)
+    last_error = models.TextField("Последняя ошибка", blank=True)
+
+    class Meta:
+        verbose_name = "Экспорт аудита в SIEM"
+
+
 class BackupRecord(models.Model):
     """M81 — запись резервного копирования."""
 
@@ -1842,6 +1860,50 @@ class UserDashboardLayout(models.Model):
     class Meta:
         unique_together = [("user", "subsystem", "name")]
         verbose_name = "Раскладка дашборда"
+
+
+class RoleStudioLayout(models.Model):
+    """Ролевой шаблон раскладки из Студии (дашборд / сегодня / кабинет)."""
+
+    class Kind(models.TextChoices):
+        DASHBOARD = "dashboard", "Дашборд"
+        TODAY = "today", "Мне на сегодня"
+        CABINET = "cabinet", "Личный кабинет"
+
+    role = models.ForeignKey("Role", on_delete=models.CASCADE, related_name="studio_layouts")
+    subsystem = models.ForeignKey("Subsystem", on_delete=models.CASCADE, related_name="role_studio_layouts")
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+    widgets = models.JSONField(default=list)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [("role", "subsystem", "kind")]
+        verbose_name = "Ролевой шаблон Студии"
+        verbose_name_plural = "Ролевые шаблоны Студии"
+
+
+class StudioConfigRevision(models.Model):
+    """Снимок конфигурации подсистемы при публикации из Студии."""
+
+    subsystem = models.ForeignKey(
+        "Subsystem", on_delete=models.CASCADE, related_name="studio_revisions"
+    )
+    version_label = models.CharField("Версия", max_length=32)
+    snapshot = models.JSONField(default=dict)
+    comment = models.CharField("Комментарий", max_length=255, blank=True)
+    published_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="studio_publications",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Ревизия конфигурации Студии"
+        verbose_name_plural = "Ревизии конфигурации Студии"
 
 
 class MarketplaceConnector(models.Model):

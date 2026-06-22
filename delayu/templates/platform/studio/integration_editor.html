@@ -1,17 +1,58 @@
 {% extends "platform/studio/_base.html" %}
 {% block studio_content %}
-<div class="card" data-studio="integration" data-save-url="{% url 'platform-studio-save' 'integration' %}" data-endpoint-id="{{ endpoint.pk|default:'' }}">
+<div class="card" data-studio="integration" data-save-url="{% url 'platform-studio-save' 'integration' %}" data-endpoint-id="{{ endpoint.pk|default:'' }}" data-dry-run-url="{% url 'platform-studio-integration-dry-run' %}" data-run-url="{% url 'platform-studio-integration-run' %}" data-diff-url="{{ studio_int_diff_url }}">
   <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
     <h5 class="mb-0">Pipeline интеграций</h5>
-    {% if endpoints %}
-    <select class="form-select form-select-sm w-auto" onchange="if(this.value) location.href='/studio/integration/'+this.value+'/'">
-      {% for e in endpoints %}
-      <option value="{{ e.pk }}" {% if endpoint and endpoint.pk == e.pk %}selected{% endif %}>{{ e.code }} — {{ e.name }}</option>
-      {% endfor %}
-    </select>
-    {% endif %}
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      {% if endpoints %}
+      <select class="form-select form-select-sm w-auto" onchange="if(this.value) location.href='/studio/integration/'+this.value+'/'">
+        {% for e in endpoints %}
+        <option value="{{ e.pk }}" {% if endpoint and endpoint.pk == e.pk %}selected{% endif %}>{{ e.code }} — {{ e.name }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      {% if endpoint and studio_int_revisions %}
+      <select class="form-select form-select-sm w-auto" id="studioIntDiffRevision">
+        <option value="">Последняя ревизия</option>
+        {% for rev in studio_int_revisions %}
+        <option value="{{ rev.pk }}">{{ rev.version_label }} — {{ rev.created_at|date:"d.m.Y H:i" }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="studioIntDiff">Сравнить с ревизией</button>
+      {% endif %}
+    </div>
   </div>
   <div class="card-body">
+    {% if endpoint and studio_int_revisions %}
+    <div id="studioIntDiffResult" class="small text-muted mb-3"></div>
+    {% endif %}
+    {% if endpoint and endpoint.endpoint_type == 'smev' %}
+    <div class="row g-2 mb-3 border rounded p-3 bg-body-secondary bg-opacity-25">
+      <div class="col-12"><h6 class="mb-1 small">Транспорт СМЭВ</h6></div>
+      <div class="col-md-3">
+        <label class="form-label small mb-0">Режим</label>
+        <select class="form-select form-select-sm" id="studioSmevTransport">
+          <option value="simulated"{% if endpoint.config.transport|default:'simulated' == 'simulated' %} selected{% endif %}>Simulated</option>
+          <option value="http"{% if endpoint.config.transport == 'http' %} selected{% endif %}>HTTP (prod)</option>
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label small mb-0">URL шлюза</label>
+        <input type="url" class="form-control form-control-sm" id="studioSmevUrl" value="{{ endpoint.config.url|default:'' }}" placeholder="https://smev-gateway.example/send" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-0">Test mode</label>
+        <select class="form-select form-select-sm" id="studioSmevTestMode">
+          <option value="1"{% if endpoint.config.test_mode|default:True %} selected{% endif %}>Да</option>
+          <option value="0"{% if endpoint.config.test_mode == False %} selected{% endif %}>Нет (prod)</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-0">Client ID</label>
+        <input type="text" class="form-control form-control-sm" id="studioSmevClientId" value="{{ endpoint.config.client_id|default:'' }}" />
+      </div>
+    </div>
+    {% endif %}
     <div class="row g-3">
       <div class="col-md-3">
         <div id="studioPipePalette" class="studio-palette">
@@ -20,6 +61,11 @@
             <i class="ri {{ n.icon }} me-2"></i>{{ n.label }}
           </div>
           {% endfor %}
+        </div>
+        <div class="mt-3 border rounded p-2">
+          <button type="button" class="btn btn-sm btn-outline-primary w-100 mb-2" id="studioPipeDryRun">Тестовый прогон (dry-run)</button>
+          <button type="button" class="btn btn-sm btn-outline-warning w-100 mb-2" id="studioPipeRun">Runtime (СМЭВ)</button>
+          <div id="studioPipeDryLog" class="small" style="max-height: 200px; overflow-y: auto;"></div>
         </div>
       </div>
       <div class="col-md-9">

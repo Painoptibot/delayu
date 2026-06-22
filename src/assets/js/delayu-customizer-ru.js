@@ -15,6 +15,6 @@ if (typeof TemplateCustomizer !== 'undefined') {
     layout_header_label: 'Тип шапки',
     content_label: 'Контент',
     layout_navbar_label: 'Панель навигации',
-    direction_label: 'Направление текста',
+    module_hints_label: 'Подсказки модулей',
   };
 }

@@ -1,0 +1,119 @@
+/* Иллюстрации Materio — в стиле платформы, с мягкой анимацией */
+
+.delayu-hero-figure {
+  position: relative;
+  display: inline-block;
+  margin: 0;
+  line-height: 0;
+}
+
+.delayu-hero-figure__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 32px rgba(38, 43, 67, 0.12));
+  animation: delayu-hero-float 5.5s ease-in-out infinite;
+}
+
+.delayu-hero-figure--sm .delayu-hero-figure__img {
+  max-height: 140px;
+  width: auto;
+}
+
+.delayu-hero-figure--md .delayu-hero-figure__img {
+  max-height: 186px;
+  width: auto;
+}
+
+.delayu-hero-figure--lg .delayu-hero-figure__img {
+  max-width: min(520px, 92%);
+  max-height: none;
+}
+
+.delayu-hero-figure--login {
+  position: relative;
+  width: 100%;
+  max-width: 38rem;
+}
+
+.delayu-hero-figure--login .delayu-hero-figure__img--main {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  width: 100%;
+}
+
+.delayu-hero-figure--login .delayu-hero-figure__mask {
+  position: absolute;
+  z-index: 0;
+  width: 70%;
+  inset-block-end: 7%;
+  inset-inline-start: unset;
+  inset-inline-end: 0;
+  pointer-events: none;
+  opacity: 1;
+}
+
+.delayu-hero-figure--wow .delayu-hero-figure__img {
+  animation: delayu-hero-enter 1.15s cubic-bezier(0.22, 1, 0.36, 1) both,
+    delayu-hero-float 6s ease-in-out 1.15s infinite;
+}
+
+.delayu-hero-figure--wow.delayu-hero-figure--login .delayu-hero-figure__mask {
+  animation: delayu-hero-mask-enter 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both,
+    delayu-hero-mask 6s ease-in-out 1.3s infinite;
+}
+
+@keyframes delayu-hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes delayu-hero-mask {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.82;
+  }
+  50% {
+    transform: translateY(4px);
+    opacity: 0.95;
+  }
+}
+
+@keyframes delayu-hero-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.96);
+    filter: drop-shadow(0 0 0 transparent) blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 18px 32px rgba(38, 43, 67, 0.12)) blur(0);
+  }
+}
+
+@keyframes delayu-hero-mask-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 0.85;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .delayu-hero-figure__img,
+  .delayu-hero-figure__mask {
+    animation: none !important;
+  }
+}

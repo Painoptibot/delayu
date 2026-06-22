@@ -1,0 +1,26 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Импорт пользователей (CSV)</h5>
+    <a href="{% url 'platform-users' %}" class="btn btn-sm btn-outline-secondary">К списку</a>
+  </div>
+  <div class="card-body">
+    <p class="text-muted">Колонки: <code>username</code>, <code>email</code>, <code>first_name</code>, <code>last_name</code>, <code>role_code</code>, <code>org_code</code>. Разделитель — точка с запятой или запятая.</p>
+    <p class="small text-warning">Временный пароль для всех импортированных: <strong>ChangeMe1!</strong> — пользователям нужно сменить при первом входе.</p>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-4">
+        <input type="file" name="csv_file" accept=".csv,text/csv" class="form-control" required />
+      </div>
+      <button type="submit" class="btn btn-primary">Загрузить</button>
+    </form>
+    <hr />
+    <p class="small text-muted mb-1">Пример:</p>
+    <pre class="small bg-light p-3 rounded">username;email;first_name;last_name;role_code;org_code
+ivanov;ivanov@example.ru;Иван;Иванов;uzhv_admin;main</pre>
+  </div>
+</div>
+{% endblock %}

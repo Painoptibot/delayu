@@ -1,0 +1,23 @@
+/* Пункты меню подсистемы АИС УЖВ — серый фон */
+
+.menu-item--subsystem > .menu-link,
+.menu-item--subsystem > .menu-link.menu-toggle {
+  background-color: rgba(38, 43, 67, 0.05);
+  border-radius: 0.375rem;
+  margin-inline: 0.35rem;
+}
+
+.menu-item--subsystem.active > .menu-link,
+.menu-item--subsystem.active.open > .menu-link.menu-toggle {
+  background-color: rgba(38, 43, 67, 0.09);
+}
+
+[data-bs-theme="dark"] .menu-item--subsystem > .menu-link,
+[data-bs-theme="dark"] .menu-item--subsystem > .menu-link.menu-toggle {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] .menu-item--subsystem.active > .menu-link,
+[data-bs-theme="dark"] .menu-item--subsystem.active.open > .menu-link.menu-toggle {
+  background-color: rgba(255, 255, 255, 0.09);
+}

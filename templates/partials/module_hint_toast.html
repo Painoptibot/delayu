@@ -1,13 +1,24 @@
 {% if module_hint %}
-<div class="delayu-module-hint toast show align-items-center border-0 shadow-lg" role="alert" id="delayuModuleHint" data-hint-code="{{ module_hint_code }}">
-  <div class="d-flex w-100">
-    <div class="toast-body flex-grow-1 pe-2">
-      <h6 class="mb-1 fw-semibold">{{ module_hint.title }}</h6>
-      <p class="mb-0 small text-body-secondary">{{ module_hint.body }}</p>
-    </div>
-    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill delayu-module-hint-close" aria-label="Закрыть">
-      <i class="ri-close-line icon-18px"></i>
+<div class="delayu-module-hint toast show align-items-stretch border-0 shadow-lg" role="dialog" aria-labelledby="delayuModuleHintTitle" id="delayuModuleHint" data-hint-code="{{ module_hint_code }}">
+  <div class="delayu-module-hint__header d-flex align-items-center justify-content-between gap-2">
+    <span class="badge bg-label-primary">{{ module_hint_code }}</span>
+    <button type="button" class="btn btn-sm btn-icon delayu-module-hint-close" aria-label="Закрыть подсказку">
+      <i class="ri-close-line"></i>
     </button>
+  </div>
+  <div class="toast-body flex-grow-1 pt-2 pb-0">
+    <h6 class="mb-2 fw-semibold" id="delayuModuleHintTitle">{{ module_hint.title }}</h6>
+    <p class="mb-0 small text-body-secondary">{{ module_hint.body }}</p>
+    {% if module_hint.tips %}
+    <ul class="small text-body-secondary mb-0 mt-2 ps-3 delayu-module-hint__tips">
+      {% for tip in module_hint.tips %}
+      <li>{{ tip }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  <div class="delayu-module-hint__footer small text-muted px-3 py-2 border-top">
+    Закройте крестиком — подсказка скроется до конца сессии. Отключить все подсказки можно в «Настройке интерфейса».
   </div>
 </div>
 {% endif %}

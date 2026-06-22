@@ -2,7 +2,7 @@
 
 {% with is_group=item.submenu|filter_by_url:request  %}
   {% if not item.permission or request.user|has_permission:item.permission %}
-  <li class="menu-item {% if is_group %}active open{% endif %}">
+  <li class="menu-item{% if item.menu_li_class %} {{ item.menu_li_class }}{% endif %} {% if is_group %}active open{% endif %}">
     <a href="javascript:void(0);" class="menu-link menu-toggle">
       <i class="{{ item.icon }}"></i>
       <div>{% trans item.name %}</div>

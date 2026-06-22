@@ -1,8 +1,14 @@
 {% extends "platform/studio/_base.html" %}
 {% block studio_content %}
-<div class="card" data-studio="menu" data-save-url="{% url 'platform-studio-save' 'menu' %}">
-  <div class="card-header"><h5 class="mb-0">Конструктор меню подсистемы</h5></div>
+<div class="card" data-studio="menu" data-save-url="{% url 'platform-studio-save' 'menu' %}" data-diff-url="{{ studio_menu_diff_url }}">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Конструктор меню подсистемы</h5>
+    {% if menu_is_draft %}<span class="badge bg-label-warning">Черновик</span>{% endif %}
+  </div>
   <div class="card-body">
+    {% if menu_is_draft %}
+    <p class="small text-warning mb-3">Изменения в черновике. Опубликуйте в <a href="{% url 'platform-studio' %}">обзоре Студии</a>, чтобы применить к пользователям.</p>
+    {% endif %}
     <div class="row g-3">
       <div class="col-md-5">
         <p class="small text-muted">Доступные пункты</p>
@@ -10,10 +16,24 @@
         <script type="application/json" id="studioMenuAllJson">{{ all_items_json|safe }}</script>
       </div>
       <div class="col-md-7">
-        <p class="small text-muted">Меню подсистемы (перетаскивайте разделы и пункты)</p>
+        <p class="small text-muted">Меню подсистемы (роли, бейджи, закрепление в «Быстрый доступ»)</p>
         <div id="studioMenuLayout" class="studio-menu-layout"></div>
         <script type="application/json" id="studioMenuJson">{{ layout_json|safe }}</script>
-        <div class="text-end mt-3"><button type="button" class="btn btn-primary" id="studioMenuSave">Сохранить меню</button></div>
+        <script type="application/json" id="studioMenuRolesJson">{{ roles_json|safe }}</script>
+        <script type="application/json" id="studioMenuBadgesJson">{{ badge_options_json|safe }}</script>
+        <div class="d-flex flex-wrap gap-2 justify-content-end align-items-center mt-3">
+          {% if studio_menu_revisions %}
+          <select class="form-select form-select-sm w-auto" id="studioMenuDiffRevision">
+            <option value="">Последняя публикация</option>
+            {% for rev in studio_menu_revisions %}
+            <option value="{{ rev.pk }}">{{ rev.version_label }} — {{ rev.created_at|date:"d.m.Y H:i" }}</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+          <button type="button" class="btn btn-outline-secondary" id="studioMenuDiff">Сравнить с ревизией</button>
+          <button type="button" class="btn btn-primary" id="studioMenuSave">Сохранить меню</button>
+        </div>
+        <div id="studioMenuDiffResult" class="small text-muted mt-2"></div>
       </div>
     </div>
   </div>

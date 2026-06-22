@@ -54,6 +54,6 @@ def tz_context() -> dict:
         version = m.group(1).strip()
     return {
         "tz_html": mark_safe(render_tz_html()),
-        "tz_title": "Техническое задание — ДелаЮ (платформа)",
+        "tz_title": "Техническое описание — ДелаЮ (платформа)",
         "tz_meta": f"Файл: docs/{TZ_FILENAME} · версия: {version}",
     }

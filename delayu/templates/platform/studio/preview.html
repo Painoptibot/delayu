@@ -1,0 +1,113 @@
+{% extends "platform/studio/_base.html" %}
+{% block studio_content %}
+<div class="card">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h5 class="mb-0">Просмотр как пользователь</h5>
+    {% if memberships %}
+    <form method="get" class="d-flex flex-wrap align-items-center gap-2">
+      <label class="small text-muted mb-0" for="studioPreviewUser">Пользователь</label>
+      <select id="studioPreviewUser" name="user" class="form-select form-select-sm" onchange="this.form.submit()">
+        {% for mem in memberships %}
+        <option value="{{ mem.user_id }}"{% if active_membership and active_membership.user_id == mem.user_id %} selected{% endif %}>
+          {{ mem.user.get_full_name|default:mem.user.username }} — {{ mem.role.name }}
+        </option>
+        {% endfor %}
+      </select>
+      <div class="form-check form-switch mb-0 ms-2">
+        <input class="form-check-input" type="checkbox" id="studioPreviewDraft" name="draft" value="1"{% if include_draft %} checked{% endif %} onchange="this.form.submit()">
+        <label class="form-check-label small" for="studioPreviewDraft">С черновиком</label>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    {% if preview %}
+    <p class="small text-muted mb-4">
+      Отчёт для <strong>{{ preview.user.name }}</strong> ({{ preview.user.username }})
+      · роль <strong>{{ preview.role.name }}</strong>
+      {% if preview.role.parent %} · наследует <em>{{ preview.role.parent }}</em>{% endif %}
+      {% if preview.organization %} · {{ preview.organization }}{% endif %}
+      {% if include_draft %}<span class="badge bg-label-warning ms-1">черновик меню/СЭД</span>{% endif %}
+    </p>
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <h6 class="text-muted">Меню ({{ preview.menu_item_count }} пунктов)</h6>
+        {% for sec in preview.menu_sections %}
+        <div class="mb-3">
+          <div class="small fw-semibold text-uppercase text-muted mb-1">{{ sec.header }}</div>
+          <ul class="list-unstyled mb-0">
+            {% for item in sec.items %}
+            <li class="small py-1 border-bottom"><i class="{{ item.icon }} me-2"></i>{{ item.name }}</li>
+            {% empty %}
+            <li class="small text-muted">Нет пунктов</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% empty %}
+        <p class="small text-muted">Меню пустое.</p>
+        {% endfor %}
+      </div>
+      <div class="col-lg-4">
+        <h6 class="text-muted">Виджеты</h6>
+        <p class="small fw-medium mb-1">Дашборд</p>
+        <ul class="small mb-3">
+          {% for w in preview.dashboard_widgets %}
+          <li>{% if w.label %}{{ w.label }}{% elif w.id %}{{ w.id }}{% else %}{{ w }}{% endif %}</li>
+          {% empty %}
+          <li class="text-muted">Шаблон не задан</li>
+          {% endfor %}
+        </ul>
+        <p class="small fw-medium mb-1">«Мне на сегодня»</p>
+        <ul class="small mb-3">
+          {% for w in preview.today_widgets %}
+          <li>{{ w }}</li>
+          {% empty %}
+          <li class="text-muted">Шаблон не задан</li>
+          {% endfor %}
+        </ul>
+        <h6 class="text-muted">Маршрут СЭД</h6>
+        {% if preview.correspondence_steps %}
+        <ol class="small">
+          {% for step in preview.correspondence_steps %}
+          <li>{{ step }}</li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="small text-muted">Этапы не настроены.</p>
+        {% endif %}
+      </div>
+      <div class="col-lg-4">
+        <h6 class="text-muted">Доступ ({{ preview.modules_granted }} / {{ preview.permission_matrix|length }})</h6>
+        {% if preview.denied_modules %}
+        <p class="small text-danger mb-2">Закрыто: {% for d in preview.denied_modules %}<span class="badge bg-label-danger me-1">{{ d.code }}</span>{% endfor %}</p>
+        {% endif %}
+        <div class="table-responsive" style="max-height: 320px;">
+          <table class="table table-sm table-bordered mb-0">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th>Модуль</th>
+                <th class="text-center" title="Просмотр">👁</th>
+                <th class="text-center" title="Изменение">✎</th>
+                <th class="text-center" title="Согласование">✓</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in preview.permission_matrix %}
+              <tr{% if row.inherited %} class="table-warning"{% elif not row.view %} class="text-muted"{% endif %}>
+                <td class="small"><code>{{ row.code }}</code>{% if row.inherited %} <span class="text-muted">↓</span>{% endif %}</td>
+                <td class="text-center">{% if row.view %}✓{% else %}—{% endif %}</td>
+                <td class="text-center">{% if row.change %}✓{% else %}—{% endif %}</td>
+                <td class="text-center">{% if row.approve %}✓{% else %}—{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-muted mb-0">Создайте пользователей и роли в подсистеме.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

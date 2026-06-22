@@ -1,0 +1,478 @@
+/* Кинематографическая сцена на странице входа */
+
+.delayu-login-col {
+  overflow: hidden;
+  background: linear-gradient(145deg, #f3f2f7 0%, #ecebf3 40%, #e8e6f0 100%);
+  position: relative;
+}
+
+[data-bs-theme="dark"] .delayu-login-col {
+  background: linear-gradient(145deg, #25293c 0%, #1f2233 50%, #1a1d2e 100%);
+}
+
+.delayu-login-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.delayu-login-scene__network {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.delayu-login-scene__mesh {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 40%, rgba(105, 108, 255, 0.14), transparent 62%),
+    radial-gradient(ellipse 50% 45% at 72% 28%, rgba(144, 85, 253, 0.1), transparent 58%),
+    radial-gradient(ellipse 45% 40% at 50% 80%, rgba(3, 195, 236, 0.06), transparent 52%);
+  animation: delayu-login-mesh 24s ease-in-out infinite alternate;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.delayu-login-scene__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 75% 65% at 50% 48%, transparent 35%, rgba(243, 242, 247, 0.55) 100%),
+    linear-gradient(180deg, rgba(243, 242, 247, 0.15) 0%, transparent 30%, transparent 70%, rgba(243, 242, 247, 0.25) 100%);
+}
+
+[data-bs-theme="dark"] .delayu-login-scene__vignette {
+  background:
+    radial-gradient(ellipse 75% 65% at 50% 48%, transparent 35%, rgba(26, 29, 46, 0.65) 100%),
+    linear-gradient(180deg, rgba(26, 29, 46, 0.2) 0%, transparent 30%, transparent 70%, rgba(26, 29, 46, 0.35) 100%);
+}
+
+.delayu-login-scene__grid,
+.delayu-login-scene__orb,
+.delayu-login-scene__sparkles {
+  display: none;
+}
+
+.delayu-login-scene__copy {
+  position: relative;
+  z-index: 6;
+  text-align: center;
+  padding: 0 2rem 1.5rem;
+  max-width: 28rem;
+  pointer-events: none;
+}
+
+.delayu-login-scene__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #696cff;
+  background: rgba(105, 108, 255, 0.1);
+  border: 1px solid rgba(105, 108, 255, 0.2);
+  margin-bottom: 1rem;
+  animation: delayu-login-fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.delayu-login-scene__eyebrow-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #696cff;
+  box-shadow: 0 0 12px rgba(105, 108, 255, 0.7);
+  animation: delayu-login-pulse 2.2s ease-in-out infinite;
+}
+
+.delayu-login-scene__title {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(120deg, #2f3349 0%, #696cff 55%, #9055fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: delayu-login-fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+[data-bs-theme="dark"] .delayu-login-scene__title {
+  background: linear-gradient(120deg, #e7e7ff 0%, #a5a7ff 55%, #c9a6ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.delayu-login-scene__lead {
+  font-size: 0.95rem;
+  color: #6d6b77;
+  margin: 0;
+  animation: delayu-login-fade-up 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
+}
+
+[data-bs-theme="dark"] .delayu-login-scene__lead {
+  color: #a5a3ae;
+}
+
+.delayu-login-scene__stage {
+  position: relative;
+  z-index: 7;
+  width: min(500px, 90%);
+  height: min(440px, 54vh);
+  margin-top: -0.5rem;
+  animation: delayu-login-stage-enter 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+
+.delayu-login-scene__semicircle-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.delayu-login-scene__semicircle {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  width: 82%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: linear-gradient(168deg, #eef0f6 0%, #e3e6ef 45%, #d6dae5 100%);
+  box-shadow:
+    inset 0 12px 28px rgba(255, 255, 255, 0.75),
+    0 16px 40px rgba(38, 43, 67, 0.1);
+  animation: delayu-login-bg-breathe 8s ease-in-out infinite;
+}
+
+[data-bs-theme="dark"] .delayu-login-scene__semicircle {
+  background: linear-gradient(168deg, #3c4158 0%, #343848 50%, #2c3042 100%);
+  box-shadow:
+    inset 0 8px 18px rgba(255, 255, 255, 0.06),
+    0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.delayu-login-scene__layer {
+  position: absolute;
+  will-change: transform;
+  pointer-events: none;
+  --parallax-x: 0px;
+  --parallax-y: 0px;
+}
+
+.delayu-login-scene__glow {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  width: 72%;
+  aspect-ratio: 1;
+  transform: translateX(-50%) translate(var(--parallax-x), var(--parallax-y));
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(105, 108, 255, 0.2) 0%,
+    rgba(144, 85, 253, 0.1) 45%,
+    transparent 70%
+  );
+  z-index: 2;
+  animation: delayu-login-glow-pulse 5s ease-in-out infinite;
+}
+
+.delayu-login-scene__layer--hero {
+  left: 50%;
+  bottom: 0;
+  height: 94%;
+  transform: translateX(-50%) translate(var(--parallax-x), var(--parallax-y));
+  z-index: 4;
+}
+
+.delayu-login-scene__inner--hero {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: delayu-login-hero-enter 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+}
+
+.delayu-login-scene__hero {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-height: 100%;
+  user-select: none;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 20px 36px rgba(38, 43, 67, 0.16));
+}
+
+@keyframes delayu-login-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes delayu-login-hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes delayu-login-hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.delayu-login-scene__badges {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.delayu-login-scene__badge {
+  position: absolute;
+  z-index: 6;
+  left: var(--bx, 50%);
+  top: var(--by, 50%);
+  --parallax-x: 0px;
+  --parallax-y: 0px;
+  transform: translate(var(--parallax-x), var(--parallax-y));
+}
+
+.delayu-login-scene__badge-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.62rem;
+  border-radius: 0.65rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #2f3349;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(38, 43, 67, 0.08);
+  box-shadow: 0 10px 24px rgba(38, 43, 67, 0.1);
+  backdrop-filter: blur(8px);
+  animation:
+    delayu-login-badge-enter 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--bdelay, 0.9s) both,
+    delayu-login-badge-float var(--bfloat, 7s) ease-in-out calc(var(--bdelay, 0.9s) + 0.7s) infinite;
+}
+
+[data-bs-theme="dark"] .delayu-login-scene__badge-inner {
+  color: #e7e7ff;
+  background: rgba(47, 51, 73, 0.9);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.delayu-login-scene__badge-inner i {
+  color: #696cff;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.delayu-login-scene__badge-inner > span {
+  line-height: 1.1;
+}
+
+@media (max-width: 1399.98px) {
+  .delayu-login-scene__badge-inner {
+    font-size: 0.625rem;
+    padding: 0.28rem 0.5rem;
+  }
+
+  .delayu-login-scene__badge-inner i {
+    font-size: 0.8rem;
+  }
+}
+
+.delayu-login-scene__ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(105, 108, 255, 0.12);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.delayu-login-scene__ring--1 {
+  width: min(620px, 95vw);
+  height: min(620px, 95vw);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: delayu-login-ring 16s linear infinite;
+}
+
+.delayu-login-scene__ring--2 {
+  width: min(820px, 110vw);
+  height: min(820px, 110vw);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-color: rgba(144, 85, 253, 0.08);
+  animation: delayu-login-ring 24s linear infinite reverse;
+}
+
+.delayu-login-scene__ring--3 {
+  width: min(980px, 125vw);
+  height: min(980px, 125vw);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-color: rgba(3, 195, 236, 0.06);
+  animation: delayu-login-ring 32s linear infinite;
+}
+
+@keyframes delayu-login-mesh {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(-3%, 4%) scale(1.06);
+  }
+}
+
+@keyframes delayu-login-orb {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(16px, -22px);
+  }
+}
+
+@keyframes delayu-login-spark {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes delayu-login-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes delayu-login-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes delayu-login-stage-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes delayu-login-bg-breathe {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.03) translateY(-3px);
+  }
+}
+
+@keyframes delayu-login-badge-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes delayu-login-badge-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes delayu-login-ring {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .delayu-login-scene__mesh,
+  .delayu-login-scene__semicircle,
+  .delayu-login-scene__inner,
+  .delayu-login-scene__glow,
+  .delayu-login-scene__badge-inner,
+  .delayu-login-scene__ring,
+  .delayu-login-scene__eyebrow-dot {
+    animation: none !important;
+  }
+
+  .delayu-login-scene__copy,
+  .delayu-login-scene__stage,
+  .delayu-login-scene__inner--hero {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}

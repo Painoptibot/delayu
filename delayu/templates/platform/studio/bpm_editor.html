@@ -1,6 +1,6 @@
 {% extends "platform/studio/_base.html" %}
 {% block studio_content %}
-<div class="card" data-studio="bpm" data-save-url="{% url 'platform-studio-save' 'bpm' %}" data-template-id="{{ template.pk|default:'' }}">
+<div class="card" data-studio="bpm" data-save-url="{% url 'platform-studio-save' 'bpm' %}" data-simulate-url="{% url 'platform-studio-bpm-simulate' %}" data-metrics-url="{% url 'platform-studio-bpm-metrics' %}" data-diff-url="{{ studio_bpm_diff_url }}" data-template-id="{{ template.pk|default:'' }}">
   <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
     <h5 class="mb-0">BPMN-редактор</h5>
     {% if templates %}
@@ -22,6 +22,12 @@
           </div>
           {% endfor %}
         </div>
+        <div class="mt-3 border rounded p-2">
+          <p class="small text-muted mb-2">Симулятор</p>
+          <button type="button" class="btn btn-sm btn-outline-primary w-100 mb-2" id="studioBpmSimulate">Запустить симуляцию</button>
+          <div id="studioBpmSimLog" class="small text-muted" style="max-height: 180px; overflow-y: auto;"></div>
+          <div id="studioBpmSimMeta" class="small fw-medium mt-2"></div>
+        </div>
       </div>
       <div class="col-md-9">
         <div id="studioBpmCanvas" class="studio-flow-canvas border rounded position-relative">
@@ -29,8 +35,24 @@
           <div id="studioBpmNodes" class="studio-flow-nodes"></div>
         </div>
         <script type="application/json" id="studioBpmJson">{{ diagram_json|safe }}</script>
+        <script type="application/json" id="studioBpmFormsJson">{{ form_schemas_json|safe }}</script>
+        <script type="application/json" id="studioBpmRolesJson">{{ roles_json|safe }}</script>
+        <script type="application/json" id="studioBpmMetricsJson">{{ node_metrics_json|safe }}</script>
+        <div id="studioBpmNodeList" class="small border rounded p-2 mt-2 mb-2" style="max-height:140px;overflow-y:auto"></div>
         <p class="small text-muted mt-2">Клик по узлу — связать со следующим. Двойной клик — удалить.</p>
-        <div class="text-end mt-2"><button type="button" class="btn btn-primary" id="studioBpmSave">Сохранить процесс</button></div>
+        <div class="d-flex flex-wrap gap-2 justify-content-end align-items-center mt-2">
+          {% if studio_bpm_revisions %}
+          <select class="form-select form-select-sm w-auto" id="studioBpmDiffRevision">
+            <option value="">Последняя публикация</option>
+            {% for rev in studio_bpm_revisions %}
+            <option value="{{ rev.pk }}">{{ rev.version_label }} — {{ rev.created_at|date:"d.m.Y H:i" }}</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+          <button type="button" class="btn btn-outline-secondary" id="studioBpmDiff">Сравнить с ревизией</button>
+          <button type="button" class="btn btn-primary" id="studioBpmSave">Сохранить процесс</button>
+        </div>
+        <div id="studioBpmDiffResult" class="small text-muted mt-2"></div>
       </div>
     </div>
   </div>

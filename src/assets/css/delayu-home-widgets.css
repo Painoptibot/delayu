@@ -1,0 +1,76 @@
+/* Главная: компактная welcome-карточка и вкладки очередей */
+
+.delayu-welcome-card {
+  overflow: visible;
+}
+
+.delayu-welcome-card .card-body {
+  overflow: visible;
+}
+
+.delayu-welcome-card__visual {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.delayu-welcome-card__actions {
+  justify-content: center;
+}
+
+@media (min-width: 992px) {
+  .delayu-welcome-card__actions {
+    justify-content: flex-end;
+  }
+}
+
+.delayu-welcome-card .delayu-welcome-scene-host {
+  max-height: 168px;
+  min-height: 168px;
+  overflow: visible;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.delayu-welcome-card .delayu-welcome-scene {
+  height: 168px;
+  max-width: 240px;
+  width: 100%;
+  margin-inline: 0 0 0 auto;
+  overflow: visible;
+}
+
+/* Очереди по модулям — длинные подписи вкладок */
+.home-queue-tab {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.home-queue-tab .nav-link {
+  width: 4.75rem;
+  min-height: 4.5rem;
+  padding: 0.5rem 0.35rem !important;
+  overflow: hidden;
+}
+
+.home-queue-tab__label {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  font-size: 0.625rem;
+  line-height: 1.15;
+  text-align: center;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+@media (min-width: 1200px) {
+  .home-queue-tab .nav-link {
+    width: 5.25rem;
+  }
+
+  .home-queue-tab__label {
+    font-size: 0.6875rem;
+  }
+}

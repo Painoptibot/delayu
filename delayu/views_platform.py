@@ -57,7 +57,7 @@ from delayu.services.workplace import log_activity as _log_activity
 
 class CaseArchiveView(ModulePermissionMixin, View):
     module_code = "M06"
-    required_action = "change"
+    required_action = "archive"
 
     def post(self, request, pk):
         m = _ctx_membership(self)
@@ -143,6 +143,9 @@ class HomeView(LoginRequiredMixin, PlatformLayoutMixin, TemplateView):
             ctx["quality"] = {}
             ctx["retention_alerts"] = []
             ctx["retention_expired_count"] = 0
+            from delayu.welcome_scene import welcome_scene_ready
+
+            ctx["welcome_scene_ready"] = welcome_scene_ready()
             return ctx
         from delayu.services.analytics import (
             department_analytics,
@@ -198,4 +201,7 @@ class HomeView(LoginRequiredMixin, PlatformLayoutMixin, TemplateView):
         ctx["quality"] = quality_metrics(sub)
         ctx["retention_alerts"] = retention_alerts(sub)
         ctx["retention_expired_count"] = retention_expired(sub)
+        from delayu.welcome_scene import welcome_scene_ready
+
+        ctx["welcome_scene_ready"] = welcome_scene_ready()
         return ctx

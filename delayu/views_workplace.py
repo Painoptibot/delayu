@@ -415,7 +415,9 @@ class TodayView(ModulePermissionMixin, ListView):
         ctx["can_change"] = user_can(self.request.user, "M08", "change")
         m = _ctx_membership(self)
         profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
-        ctx["today_widgets"] = studio.today_widgets_for_profile(profile)
+        ctx["today_widgets"] = studio.today_widgets_for_profile(
+            profile, subsystem=m.subsystem, role=m.role
+        )
         ctx["today_widget_catalog"] = studio.TODAY_WIDGETS
         ctx["inbox_preview"] = today_inbox_preview(
             self.request.user, m.subsystem

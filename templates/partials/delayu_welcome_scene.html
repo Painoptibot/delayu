@@ -1,0 +1,44 @@
+{% load static %}
+
+{% if welcome_scene_ready %}
+<div class="delayu-welcome-scene" data-delayu-welcome-scene aria-hidden="true">
+  <div class="delayu-welcome-scene__semicircle-wrap" data-depth="0.1">
+    <div class="delayu-welcome-scene__semicircle" aria-hidden="true"></div>
+  </div>
+
+  <div class="delayu-welcome-scene__layer delayu-welcome-scene__layer--stars" data-depth="0.28">
+    <div class="delayu-welcome-scene__inner delayu-welcome-scene__inner--stars">
+      <img
+        src="{% static 'img/illustrations/login-layers/fx.png' %}"
+        alt=""
+        draggable="false"
+        class="delayu-welcome-scene__stars" />
+      <span class="delayu-welcome-scene__twinkle delayu-welcome-scene__twinkle--1"></span>
+      <span class="delayu-welcome-scene__twinkle delayu-welcome-scene__twinkle--2"></span>
+    </div>
+  </div>
+
+  <div class="delayu-welcome-scene__layer delayu-welcome-scene__layer--lightning" data-depth="0.42">
+    <div class="delayu-welcome-scene__inner delayu-welcome-scene__inner--lightning">
+      <span class="delayu-welcome-scene__lightning-glow" aria-hidden="true"></span>
+      <img
+        src="{% static 'img/illustrations/login-layers/fx2.png' %}"
+        alt=""
+        draggable="false"
+        class="delayu-welcome-scene__lightning" />
+    </div>
+  </div>
+
+  <div class="delayu-welcome-scene__layer delayu-welcome-scene__layer--man" data-depth="0.58">
+    <div class="delayu-welcome-scene__inner delayu-welcome-scene__inner--man">
+      <img
+        src="{% static 'img/illustrations/login-layers/man.png' %}"
+        alt=""
+        draggable="false"
+        class="delayu-welcome-scene__man" />
+    </div>
+  </div>
+</div>
+{% else %}
+{% include "partials/delayu_hero_figure.html" with variant="home" size="md" %}
+{% endif %}

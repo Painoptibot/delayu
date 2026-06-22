@@ -3,6 +3,9 @@
 {% block title %}Пользователи{% endblock %}
 {% block header_actions %}
 {% if can_create %}
+<a href="{% url 'platform-users-import' %}" class="btn btn-outline-primary btn-sm me-2">
+  <i class="ri-upload-2-line me-1"></i>Импорт CSV
+</a>
 <a href="{% url 'platform-user-create' %}" class="btn btn-primary btn-sm">
   <i class="ri-user-add-line me-1"></i>Добавить
 </a>

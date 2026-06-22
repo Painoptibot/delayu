@@ -68,6 +68,14 @@ class Subsystem(models.Model):
     config_version = models.CharField("Версия конфигурации", max_length=32, blank=True)
     menu_layout = models.JSONField("Меню (конструктор)", default=list, blank=True)
     correspondence_workflow = models.JSONField("Маршрут СЭД", default=dict, blank=True)
+    studio_draft = models.JSONField("Черновик Студии", default=dict, blank=True)
+    studio_has_draft = models.BooleanField("Есть неопубликованные изменения", default=False)
+    studio_setup_state = models.JSONField(
+        "Мастер настройки Студии",
+        default=dict,
+        blank=True,
+        help_text="Прогресс мастера первичной настройки Студии",
+    )
     published_at = models.DateTimeField("Опубликовано", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -136,6 +144,14 @@ class Role(models.Model):
     name = models.CharField("Наименование", max_length=128)
     description = models.TextField("Описание", blank=True)
     is_system = models.BooleanField("Системная", default=False)
+    parent_role = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="child_roles",
+        verbose_name="Наследует права от",
+    )
 
     class Meta:
         verbose_name = "Роль"
@@ -158,6 +174,10 @@ class RoleModulePermission(models.Model):
     can_delete = models.BooleanField(default=False)
     can_view_pii = models.BooleanField("Просмотр ПДн", default=False)
     can_export_pii = models.BooleanField("Экспорт ПДн", default=False)
+    can_approve = models.BooleanField("Согласование", default=False)
+    can_sign = models.BooleanField("Подпись", default=False)
+    can_archive = models.BooleanField("Архивирование", default=False)
+    can_bulk = models.BooleanField("Массовые операции", default=False)
 
     class Meta:
         verbose_name = "Право на модуль"
