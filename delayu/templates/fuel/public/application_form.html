@@ -1,0 +1,143 @@
+{% extends "fuel/public/base.html" %}
+{% load static %}
+
+{% block title %}Новая заявка · {{ page_brand }}{% endblock %}
+
+{% block content %}
+<div class="fuel-card">
+  <h1>Заявка на пропуск</h1>
+  <p class="fuel-muted">Заполните данные автомобиля. Лимит действует на госномер по всем АЗС города.</p>
+  {% if from_previous_application %}
+    <div class="fuel-alert fuel-alert--info">Подставили данные из вашей последней заявки — проверьте и при необходимости измените.</div>
+  {% endif %}
+  <div id="fuel-offline-apply-msg" class="fuel-alert fuel-alert--warn" hidden></div>
+  <div class="fuel-alert fuel-alert--info">Без интернета заявка сохранится на устройстве. <strong>Она не будет принята</strong> до появления связи.</div>
+  <div id="fuel-taxi-warning" class="fuel-alert fuel-alert--info" hidden></div>
+  {% if form.non_field_errors %}
+    <div class="fuel-error">{{ form.non_field_errors }}</div>
+  {% endif %}
+  <form method="post" id="fuel-apply-form">
+    {% csrf_token %}
+    <div class="fuel-field">
+      <label for="id_category">{{ form.category.label }}</label>
+      {{ form.category }}
+      <p class="fuel-muted fuel-hint">Сначала — самые частые категории. По умолчанию: население.</p>
+    </div>
+    <div class="fuel-field">
+      <label for="id_plate">{{ form.plate.label }}</label>
+      {{ form.plate }}
+      {% if form.plate.errors %}<div class="fuel-error">{{ form.plate.errors }}</div>{% endif %}
+      <p class="fuel-muted fuel-hint" id="fuel-plate-parity-hint"></p>
+    </div>
+    <div class="fuel-field">
+      <label for="id_vehicle_make">{{ form.vehicle_make.label }}</label>
+      {{ form.vehicle_make }}
+    </div>
+    <div class="fuel-field">
+      <label for="id_inn">{{ form.inn.label }}</label>
+      {{ form.inn }}
+      {% if form.inn.errors %}<div class="fuel-error">{{ form.inn.errors }}</div>{% endif %}
+      {% if dadata_configured %}
+        <p class="fuel-muted fuel-hint">Начните вводить ИНН — подставим название из ЕГРЮЛ</p>
+      {% endif %}
+    </div>
+    <div class="fuel-field">
+      <label for="id_org_name">{{ form.org_name.label }}</label>
+      {{ form.org_name }}
+    </div>
+
+    <h2 class="fuel-section-title">Предпочтительная АЗС</h2>
+    <p class="fuel-muted">Система может направить на менее загруженную точку</p>
+    <div class="fuel-azs-picker" data-fuel-azs-picker>
+      <div class="fuel-field fuel-field--compact">
+        <input
+          type="search"
+          class="fuel-input"
+          data-fuel-azs-search
+          placeholder="Поиск по названию, сети или адресу"
+          autocomplete="off"
+        >
+      </div>
+      <div class="fuel-azs-list" data-fuel-azs-list>
+        {% for azs in azs_list %}
+          <label
+            class="fuel-azs-item{% if preferred_azs_id == azs.pk %} fuel-azs-item--selected{% elif not preferred_azs_id and forloop.first %} fuel-azs-item--selected{% endif %}"
+            data-fuel-azs-item
+            data-search="{{ azs.name|lower }} {{ azs.network|lower }} {{ azs.address|lower }} {{ azs.district|lower }}"
+          >
+            <input
+              type="radio"
+              class="fuel-azs-item__radio"
+              name="preferred_azs"
+              value="{{ azs.pk }}"
+              {% if preferred_azs_id == azs.pk %}checked{% elif not preferred_azs_id and forloop.first %}checked{% endif %}
+            >
+            <span class="fuel-azs-item__body">
+              <span class="fuel-azs-item__title">{{ azs.name }}</span>
+              <span class="fuel-azs-item__meta">{{ azs.address }} · ~{{ azs.queue_minutes }} мин</span>
+            </span>
+          </label>
+        {% empty %}
+          <p class="fuel-muted">Нет доступных АЗС</p>
+        {% endfor %}
+      </div>
+      {% if azs_list|length > 5 %}
+        <button type="button" class="fuel-btn fuel-btn--ghost fuel-azs-more" data-fuel-azs-more>
+          Показать ещё
+        </button>
+      {% endif %}
+    </div>
+
+    <div class="fuel-field fuel-consent">
+      <label class="fuel-consent__label">
+        {{ form.agree_rules }}
+        <span>
+          Подтверждаю согласие с <a href="{{ portal_legal_rules_url }}" target="_blank" rel="noopener">правилами сервиса</a>
+          и <a href="{{ portal_legal_privacy_url }}" target="_blank" rel="noopener">политикой обработки персональных данных</a>
+        </span>
+      </label>
+      {% if form.agree_rules.errors %}<div class="fuel-error">{{ form.agree_rules.errors }}</div>{% endif %}
+    </div>
+
+    <button type="submit" class="fuel-btn">Подать заявку</button>
+  </form>
+  <script type="application/json" id="fuel-azs-snapshot-json">{{ azs_snapshot_json|safe }}</script>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/fuel-apply-form.js' %}"></script>
+<script src="{% static 'js/fuel-vehicle-suggest.js' %}"></script>
+<script>initFuelVehicleSuggest('fuel-apply-form', '{{ portal_root }}/api/vehicles/');</script>
+{% if dadata_configured %}
+<script src="{% static 'js/fuel-dadata.js' %}"></script>
+<script>initFuelDadata('fuel-apply-form', '{{ portal_root }}/api/party/');</script>
+{% endif %}
+<script>
+(function() {
+  var cat = document.getElementById('id_category');
+  var taxiBox = document.getElementById('fuel-taxi-warning');
+  var plateHint = document.getElementById('fuel-plate-parity-hint');
+  var parityMsg = '{% for b in portal_banners %}{% if b.kind == "parity" %}{{ b.message|escapejs }}{% endif %}{% endfor %}';
+
+  var taxiCats = [{% for pk in taxi_category_pks %}{{ pk }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+
+  if (plateHint && parityMsg) plateHint.textContent = parityMsg;
+
+  function updateTaxi() {
+    if (!cat || !taxiBox) return;
+    var val = parseInt(cat.value, 10);
+    if (taxiCats.indexOf(val) >= 0) {
+      taxiBox.hidden = false;
+      taxiBox.textContent = 'Категория такси: заявки принимаются с 06:00 до 22:00.';
+    } else {
+      taxiBox.hidden = true;
+    }
+  }
+  if (cat) {
+    cat.addEventListener('change', updateTaxi);
+    updateTaxi();
+  }
+})();
+</script>
+{% endblock %}

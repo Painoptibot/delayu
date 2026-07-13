@@ -47,6 +47,9 @@ set -a && source "${APP_DIR}/.env" && set +a
 echo "==> Миграции"
 "${VENV}/bin/python" manage.py migrate --noinput
 
+echo "==> Топливный пропуск (Новороссийск)"
+"${VENV}/bin/python" manage.py seed_fuel_novorossiysk || true
+
 echo "==> Статика"
 "${VENV}/bin/python" manage.py collectstatic --noinput
 
@@ -70,7 +73,7 @@ if [[ -n "${DOMAIN:-}" ]]; then
   sudo rm -f /etc/nginx/sites-enabled/default
   sudo nginx -t
   sudo systemctl reload nginx
-  echo "    HTTPS: sudo certbot --nginx -d ${DOMAIN}"
+  echo "    HTTPS: sudo certbot --nginx -d ${DOMAIN} -d novorossiysk.${DOMAIN}"
 else
   echo "==> Nginx (IP / без домена)"
   sudo cp deploy/nginx/delayu-http.conf /etc/nginx/sites-available/delayu
@@ -94,5 +97,7 @@ echo ""
 echo "Готово. Дальше:"
 echo "  ${VENV}/bin/python manage.py createsuperuser"
 echo "  ${VENV}/bin/python manage.py seed_uzhv          # если нужны демо-данные УЖВ"
+echo "  ${VENV}/bin/python manage.py seed_fuel_novorossiysk  # топливный пропуск"
+echo "  Портал жителя: https://novorossiysk.\${DOMAIN}/ или https://\${DOMAIN}/fuel/novorossiysk/"
 echo "  ${VENV}/bin/python manage.py setup_free_integrations"
 echo "  certbot --nginx -d \${DOMAIN}   # если ещё нет HTTPS"

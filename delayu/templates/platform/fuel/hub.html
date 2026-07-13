@@ -1,0 +1,85 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block card_body %}
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+  <span class="badge bg-success" data-fuel-live-dot>● онлайн</span>
+  <span class="text-muted small" data-fuel-live-updated>Обновление…</span>
+</div>
+<div class="row g-3 mb-4" data-fuel-live-stats>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100"><div class="card-body">
+      <span class="text-muted d-block mb-1">Заявок сегодня</span>
+      <h3 class="mb-0" data-stat="applications_today">{{ stats.applications_today }}</h3>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100"><div class="card-body">
+      <span class="text-muted d-block mb-1">Одобрено</span>
+      <h3 class="mb-0" data-stat="approved_today">{{ stats.approved_today }}</h3>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100"><div class="card-body">
+      <span class="text-muted d-block mb-1">Отпусков на АЗС</span>
+      <h3 class="mb-0" data-stat="redeems_today">{{ stats.redeems_today }}</h3>
+      <span class="small text-muted"><span data-stat="liters_today">{{ stats.liters_today }}</span> л</span>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100"><div class="card-body">
+      <span class="text-muted d-block mb-1">На проверке</span>
+      <h3 class="mb-0 text-warning" data-stat="pending">{{ stats.pending }}</h3>
+    </div></div>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <a href="{% url 'fuel-operator-applications' %}" class="btn btn-primary btn-sm">Все заявки</a>
+  <a href="{% url 'fuel-operator-dashboard' %}" class="btn btn-outline-primary btn-sm">Дашборд штаба</a>
+  <a href="{% url 'fuel-operator-leadership' %}" class="btn btn-outline-primary btn-sm">Руководство</a>
+  <a href="{% url 'fuel-operator-azs' %}" class="btn btn-outline-primary btn-sm">АЗС</a>
+  <a href="{% url 'fuel-operator-logs-ops' %}" class="btn btn-outline-secondary btn-sm">Журнал штаб/АЗС</a>
+  <a href="{% url 'fuel-operator-logs-citizen' %}" class="btn btn-outline-secondary btn-sm">Журнал жителей</a>
+  <a href="{% url 'fuel-operator-parity' %}" class="btn btn-outline-primary btn-sm">Чётность ГРЗ</a>
+  <a href="{{ citizen_portal_path }}" class="btn btn-outline-secondary btn-sm" target="_blank">Портал жителя ↗</a>
+</div>
+
+<h5 class="mb-3">Очередь модерации</h5>
+<div class="table-responsive mb-4">
+  <table class="table table-sm">
+    <thead><tr><th>№</th><th>Заявитель</th><th>ГРЗ</th><th>Категория</th><th></th></tr></thead>
+    <tbody id="fuel-pending-apps-tbody">
+      {% for app in pending_apps %}
+      <tr data-app-id="{{ app.pk }}">
+        <td><a href="{% url 'fuel-operator-applications' %}?highlight={{ app.pk }}">{{ app.number }}</a></td>
+        <td>{{ app.citizen.full_name }}</td>
+        <td>{{ app.plate }}</td>
+        <td>{{ app.category.name }}</td>
+        <td class="text-nowrap">
+          <form method="post" action="{% url 'fuel-operator-approve' app.pk %}" class="d-inline">{% csrf_token %}
+            <button class="btn btn-success btn-sm">Одобрить</button>
+          </form>
+          <a href="{% url 'fuel-operator-reject' app.pk %}" class="btn btn-outline-danger btn-sm">Отклонить</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr data-empty-row><td colspan="5" class="text-muted">Нет заявок на проверке</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h5 class="mb-3">Последние отпуски на АЗС</h5>
+<div class="table-responsive">
+  <table class="table table-sm">
+    <thead><tr><th>Время</th><th>ГРЗ</th><th>АЗС</th><th>Л</th><th>Пропуск</th></tr></thead>
+    <tbody id="fuel-recent-redeems-tbody">
+      <tr data-redeem-placeholder><td colspan="5" class="text-muted">Загрузка…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div data-fuel-live data-fuel-live-url="{{ live_api_url }}" data-fuel-live-mode="hub"></div>
+{% load static %}
+<script src="{% static 'js/delayu-fuel-live.js' %}"></script>
+{% endblock %}

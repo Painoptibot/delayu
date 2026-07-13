@@ -1,0 +1,14 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block card_body %}
+<p class="text-muted">Заявка {{ application.number }} · {{ application.plate }}</p>
+<form method="post">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label class="form-label">{{ form.reason.label }}</label>
+    {{ form.reason }}
+  </div>
+  <button type="submit" class="btn btn-danger">Отклонить заявку</button>
+  <a href="{% url 'fuel-operator-applications' %}" class="btn btn-outline-secondary">Отмена</a>
+</form>
+{% endblock %}

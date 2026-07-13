@@ -1,0 +1,93 @@
+{% extends "fuel/public/base.html" %}
+{% load fuel_portal %}
+
+{% block title %}Карта АЗС · {{ page_brand }}{% endblock %}
+
+{% block content %}
+<div class="fuel-card" style="padding:12px">
+  <h1>Карта АЗС</h1>
+  <p class="fuel-muted" data-fuel-azs-subtitle>
+    Статусы заправок · обновление онлайн
+    {% if portal_checked_at %}· обновлено {{ portal_checked_at|date:"d.m.Y H:i" }}{% endif %}
+    · <strong>кнопка «Пробки»</strong> на карте
+  </p>
+  <div id="fuel-citizen-map" style="border-radius:12px;overflow:hidden;margin:12px 0"></div>
+  <div id="fuel-route-panel" class="fuel-route-panel" hidden>
+    <div class="fuel-route-panel__head">
+      <div>
+        <strong data-fuel-route-title>Маршрут</strong>
+        <p class="fuel-muted fuel-route-panel__address" data-fuel-route-address></p>
+      </div>
+      <button type="button" class="fuel-route-panel__close" data-fuel-route-close aria-label="Закрыть маршрут">×</button>
+    </div>
+    <p class="fuel-route-panel__meta" data-fuel-route-meta>Построение маршрута…</p>
+  </div>
+</div>
+
+<div class="fuel-card">
+  <h2>Рекомендации</h2>
+  <p class="fuel-muted fuel-hint">Нажмите на заправку — откроется заявка с выбранной АЗС. Кнопка «Маршрут» строит путь на карте.</p>
+  <div data-fuel-azs-recommended>
+  {% for azs in recommended_azs %}
+    <div class="fuel-azs-item fuel-azs-item--map fuel-azs-item--actionable{% if forloop.first %} fuel-azs-item--selected{% endif %}"
+      data-apply-url="{% fuel_apply_azs_url_tag azs.pk %}" data-azs-id="{{ azs.pk }}">
+      <div class="fuel-azs-item__content" data-fuel-azs-apply>
+        <h3 class="fuel-azs-item__map-title">★ {{ azs.name }}</h3>
+        <p class="fuel-azs-item__map-meta">
+          {% if azs.status == 'ok' %}<span class="fuel-status fuel-status--ok">● Есть {{ azs.fuel_grade }}</span>
+          {% elif azs.status == 'low' %}<span class="fuel-status fuel-status--warn">● Мало</span>
+          {% elif azs.status == 'busy' %}<span class="fuel-status fuel-status--bad">● Перегрузка</span>
+          {% else %}<span class="fuel-status fuel-status--bad">● Нет бензина</span>{% endif %}
+          · ~{{ azs.queue_minutes }} мин
+        </p>
+        <p class="fuel-muted fuel-azs-item__map-address">{{ azs.address }}</p>
+      </div>
+      {% if azs.latitude and azs.longitude %}
+        <button type="button" class="fuel-btn fuel-btn--secondary fuel-route-btn"
+          data-lat="{{ azs.latitude }}" data-lng="{{ azs.longitude }}"
+          data-title="{{ azs.name }}" data-address="{{ azs.address }}">Маршрут</button>
+      {% endif %}
+    </div>
+  {% endfor %}
+  </div>
+</div>
+
+<div class="fuel-card">
+  <h2>Все заправки</h2>
+  <div data-fuel-azs-all>
+  {% for azs in azs_list %}
+    <div class="fuel-azs-item fuel-azs-item--map fuel-azs-item--actionable"
+      data-apply-url="{% fuel_apply_azs_url_tag azs.pk %}" data-azs-id="{{ azs.pk }}">
+      <div class="fuel-azs-item__content" data-fuel-azs-apply>
+        <h3 class="fuel-azs-item__map-title">{{ azs.name }}</h3>
+        <p class="fuel-muted fuel-azs-item__map-address">{{ azs.district }} · {{ azs.address }}</p>
+        <p class="fuel-azs-item__map-meta">Очередь ~{{ azs.queue_minutes }} мин · {{ azs.stock_liters }} л
+          {% if not azs.is_accepting_permits %} · <strong>стоп пропусков</strong>{% endif %}
+        </p>
+      </div>
+      {% if azs.latitude and azs.longitude %}
+        <button type="button" class="fuel-btn fuel-btn--secondary fuel-route-btn"
+          data-lat="{{ azs.latitude }}" data-lng="{{ azs.longitude }}"
+          data-title="{{ azs.name }}" data-address="{{ azs.address }}">Маршрут</button>
+      {% endif %}
+    </div>
+  {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% include "fuel/public/_map_assets.html" %}
+{% load static %}
+<script src="{% static 'js/fuel-azs-actions.js' %}"></script>
+<script>
+(function() {
+  var points = {{ map_points_json|safe }};
+  initFuelAzsMap('fuel-citizen-map', points, { height: 320, zoom: 12 });
+  initFuelAzsActions({
+    mapContainerId: 'fuel-citizen-map',
+    routePanelId: 'fuel-route-panel'
+  });
+})();
+</script>
+{% endblock %}

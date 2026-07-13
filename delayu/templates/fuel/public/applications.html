@@ -1,0 +1,31 @@
+{% extends "fuel/public/base.html" %}
+
+{% block title %}Мои заявки · {{ page_brand }}{% endblock %}
+
+{% block content %}
+<div class="fuel-card">
+  <h1>Мои заявки</h1>
+  <a href="{{ portal_root }}/apply/" class="fuel-btn" style="margin-bottom:16px">Новая заявка</a>
+  <div id="fuel-offline-applications-wrap" hidden>
+    <h2 class="fuel-section-title">Ожидают отправки</h2>
+    <p class="fuel-muted fuel-hint">Эти заявки ещё не приняты системой — отправятся после подключения к интернету.</p>
+    <table class="fuel-table" id="fuel-offline-applications-table">
+      <tr><th>№</th><th>ГРЗ</th><th>Статус</th></tr>
+    </table>
+  </div>
+  {% if applications %}
+    <table class="fuel-table">
+      <tr><th>№</th><th>ГРЗ</th><th>Статус</th></tr>
+      {% for app in applications %}
+        <tr>
+          <td><a href="{{ portal_root }}/applications/{{ app.pk }}/">{{ app.number }}</a></td>
+          <td>{{ app.plate }}</td>
+          <td>{{ app.get_status_display }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p class="fuel-muted">Заявок пока нет.</p>
+  {% endif %}
+</div>
+{% endblock %}

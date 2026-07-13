@@ -1,0 +1,51 @@
+{% extends "fuel/public/base.html" %}
+
+{% block title %}QR {{ permit.number }} · {{ page_brand }}{% endblock %}
+
+{% block content %}
+<div class="fuel-card" style="text-align:center">
+  <span class="fuel-hero-badge">Покажите на АЗС</span>
+  <h1>{{ permit.number }}</h1>
+  <div class="fuel-qr-wrap">
+    {% if qr_svg %}
+      <div class="fuel-qr-svg">{{ qr_svg }}</div>
+    {% else %}
+      <img src="{{ portal_root }}/permits/{{ permit.pk }}/qr.svg" alt="QR-пропуск" id="fuel-qr-img">
+    {% endif %}
+  </div>
+  <div class="fuel-permit-meta">
+    <strong>{{ permit.plate }}</strong><br>
+    {{ permit.remaining_liters }} из {{ permit.max_liters }} л<br>
+    Действует до {{ permit.valid_until|date:"d.m.Y H:i" }}
+  </div>
+  {% if permit.manual_code %}
+    <div class="fuel-manual-code">
+      <span class="fuel-manual-code__label">Код для ручного ввода на АЗС</span>
+      <span class="fuel-manual-code__value">{{ permit.manual_code }}</span>
+    </div>
+  {% endif %}
+  {% if permit_usage.redeemed_total %}
+    <div class="fuel-redeem-summary">
+      <p class="fuel-redeem-summary__title">Уже заправлено: <strong>{{ permit_usage.redeemed_total }} л</strong></p>
+      <ul class="fuel-redeem-summary__list">
+        {% for r in permit_usage.redeems %}
+          <li>{{ r.created_at|date:"d.m.Y H:i" }} · {{ r.azs.name }} · <strong>{{ r.liters }} л</strong></li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  {% if permit.assigned_azs %}
+    <p class="fuel-muted">{{ permit.assigned_azs.name }} · {{ permit.assigned_azs.address }}</p>
+  {% endif %}
+  <p class="fuel-muted" style="margin-top:16px">QR сохранён с криптоподписью — работает при слабом интернете на АЗС.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  if ('serviceWorker' in navigator) {
+    const payload = {{ permit.qr_payload|escapejs }};
+    try { localStorage.setItem('fuel_qr_{{ permit.pk }}', payload); } catch (e) {}
+  }
+</script>
+{% endblock %}

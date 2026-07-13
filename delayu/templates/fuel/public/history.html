@@ -1,0 +1,39 @@
+{% extends "fuel/public/base.html" %}
+
+{% block title %}История · {{ page_brand }}{% endblock %}
+
+{% block content %}
+<div class="fuel-card">
+  <h1>История заправок</h1>
+  {% if redeems %}
+    <table class="fuel-table">
+      <tr><th>Дата</th><th>АЗС</th><th>Л</th></tr>
+      {% for r in redeems %}
+        <tr>
+          <td>{{ r.created_at|date:"d.m.Y H:i" }}</td>
+          <td>{{ r.azs.name }}</td>
+          <td>{{ r.liters }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p class="fuel-muted">Отпусков пока не было.</p>
+  {% endif %}
+</div>
+
+<div class="fuel-card">
+  <h2>Заявки</h2>
+  {% if applications %}
+    <table class="fuel-table">
+      <tr><th>№</th><th>ГРЗ</th><th>Статус</th></tr>
+      {% for app in applications %}
+        <tr>
+          <td><a href="{{ portal_root }}/applications/{{ app.pk }}/">{{ app.number }}</a></td>
+          <td>{{ app.plate }}</td>
+          <td>{{ app.get_status_display }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+</div>
+{% endblock %}

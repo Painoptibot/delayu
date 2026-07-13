@@ -1,0 +1,59 @@
+{% extends "fuel/public/base.html" %}
+
+{% block title %}Остаток топлива{% endblock %}
+
+{% block content %}
+<div class="fuel-card">
+  <h1>Остаток на АЗС</h1>
+  <p class="fuel-muted">{{ station.name }}</p>
+  {% if capacity %}
+  <div class="fuel-muted" style="margin-bottom:12px;font-size:14px">
+    Прогноз: очередь ~{{ capacity.queue_minutes_computed }} мин ·
+    заявок {{ capacity.apps_submitted }}/{{ capacity.max_applications }} ·
+    осталось слотов {{ capacity.apps_remaining }}
+  </div>
+  {% endif %}
+  {% if saved %}
+    <div class="fuel-alert fuel-alert--success">Данные обновлены. Штаб видит актуальный остаток.</div>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="fuel-field">
+      <label>{{ form.stock_liters.label }}</label>
+      {{ form.stock_liters }}
+    </div>
+    <div class="fuel-field">
+      <label>{{ form.pump_count.label }}</label>
+      {{ form.pump_count }}
+    </div>
+    <div class="fuel-field">
+      <label>{{ form.avg_refuel_minutes.label }}</label>
+      {{ form.avg_refuel_minutes }}
+    </div>
+    <div class="fuel-field fuel-field--check">
+      <label>{{ form.use_manual_queue }} {{ form.use_manual_queue.label }}</label>
+    </div>
+    <div class="fuel-field" id="fuel-queue-manual">
+      <label>{{ form.queue_minutes.label }}</label>
+      {{ form.queue_minutes }}
+      <p class="fuel-muted" style="font-size:13px;margin-top:4px">Только при ручном режиме очереди</p>
+    </div>
+    <button type="submit" class="fuel-btn">Сохранить</button>
+    <div class="fuel-actions">
+      <a href="{{ portal_root }}/azs/" class="fuel-btn fuel-btn--secondary">К сканеру</a>
+    </div>
+  </form>
+</div>
+<script>
+(function () {
+  var manual = document.getElementById('id_use_manual_queue');
+  var block = document.getElementById('fuel-queue-manual');
+  function sync() {
+    if (!manual || !block) return;
+    block.style.display = manual.checked ? '' : 'none';
+  }
+  if (manual) manual.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endblock %}

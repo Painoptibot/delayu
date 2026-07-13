@@ -1,0 +1,183 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="{{ brand_color }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>{% block title %}{{ page_brand }}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/fuel-citizen.css' %}">
+  <link rel="manifest" href="{{ portal_root }}/manifest.webmanifest">
+  <style>:root { --fuel-brand: {{ brand_color }}; }</style>
+</head>
+<body
+  class="fuel-body{% if body_class %} {{ body_class }}{% endif %}{% if citizen and body_class != 'fuel-body--azs' %} fuel-body--tabs{% endif %}"
+  data-fuel-portal-root="{{ portal_root }}"
+  data-fuel-is-citizen="{% if citizen %}1{% else %}0{% endif %}"
+>
+  <header class="fuel-header{% if body_class == 'fuel-body--azs' %} fuel-header--azs{% endif %}">
+    <div class="fuel-header__inner{% if azs_station %} fuel-header__inner--azs-auth{% endif %}">
+      <a href="{% if azs_station %}{{ portal_root }}/azs/{% else %}{{ portal_root }}/{% endif %}" class="fuel-logo{% if azs_station %} fuel-logo--azs{% endif %}">
+        {% if azs_station %}{{ azs_station.name }}{% elif body_class == 'fuel-body--azs' %}Портал АЗС{% else %}{{ page_brand }}{% endif %}
+      </a>
+      {% if azs_station %}
+        <nav class="fuel-nav fuel-nav--azs" aria-label="Портал АЗС">
+          <a href="{{ portal_root }}/azs/" class="fuel-nav__link{% if '/azs/stock/' not in request.path and '/azs/confirm/' not in request.path and '/azs/login/' not in request.path %} fuel-nav__link--active{% endif %}">Сканер</a>
+          <a href="{{ portal_root }}/azs/stock/" class="fuel-nav__link{% if '/azs/stock/' in request.path %} fuel-nav__link--active{% endif %}">Остаток</a>
+          <form method="post" action="{{ portal_root }}/azs/logout/" class="fuel-nav__logout-form">
+            {% csrf_token %}
+            <button type="submit" class="fuel-nav__cta fuel-nav__cta--ghost">Выйти</button>
+          </form>
+        </nav>
+      {% elif not citizen %}
+        <nav class="fuel-nav fuel-nav--guest" aria-label="Навигация">
+          {% if body_class == 'fuel-body--azs' %}
+            <a href="{{ portal_root }}/" class="fuel-nav__link">Портал жителя</a>
+          {% else %}
+            <a href="{{ portal_root }}/azs/login/" class="fuel-nav__link">Портал АЗС</a>
+            <a href="{{ portal_root }}/login/" class="fuel-nav__cta">Войти</a>
+          {% endif %}
+        </nav>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if citizen and body_class != 'fuel-body--azs' %}
+  <div id="fuel-citizen-offline-badge" class="fuel-offline-badge" hidden></div>
+  <div id="fuel-offline-queue-panel" class="fuel-offline-queue" hidden aria-live="polite">
+    <div class="fuel-offline-queue__head">
+      <strong>Заявки ожидают отправки</strong>
+      <span class="fuel-status fuel-status--offline-pending">Не приняты системой</span>
+    </div>
+    <p class="fuel-offline-queue__lead">
+      Без интернета заявки не попадают на сервер. Они отправятся автоматически после подключения к сети.
+    </p>
+    <ul class="fuel-offline-queue__list" id="fuel-offline-queue-list"></ul>
+  </div>
+  {% endif %}
+  <div id="fuel-offline-sync-notice" class="fuel-alert fuel-alert--info" hidden></div>
+
+  <main class="fuel-main">
+    {% for banner in portal_banners %}
+      {% if banner.kind == 'parity' %}
+        <div
+          class="fuel-parity-banner fuel-parity-banner--dismissible"
+          data-fuel-parity-banner
+          data-subsystem="{{ subsystem.code }}"
+          data-version="{{ banner.version }}"
+          hidden
+        >
+          <span class="fuel-parity-banner__text">{{ banner.message }}</span>
+          <button type="button" class="fuel-parity-banner__close" data-fuel-parity-close aria-label="Закрыть">×</button>
+        </div>
+      {% endif %}
+    {% endfor %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="fuel-alert fuel-alert--{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  {% if citizen and body_class != 'fuel-body--azs' %}
+    <nav class="fuel-tabbar" aria-label="Основное меню">
+      <a href="{{ portal_root }}/map/" class="fuel-tabbar__item{% if '/map/' in request.path %} fuel-tabbar__item--active{% endif %}">
+        <span class="fuel-tabbar__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        </span>
+        <span class="fuel-tabbar__label">Карта</span>
+      </a>
+      <a href="{{ portal_root }}/applications/" class="fuel-tabbar__item{% if '/applications' in request.path or '/apply/' in request.path %} fuel-tabbar__item--active{% endif %}">
+        <span class="fuel-tabbar__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        </span>
+        <span class="fuel-tabbar__label">Заявки</span>
+      </a>
+      <a href="{{ portal_root }}/history/" class="fuel-tabbar__item{% if '/history/' in request.path %} fuel-tabbar__item--active{% endif %}">
+        <span class="fuel-tabbar__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </span>
+        <span class="fuel-tabbar__label">История</span>
+      </a>
+      <a href="{{ portal_root }}/profile/" class="fuel-tabbar__item{% if '/profile/' in request.path %} fuel-tabbar__item--active{% endif %}">
+        <span class="fuel-tabbar__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 6.5-4 8-4s6.5 0 8 4"/></svg>
+        </span>
+        <span class="fuel-tabbar__label">Профиль</span>
+      </a>
+      <form method="post" action="{{ portal_root }}/logout/" class="fuel-tabbar__logout">
+        {% csrf_token %}
+        <button type="submit" class="fuel-tabbar__item fuel-tabbar__item--logout">
+          <span class="fuel-tabbar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          </span>
+          <span class="fuel-tabbar__label">Выйти</span>
+        </button>
+      </form>
+    </nav>
+  {% endif %}
+
+  <footer class="fuel-footer">
+    <div class="fuel-footer__panel">
+      <div
+        class="fuel-status-card{% if portal_user_refreshed %} fuel-status-card--fresh-persist{% endif %}"
+        data-fuel-portal-status
+        data-fuel-status-api="{{ fuel_status_api_url }}"
+        {% if portal_checked_at %}data-fuel-checked-at="{{ portal_checked_at|date:'c' }}"{% endif %}
+        {% if azs_status_updated_at %}data-fuel-updated-at="{{ azs_status_updated_at|date:'c' }}"{% endif %}
+        {% if portal_user_refreshed %}data-fuel-user-refreshed="1"{% endif %}
+      >
+        <button type="button" class="fuel-status-card__btn" data-fuel-status-refresh aria-expanded="false">
+          <span class="fuel-footer__dot fuel-footer__dot--online" data-fuel-status-dot aria-hidden="true"></span>
+          <span class="fuel-status-card__main">
+            <span class="fuel-status-card__title" data-fuel-status-text>Сервис: онлайн</span>
+            <span class="fuel-status-card__updated" data-fuel-status-updated>
+              {% if portal_checked_at %}Проверено {{ portal_checked_at|date:"d.m.Y H:i" }}{% else %}Дата обновления неизвестна{% endif %}
+            </span>
+          </span>
+          <span class="fuel-status-card__action" data-fuel-status-action>Обновить</span>
+        </button>
+        <p class="fuel-status-card__stale" data-fuel-status-stale hidden></p>
+      </div>
+      <p class="fuel-footer__lead">
+        Платформа «Делаю» · лимит на госномер · балансировка по АЗС города.
+      </p>
+      <div class="fuel-footer__links">
+        <a href="{{ portal_support_url }}">Техподдержка</a>
+        <a href="{{ portal_support_url }}#ask">Задать вопрос</a>
+        <a href="mailto:{{ fuel_support_email }}">{{ fuel_support_email }}</a>
+        <a href="tel:{{ fuel_support_phone|cut:' ' }}">{{ fuel_support_phone }}</a>
+      </div>
+      <p class="fuel-footer__copy">ООО «ЮГИТ» · {{ subsystem.name }}</p>
+    </div>
+  </footer>
+  <script src="{% static 'js/fuel-parity-banner.js' %}"></script>
+  <script src="{% static 'js/fuel-portal-status.js' %}"></script>
+  <script src="{% static 'js/fuel-citizen-offline.js' %}"></script>
+  <script>
+  (function () {
+    if (typeof FuelCitizenOffline !== 'undefined') {
+      FuelCitizenOffline.init({
+        syncUrl: {% if citizen %}'{{ fuel_apply_sync_url }}'{% else %}''{% endif %},
+      });
+    }
+    window.showFuelOfflineSyncNotice = function (count) {
+      var box = document.getElementById('fuel-offline-sync-notice');
+      if (!box || !count) return;
+      box.hidden = false;
+      box.className = 'fuel-alert fuel-alert--success';
+      box.textContent = 'Заявки приняты системой: ' + count + '. Обновите список заявок.';
+    };
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('{{ fuel_sw_url }}', { scope: '{{ portal_root }}/' }).catch(function () {});
+    }
+  })();
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

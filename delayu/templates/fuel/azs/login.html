@@ -1,0 +1,26 @@
+{% extends "fuel/public/base.html" %}
+
+{% block title %}АЗС · {{ page_brand }}{% endblock %}
+
+{% block content %}
+<div class="fuel-card">
+  <h1>Вход оператора АЗС</h1>
+  <p class="fuel-muted">Логин и пароль выдаёт оператор штаба города</p>
+  {% if form.non_field_errors %}<div class="fuel-error">{{ form.non_field_errors }}</div>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="fuel-field">
+      <label>{{ form.login.label }}</label>
+      {{ form.login }}
+    </div>
+    <div class="fuel-field">
+      <label>{{ form.pin.label }}</label>
+      {{ form.pin }}
+    </div>
+    <button type="submit" class="fuel-btn">Войти</button>
+  </form>
+  <div class="fuel-actions">
+    <a href="{{ portal_root }}/" class="fuel-btn fuel-btn--secondary">Портал жителя</a>
+  </div>
+</div>
+{% endblock %}

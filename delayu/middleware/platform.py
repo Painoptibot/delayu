@@ -15,6 +15,7 @@ SKIP_MEMBERSHIP_PREFIXES = (
     "/admin/",
     "/api/v1/health/",
     "/docs/tz/",
+    "/fuel/",
 )
 
 TWO_FACTOR_SKIP_PREFIXES = (
@@ -61,6 +62,10 @@ class ActiveMembershipMiddleware:
     def __call__(self, request):
         path = request.path
         if any(path.startswith(p) for p in SKIP_MEMBERSHIP_PREFIXES):
+            return self.get_response(request)
+        if getattr(request, "fuel_subsystem", None):
+            return self.get_response(request)
+        if path.startswith("/fuel/"):
             return self.get_response(request)
         if not getattr(request, "user", None) or not request.user.is_authenticated:
             return self.get_response(request)

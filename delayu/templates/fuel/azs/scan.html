@@ -1,0 +1,133 @@
+{% extends "fuel/public/base.html" %}
+{% load static %}
+
+{% block title %}Сканер · {{ station.name }}{% endblock %}
+
+{% block content %}
+<div id="fuel-offline-badge" class="fuel-offline-badge" hidden></div>
+<div class="fuel-card">
+  <p class="fuel-muted">{{ station.network }} · {{ station.address }}</p>
+  <h1>Сканер пропусков</h1>
+  <p class="fuel-muted">Смена: {{ stats.count }} отпусков · {{ stats.liters }} л</p>
+
+  {% if success %}
+    <div style="background:#ecfdf5;border:2px solid #10b981;border-radius:12px;padding:16px;text-align:center;margin-bottom:16px">
+      <p style="color:#065f46;font-weight:800;font-size:18px">✓ ОТПУСК ЗАФИКСИРОВАН</p>
+      <p style="font-size:13px;margin-top:8px">ГРЗ <strong>{{ success.plate }}</strong> · {{ success.liters }} л</p>
+    </div>
+  {% endif %}
+
+  {% if denied %}
+    <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:12px;padding:16px;text-align:center;margin-bottom:16px">
+      <p style="color:#991b1b;font-weight:800;font-size:18px">✗ ОТКАЗ</p>
+      <p style="font-size:13px;margin-top:8px">{{ denied.message }}</p>
+    </div>
+  {% endif %}
+
+  {% if preview and preview.allowed %}
+    <div class="fuel-azs-preview fuel-azs-preview--ok">
+      <p class="fuel-azs-preview__title">✓ РАЗРЕШЕНО</p>
+      <p class="fuel-azs-preview__meta">ГРЗ <strong>{{ preview.plate }}</strong> · макс. {{ preview.max_liters }} л</p>
+      {% if preview.manual_code %}
+        <div class="fuel-manual-code fuel-manual-code--compact">
+          <span class="fuel-manual-code__label">Код пропуска</span>
+          <span class="fuel-manual-code__value">{{ preview.manual_code }}</span>
+        </div>
+      {% endif %}
+      <a href="{{ portal_root }}/azs/confirm/" class="fuel-btn fuel-btn--success">Подтвердить отпуск</a>
+    </div>
+  {% endif %}
+
+  <div id="fuel-scanner" style="position:relative;overflow:hidden;border-radius:12px;background:#0f172a;min-height:200px;margin:16px 0">
+    <video id="fuel-video" playsinline style="width:100%;display:block"></video>
+    <div class="scan-line" style="height:3px;background:linear-gradient(90deg,transparent,#059669,transparent);animation:scan 2s infinite"></div>
+  </div>
+  <p class="fuel-muted" style="text-align:center;font-size:12px">Наведите камеру на QR-пропуск</p>
+
+  <form method="post" style="margin-top:20px" class="fuel-azs-manual-form">
+    {% csrf_token %}
+    <input type="hidden" name="qr_payload" id="fuel-qr-payload">
+    <div class="fuel-field">
+      <label>{{ manual_form.manual_code.label }}</label>
+      {{ manual_form.manual_code }}
+      <p class="fuel-muted fuel-azs-manual-hint">8 символов с карточки пропуска жителя</p>
+    </div>
+    <button type="submit" class="fuel-btn fuel-btn--secondary">Проверить код вручную</button>
+  </form>
+
+  <div class="fuel-actions-row">
+    <a href="{{ portal_root }}/azs/stock/" class="fuel-btn fuel-btn--secondary">Остаток топлива</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+@keyframes scan { 0%,100%{transform:translateY(0);opacity:.3} 50%{transform:translateY(120px);opacity:1} }
+</style>
+<script src="{% static 'js/fuel-azs-offline.js' %}"></script>
+<script>
+  FuelAzsOffline.init({ syncUrl: '{{ portal_root }}/azs/sync/' });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+(function() {
+  const video = document.getElementById('fuel-video');
+  const payloadInput = document.getElementById('fuel-qr-payload');
+  const portalRoot = '{{ portal_root }}';
+  let scanning = false;
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      video.srcObject = stream;
+      await video.play();
+      scanning = true;
+      requestAnimationFrame(tick);
+    } catch (e) {
+      document.getElementById('fuel-scanner').innerHTML = '<p style="color:#94a3b8;padding:20px;text-align:center">Камера недоступна — используйте ручной ввод кода</p>';
+    }
+  }
+
+  function tick() {
+    if (!scanning || video.readyState !== video.HAVE_ENOUGH_DATA) {
+      requestAnimationFrame(tick);
+      return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
+    if (code && code.data) {
+      scanning = false;
+      payloadInput.value = code.data;
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = portalRoot + '/azs/';
+      const csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+      if (csrf) {
+        const inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'csrfmiddlewaretoken';
+        inp.value = csrf.value;
+        form.appendChild(inp);
+      }
+      const p = document.createElement('input');
+      p.type = 'hidden';
+      p.name = 'qr_payload';
+      p.value = code.data;
+      form.appendChild(p);
+      document.body.appendChild(form);
+      form.submit();
+      return;
+    }
+    requestAnimationFrame(tick);
+  }
+
+  if (navigator.mediaDevices) startCamera();
+})();
+</script>
+{% endblock %}

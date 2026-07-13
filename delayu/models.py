@@ -63,7 +63,14 @@ class Subsystem(models.Model):
             ("agency", "Ведомство"),
             ("holding", "Холдинг"),
             ("uzhv", "АИС УЖВ"),
+            ("fuel", "Топливный пропуск"),
         ],
+    )
+    public_subdomain = models.SlugField(
+        "Поддомен публичного портала",
+        max_length=64,
+        blank=True,
+        help_text="Например novorossiysk → novorossiysk.delau.tech",
     )
     config_version = models.CharField("Версия конфигурации", max_length=32, blank=True)
     menu_layout = models.JSONField("Меню (конструктор)", default=list, blank=True)
@@ -213,3 +220,4 @@ class SubsystemMembership(models.Model):
 
 from delayu.models_business import *  # noqa: E402, F403
 from delayu.models_uzhv import *  # noqa: E402, F403
+from delayu.models_fuel import *  # noqa: E402, F403

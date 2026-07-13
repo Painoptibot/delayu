@@ -1,0 +1,26 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block header_actions %}
+  <a href="{% url 'fuel-operator-support' %}" class="btn btn-outline-secondary btn-sm">← К списку</a>
+{% endblock %}
+{% block card_body %}
+<div class="mb-4">
+  <p class="mb-1"><strong>{{ ticket.name }}</strong> · {{ ticket.contact }}</p>
+  <p class="text-muted small mb-2">{{ ticket.created_at|date:"d.m.Y H:i" }} · {{ ticket.get_status_display }}</p>
+  <div class="border rounded p-3 bg-light">{{ ticket.question|linebreaksbr }}</div>
+</div>
+<form method="post" class="row g-3">
+  {% csrf_token %}
+  <div class="col-md-4">
+    <label class="form-label">{{ form.status.label }}</label>
+    {{ form.status }}
+  </div>
+  <div class="col-12">
+    <label class="form-label">{{ form.operator_note.label }}</label>
+    {{ form.operator_note }}
+  </div>
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">Сохранить ответ</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block card_body %}
+<div class="alert {% if audit.ok %}alert-success{% else %}alert-warning{% endif %}">
+  Проверок: {{ audit.summary.total }} · пройдено: {{ audit.summary.passed }} ·
+  критичных проблем: {{ audit.summary.critical_fail }} · высоких: {{ audit.summary.high_fail }}
+</div>
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr><th>Проверка</th><th>Уровень</th><th>Результат</th><th>Детали</th></tr>
+    </thead>
+    <tbody>
+      {% for f in audit.findings %}
+      <tr class="{% if not f.passed and f.severity == 'critical' %}table-danger{% elif not f.passed %}table-warning{% endif %}">
+        <td>
+          <strong>{{ f.title }}</strong>
+          {% if f.recommendation %}<div class="small text-muted">{{ f.recommendation }}</div>{% endif %}
+        </td>
+        <td>{{ f.severity }}</td>
+        <td>{% if f.passed %}✓{% else %}✗{% endif %}</td>
+        <td class="small">{{ f.detail }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

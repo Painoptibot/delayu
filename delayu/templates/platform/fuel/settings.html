@@ -1,0 +1,23 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block card_body %}
+<p class="text-muted">Параметры автоматического расчёта очереди и ёмкости АЗС.</p>
+<form method="post" class="row g-3" style="max-width:520px">
+  {% csrf_token %}
+  <div class="col-12">
+    <label class="form-label">{{ form.permit_quota_liters.label }}</label>
+    {{ form.permit_quota_liters }}
+    <div class="form-text">Используется для расчёта макс. числа заявок: остаток ÷ квота</div>
+  </div>
+  <div class="col-12">
+    <div class="form-check">
+      {{ form.auto_queue_enabled }}
+      <label class="form-check-label">{{ form.auto_queue_enabled.label }}</label>
+    </div>
+    <div class="form-text">При включении очередь считается по колонкам и среднему времени заправки</div>
+  </div>
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+  </div>
+</form>
+{% endblock %}

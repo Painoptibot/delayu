@@ -1,0 +1,3 @@
+{% load static %}
+<script>window.FUEL_YANDEX_MAPS_API_KEY = "{{ yandex_maps_api_key|default:''|escapejs }}";</script>
+<script src="{% static 'js/delayu-fuel-map.js' %}"></script>

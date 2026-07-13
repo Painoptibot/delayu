@@ -11,15 +11,30 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="subsystem",
-            name="studio_draft",
-            field=models.JSONField(blank=True, default=dict, verbose_name="Черновик Студии"),
-        ),
-        migrations.AddField(
-            model_name="subsystem",
-            name="studio_has_draft",
-            field=models.BooleanField(default=False, verbose_name="Есть неопубликованные изменения"),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+                    ALTER TABLE delayu_subsystem
+                        ADD COLUMN IF NOT EXISTS studio_draft jsonb NOT NULL DEFAULT '{}';
+                    ALTER TABLE delayu_subsystem
+                        ADD COLUMN IF NOT EXISTS studio_has_draft boolean NOT NULL DEFAULT false;
+                    """,
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name="subsystem",
+                    name="studio_draft",
+                    field=models.JSONField(blank=True, default=dict, verbose_name="Черновик Студии"),
+                ),
+                migrations.AddField(
+                    model_name="subsystem",
+                    name="studio_has_draft",
+                    field=models.BooleanField(default=False, verbose_name="Есть неопубликованные изменения"),
+                ),
+            ],
         ),
         migrations.CreateModel(
             name="RoleStudioLayout",

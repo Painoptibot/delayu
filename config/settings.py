@@ -77,6 +77,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
 
     "django.middleware.common.CommonMiddleware",
+    "delayu.middleware.fuel_portal.FuelPortalMiddleware",
 
     "django.middleware.csrf.CsrfViewMiddleware",
 
@@ -312,6 +313,12 @@ DEPLOY_WEBHOOK_TOKEN = os.getenv("DEPLOY_WEBHOOK_TOKEN", "")
 
 # Публичная форма обращений УЖВ (пусто = без токена, только для dev)
 UZHV_PUBLIC_APPEAL_TOKEN = os.getenv("UZHV_PUBLIC_APPEAL_TOKEN", "")
+
+# Топливный пропуск — базовый домен для поддоменов портала (novorossiysk.delau.tech)
+FUEL_PLATFORM_BASE_DOMAIN = os.getenv("FUEL_PLATFORM_BASE_DOMAIN", "delau.tech")
+FUEL_SUPPORT_EMAIL = os.getenv("FUEL_SUPPORT_EMAIL", "support@delau.tech")
+FUEL_SUPPORT_PHONE = os.getenv("FUEL_SUPPORT_PHONE", "8 (800) 100-00-00")
+FUEL_SMS_DEMO_MODE = os.getenv("FUEL_SMS_DEMO_MODE", "true").lower() in ("1", "true", "yes")
 
 # Версия платформы для паспорта продукта и реестра
 DELAYU_PLATFORM_VERSION = os.getenv("DELAYU_PLATFORM_VERSION", "2.2.0")

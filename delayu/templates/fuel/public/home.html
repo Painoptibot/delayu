@@ -1,0 +1,82 @@
+{% extends "fuel/public/base.html" %}
+{% load fuel_portal %}
+
+{% block content %}
+{% if queue_position %}
+<div class="fuel-queue-banner">
+  Заявка <strong>{{ pending_application.number }}</strong> на проверке.
+  Примерная очередь: <strong>№{{ queue_position }}</strong> из {{ queue_total }}.
+</div>
+{% endif %}
+{% if citizen and active_permit %}
+  <div class="fuel-card">
+    <span class="fuel-hero-badge">Пропуск активен</span>
+    <h1>{{ active_permit.number }}</h1>
+    <p class="fuel-muted">Заявка {{ active_permit.application.number }} · {{ active_permit.get_status_display }}</p>
+    <div class="fuel-qr-wrap">
+      <a href="{{ portal_root }}/permits/{{ active_permit.pk }}/">
+        {% if active_permit_qr_svg %}
+          <div class="fuel-qr-svg">{{ active_permit_qr_svg }}</div>
+        {% else %}
+          <img src="{{ portal_root }}/permits/{{ active_permit.pk }}/qr.svg" alt="QR-пропуск">
+        {% endif %}
+      </a>
+    </div>
+    <div class="fuel-permit-meta">
+      <strong>{{ active_permit.plate }}</strong><br>
+      {{ active_permit.remaining_liters }} из {{ active_permit.max_liters }} л · до {{ active_permit.valid_until|date:"d.m.Y H:i" }}
+    </div>
+    {% include "fuel/public/_permit_card_extras.html" with permit=active_permit permit_usage=active_permit_usage %}
+    {% if active_permit.assigned_azs %}
+      <p class="fuel-muted" style="margin-top:12px;text-align:center">
+        Рекомендуемая АЗС: <strong>{{ active_permit.assigned_azs.name }}</strong><br>
+        {{ active_permit.assigned_azs.address }}
+      </p>
+    {% endif %}
+    <a href="{{ portal_root }}/permits/{{ active_permit.pk }}/" class="fuel-btn">Показать QR на заправке</a>
+  </div>
+{% elif citizen %}
+  <div class="fuel-card">
+    <h1>Здравствуйте, {{ citizen.full_name|default:citizen.phone }}</h1>
+    <p class="fuel-muted">Нет активного пропуска. Подайте заявку — обычно это занимает до 3 минут.</p>
+    <a href="{{ portal_root }}/apply/" class="fuel-btn">Подать заявку</a>
+  </div>
+{% else %}
+  <div class="fuel-card">
+    <span class="fuel-hero-badge">Портал жителя</span>
+    <h1>Топливный пропуск</h1>
+    <p class="fuel-muted">Электронный пропуск на АЗС при ограниченных поставках топлива. Лимит на госномер по всему городу.</p>
+    <a href="{{ portal_root }}/login/" class="fuel-btn">Войти по телефону</a>
+  </div>
+{% endif %}
+
+<div class="fuel-card">
+  <h2>Карта АЗС</h2>
+  <p class="fuel-muted" data-fuel-azs-subtitle>
+    Статус заправок и очередь · обновление онлайн
+    {% if portal_checked_at %}· обновлено {{ portal_checked_at|date:"d.m.Y H:i" }}{% endif %}
+  </p>
+  <div data-fuel-azs-recommended>
+  {% for azs in recommended_azs %}
+    <a href="{% fuel_apply_azs_url_tag azs.pk %}" class="fuel-azs-item fuel-azs-item--link{% if forloop.first %} fuel-azs-item--selected{% endif %}" data-azs-id="{{ azs.pk }}">
+      <h3>{{ azs.name }}</h3>
+      <p>
+        {% if azs.status == 'ok' %}<span class="fuel-status fuel-status--ok">● Есть {{ azs.fuel_grade }}</span>
+        {% elif azs.status == 'low' %}<span class="fuel-status fuel-status--warn">● Мало</span>
+        {% elif azs.status == 'busy' %}<span class="fuel-status fuel-status--bad">● Перегрузка</span>
+        {% else %}<span class="fuel-status fuel-status--bad">● Нет бензина</span>{% endif %}
+        · очередь ~{{ azs.queue_minutes }} мин
+      </p>
+      <p class="fuel-muted">{{ azs.address }}</p>
+      <span class="fuel-azs-item__hint">Выбрать для заявки →</span>
+    </a>
+  {% empty %}
+    <p class="fuel-muted">Список АЗС загружается…</p>
+  {% endfor %}
+  </div>
+  <a href="{{ portal_root }}/map/" class="fuel-btn fuel-btn--secondary">Вся карта и рекомендации</a>
+  <div class="fuel-actions">
+    <a href="{{ portal_root }}/azs/login/" class="fuel-btn fuel-btn--secondary">Портал АЗС</a>
+  </div>
+</div>
+{% endblock %}

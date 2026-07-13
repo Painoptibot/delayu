@@ -40,6 +40,7 @@ from delayu.views_ux import *  # noqa: F401, F403
 from delayu.views_waves import *  # noqa: F401, F403
 from delayu.views_studio import *  # noqa: F401, F403
 from delayu.views_uzhv import *  # noqa: F401, F403
+from delayu.views_fuel_operator import *  # noqa: F401, F403
 from delayu.views_security import *  # noqa: F401, F403
 from delayu.views_reauth import *  # noqa: F401, F403
 from delayu.views_etl import *  # noqa: F401, F403

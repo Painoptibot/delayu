@@ -1,0 +1,35 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block card_body %}
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="card"><div class="card-body">
+    <span class="text-muted">Отпусков сегодня</span>
+    <h4>{{ stats.redeems_today }}</h4>
+  </div></div></div>
+  <div class="col-md-4"><div class="card"><div class="card-body">
+    <span class="text-muted">Литров сегодня</span>
+    <h4>{{ stats.liters_today }}</h4>
+  </div></div></div>
+  <div class="col-md-4"><div class="card"><div class="card-body">
+    <span class="text-muted">Активных пропусков</span>
+    <h4>{{ stats.permits_active }}</h4>
+  </div></div></div>
+</div>
+<h5>Последние отпуски</h5>
+<div class="table-responsive">
+  <table class="table table-sm">
+    <thead><tr><th>Время</th><th>АЗС</th><th>ГРЗ</th><th>Л</th><th>Пропуск</th></tr></thead>
+    <tbody>
+      {% for r in recent_redeems %}
+      <tr>
+        <td>{{ r.created_at|date:"d.m H:i" }}</td>
+        <td>{{ r.azs.name }}</td>
+        <td>{{ r.plate }}</td>
+        <td>{{ r.liters }}</td>
+        <td>{{ r.permit.number }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

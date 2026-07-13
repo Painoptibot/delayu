@@ -1,0 +1,25 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block card_body %}
+<div class="table-responsive">
+  <table class="table table-sm">
+    <thead>
+      <tr><th>Время</th><th>Контур</th><th>Действие</th><th>Описание</th><th>Инициатор</th></tr>
+    </thead>
+    <tbody>
+      {% for e in events %}
+      <tr>
+        <td class="text-nowrap">{{ e.created_at|date:"d.m.Y H:i:s" }}</td>
+        <td>{{ e.get_channel_display }}</td>
+        <td><code>{{ e.action }}</code></td>
+        <td>{{ e.summary }}</td>
+        <td>{{ e.actor_label|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-muted">Событий пока нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="text-muted small">Отпуски на АЗС, действия операторов штаба, входы и обновления остатков на портале АЗС.</p>
+{% endblock %}

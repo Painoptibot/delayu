@@ -1,0 +1,46 @@
+{% extends "fuel/public/base.html" %}
+
+{% block title %}Заявка {{ application.number }} · {{ page_brand }}{% endblock %}
+
+{% block content %}
+<div class="fuel-card">
+  <h1>Заявка {{ application.number }}</h1>
+  <p>
+    {% if application.status == 'approved' %}
+      <span class="fuel-status fuel-status--ok">● Одобрено</span>
+    {% elif application.status == 'rejected' %}
+      <span class="fuel-status fuel-status--bad">● Отклонено</span>
+    {% else %}
+      <span class="fuel-status fuel-status--pending">● На проверке</span>
+    {% endif %}
+  </p>
+  <table class="fuel-table" style="margin-top:16px">
+    <tr><th>Госномер</th><td>{{ application.plate }}</td></tr>
+    <tr><th>Категория</th><td>{{ application.category.name }} · {{ application.category.daily_limit_liters }} л/сутки</td></tr>
+    <tr><th>Дата</th><td>{{ application.created_at|date:"d.m.Y H:i" }}</td></tr>
+    {% if application.assigned_azs %}
+      <tr><th>АЗС</th><td>{{ application.assigned_azs.name }}</td></tr>
+    {% endif %}
+    {% if application.reject_reason %}
+      <tr><th>Причина отказа</th><td>{{ application.reject_reason }}</td></tr>
+    {% endif %}
+  </table>
+
+  {% if permit %}
+    <a href="{{ portal_root }}/permits/{{ permit.pk }}/" class="fuel-btn fuel-btn--success">Открыть QR-пропуск</a>
+    {% if permit_usage and permit_usage.redeemed_total %}
+      <div class="fuel-redeem-summary" style="margin-top:16px">
+        <p class="fuel-redeem-summary__title">Заправлено по пропуску: <strong>{{ permit_usage.redeemed_total }} л</strong></p>
+        <ul class="fuel-redeem-summary__list">
+          {% for r in permit_usage.redeems %}
+            <li>{{ r.created_at|date:"d.m.Y H:i" }} · {{ r.azs.name }} · {{ r.liters }} л</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  {% elif application.status == 'pending' %}
+    <p class="fuel-muted" style="margin-top:16px">Оператор штаба проверит заявку. Вы получите уведомление после одобрения.</p>
+  {% endif %}
+  <a href="{{ portal_root }}/applications/" class="fuel-btn fuel-btn--secondary">Все заявки</a>
+</div>
+{% endblock %}

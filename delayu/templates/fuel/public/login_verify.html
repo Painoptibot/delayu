@@ -1,0 +1,25 @@
+{% extends "fuel/public/base.html" %}
+
+{% block title %}Код подтверждения · {{ page_brand }}{% endblock %}
+
+{% block content %}
+<div class="fuel-card">
+  <h1>Код подтверждения</h1>
+  <p class="fuel-muted">Отправили код на <strong>{{ phone_display }}</strong> ({{ channel_label }}).</p>
+  {% if form.non_field_errors %}
+    <div class="fuel-error">{{ form.non_field_errors }}</div>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="fuel-field">
+      <label for="id_code">{{ form.code.label }}</label>
+      {{ form.code }}
+      {% if form.code.errors %}<div class="fuel-error">{{ form.code.errors }}</div>{% endif %}
+    </div>
+    <button type="submit" class="fuel-btn">Войти</button>
+  </form>
+  <div class="fuel-actions">
+    <a href="{{ portal_root }}/login/" class="fuel-btn fuel-btn--secondary">Изменить телефон</a>
+  </div>
+</div>
+{% endblock %}

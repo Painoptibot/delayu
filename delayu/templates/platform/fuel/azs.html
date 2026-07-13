@@ -1,0 +1,90 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block header_actions %}
+  <a href="{% url 'fuel-operator-azs-create' %}" class="btn btn-primary btn-sm">+ Добавить АЗС</a>
+{% endblock %}
+{% block card_body %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <span class="text-muted small" data-fuel-live-updated>Обновление онлайн…</span>
+  <a href="{{ citizen_portal_azs_path }}" class="btn btn-outline-secondary btn-sm" target="_blank">Портал АЗС ↗</a>
+</div>
+
+<h6 class="mb-2">Пользователи портала АЗС</h6>
+<p class="text-muted small mb-3">Логин и пароль для входа операторов на заправке. Блокировка снимает доступ без удаления учётки.</p>
+<div class="table-responsive mb-4">
+  <table class="table table-sm align-middle" id="fuel-azs-users-table">
+    <thead>
+      <tr><th>АЗС</th><th>Логин</th><th>Пароль</th><th>Доступ</th><th>Пропуска</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for s in active_stations %}
+      <tr data-station-id="{{ s.pk }}" class="{% if s.portal_blocked %}table-warning{% endif %}">
+        <td>{{ s.name }}</td>
+        <td><code>{{ s.portal_login|default:"—" }}</code></td>
+        <td><code>{{ s.portal_pin|default:"—" }}</code></td>
+        <td data-portal-blocked-cell>
+          {% if s.portal_blocked %}<span class="text-danger">Заблокирован</span>{% else %}<span class="text-success">Активен</span>{% endif %}
+        </td>
+        <td data-fuel-accepting-cell>{% if s.is_accepting_permits %}<span class="text-success">Да</span>{% else %}<span class="text-danger">Стоп</span>{% endif %}</td>
+        <td class="text-nowrap">
+          <form method="post" action="{% url 'fuel-operator-azs-portal-block' s.pk %}" class="d-inline" data-fuel-portal-block>
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm {% if s.portal_blocked %}btn-outline-success{% else %}btn-outline-warning{% endif %}">
+              {% if s.portal_blocked %}Разблокировать{% else %}Блок{% endif %}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted">Нет активных АЗС</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h6 class="mb-2">Все АЗС</h6>
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr><th>АЗС</th><th>Район</th><th>Статус</th><th>Остаток</th><th>Очередь</th><th></th></tr>
+    </thead>
+    <tbody id="fuel-azs-stations-tbody">
+      {% for s in stations %}
+      <tr data-station-id="{{ s.pk }}" class="{% if s.is_archived %}table-secondary text-muted{% endif %}" data-archived="{% if s.is_archived %}1{% else %}0{% endif %}">
+        <td>
+          {{ s.name }}
+          {% if s.is_archived %}<span class="badge bg-secondary ms-1">архив</span>{% endif %}
+          <br><small class="text-muted">{{ s.address }}</small>
+        </td>
+        <td>{{ s.district|default:"—" }}</td>
+        <td data-station-status>{{ s.get_status_display }}</td>
+        <td data-station-stock>{{ s.stock_liters }} л</td>
+        <td data-station-queue>{{ s.queue_minutes }} мин</td>
+        <td class="text-nowrap">
+          {% if not s.is_archived %}
+          <a href="{% url 'fuel-operator-azs-edit' s.pk %}" class="btn btn-outline-primary btn-sm">Изменить</a>
+          <form method="post" action="{% url 'fuel-operator-azs-toggle' s.pk %}" class="d-inline" data-fuel-azs-toggle>
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm {% if s.is_accepting_permits %}btn-outline-danger{% else %}btn-outline-success{% endif %}" data-accepting="{% if s.is_accepting_permits %}1{% else %}0{% endif %}">
+              {% if s.is_accepting_permits %}Стоп{% else %}Пуск{% endif %}
+            </button>
+          </form>
+          {% endif %}
+          <form method="post" action="{% url 'fuel-operator-azs-archive' s.pk %}" class="d-inline" onsubmit="return confirm('{% if s.is_archived %}Восстановить АЗС?{% else %}Перенести в архив? Портал будет заблокирован.{% endif %}');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm {% if s.is_archived %}btn-outline-success{% else %}btn-outline-secondary{% endif %}">
+              {% if s.is_archived %}Восстановить{% else %}В архив{% endif %}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div data-fuel-live data-fuel-live-url="{{ live_api_url }}" data-fuel-live-mode="azs"></div>
+{% load static %}
+<script src="{% static 'js/delayu-fuel-operator.js' %}"></script>
+<script src="{% static 'js/delayu-fuel-live.js' %}"></script>
+{% endblock %}

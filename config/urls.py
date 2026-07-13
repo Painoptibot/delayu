@@ -7,6 +7,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("core.urls")),
     path("", include("delayu.urls")),
+    path("", include("delayu.urls_fuel_public")),
     path("", include("apps.pages.urls")),
 ]
 

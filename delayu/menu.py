@@ -116,6 +116,26 @@ MENU_SECTIONS = [
         ],
     },
     {
+        "header": "Топливный пропуск",
+        "template": "fuel",
+        "items": [
+            {"url_name": "fuel-operator-hub", "codes": ["M22"], "icon": "ri-gas-station-line", "label": "Обзор штаба"},
+            {"url_name": "fuel-operator-dashboard", "codes": ["M15"], "icon": "ri-dashboard-3-line", "label": "Дашборд"},
+            {"url_name": "fuel-operator-leadership", "codes": ["M15"], "icon": "ri-presentation-line", "label": "Руководство"},
+            {"url_name": "fuel-operator-applications", "codes": ["M22"], "icon": "ri-file-list-3-line", "label": "Заявки"},
+            {"url_name": "fuel-operator-azs", "codes": ["M22"], "icon": "ri-map-pin-line", "label": "АЗС"},
+            {"url_name": "fuel-operator-blacklist", "codes": ["M22"], "icon": "ri-forbid-line", "label": "Чёрный список"},
+            {"url_name": "fuel-operator-parity", "codes": ["M22"], "icon": "ri-calendar-check-line", "label": "Чётность ГРЗ"},
+            {"url_name": "fuel-operator-reports", "codes": ["M15"], "icon": "ri-bar-chart-line", "label": "Отчёты"},
+            {"url_name": "fuel-operator-logs-ops", "codes": ["M22"], "icon": "ri-history-line", "label": "Журнал штаб/АЗС"},
+            {"url_name": "fuel-operator-logs-citizen", "codes": ["M22"], "icon": "ri-user-search-line", "label": "Журнал жителей"},
+            {"url_name": "fuel-operator-support", "codes": ["M22"], "icon": "ri-customer-service-2-line", "label": "Обращения ТП"},
+            {"url_name": "fuel-operator-settings", "codes": ["M22"], "icon": "ri-settings-3-line", "label": "Настройки прогноза"},
+            {"url_name": "fuel-operator-demo", "codes": ["M15"], "icon": "ri-speed-line", "label": "Нагрузка и health"},
+            {"url_name": "fuel-operator-security", "codes": ["M15"], "icon": "ri-shield-check-line", "label": "Безопасность"},
+        ],
+    },
+    {
         "header": "АИС УЖВ",
         "template": "uzhv",
         "items": [

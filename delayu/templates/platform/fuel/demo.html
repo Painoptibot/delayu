@@ -1,0 +1,58 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block card_body %}
+<h5 class="mb-3">Состояние компонентов</h5>
+<p class="text-muted small">Проверено: {{ health.checked_at|default:"—" }}</p>
+<div class="row g-3 mb-4">
+  {% for name, comp in health.components.items %}
+  <div class="col-md-4">
+    <div class="card h-100 border-start border-3 {% if comp.ok %}border-success{% else %}border-danger{% endif %}">
+      <div class="card-body py-3">
+        <span class="text-muted small text-uppercase">{{ name }}</span>
+        <h4 class="mb-0">{% if comp.ok %}OK{% else %}Ошибка{% endif %}</h4>
+        <div class="small text-muted">{{ comp.ms|default:"—" }} мс</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<table class="table table-sm mb-4" style="max-width:480px">
+  {% for key, val in health.counts.items %}
+  <tr><td>{{ key }}</td><td><strong>{{ val }}</strong></td></tr>
+  {% endfor %}
+</table>
+
+<h5 class="mb-3">Нагрузочный тест</h5>
+<form method="post" class="row g-3 align-items-end mb-4" style="max-width:520px">
+  {% csrf_token %}
+  <div class="col-md-4">
+    <label class="form-label">Запросов на endpoint</label>
+    <input type="number" name="requests" class="form-control" value="20" min="5" max="100">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Потоков</label>
+    <input type="number" name="workers" class="form-control" value="8" min="1" max="32">
+  </div>
+  <div class="col-md-4">
+    <button type="submit" class="btn btn-primary w-100">Запустить</button>
+  </div>
+</form>
+
+{% if load_result %}
+<div class="alert {% if load_result.ok %}alert-success{% else %}alert-warning{% endif %}">
+  Запросов: {{ load_result.total_requests }} · успешно: {{ load_result.success_count }} ·
+  p95: {{ load_result.p95_ms }} мс · RPS: {{ load_result.rps }}
+</div>
+<table class="table table-sm">
+  <thead><tr><th>Endpoint</th><th>Средн.</th><th>Макс.</th></tr></thead>
+  <tbody>
+    {% for path, stats in load_result.per_endpoint.items %}
+    <tr><td><code>{{ path }}</code></td><td>{{ stats.avg_ms }} мс</td><td>{{ stats.max_ms }} мс</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<p class="text-muted small">CLI: <code>python manage.py fuel_load_demo --subsystem novorossiysk</code></p>
+{% endblock %}

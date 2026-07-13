@@ -1,0 +1,99 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block header_actions %}
+  <a href="{% url 'fuel-operator-azs' %}" class="btn btn-outline-secondary btn-sm">← К списку АЗС</a>
+{% endblock %}
+{% block card_body %}
+<form method="post" class="row g-3">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="col-12 alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="col-md-8">
+    <label class="form-label">{{ form.name.label }}</label>
+    {{ form.name }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.code.label }}</label>
+    {{ form.code }}
+    <div class="form-text">{{ form.code.help_text }}</div>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.network.label }}</label>
+    {{ form.network }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.district.label }}</label>
+    {{ form.district }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.fuel_grade.label }}</label>
+    {{ form.fuel_grade }}
+  </div>
+  <div class="col-12">
+    <label class="form-label">{{ form.address.label }}</label>
+    {{ form.address }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.latitude.label }}</label>
+    {{ form.latitude }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.longitude.label }}</label>
+    {{ form.longitude }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.status.label }}</label>
+    {{ form.status }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.stock_liters.label }}</label>
+    {{ form.stock_liters }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.queue_minutes.label }}</label>
+    {{ form.queue_minutes }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.pump_count.label }}</label>
+    {{ form.pump_count }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.avg_refuel_minutes.label }}</label>
+    {{ form.avg_refuel_minutes }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.max_apps_override.label }}</label>
+    {{ form.max_apps_override }}
+    <div class="form-text">Пусто — рассчитывается автоматически</div>
+  </div>
+  <div class="col-md-4 d-flex align-items-end">
+    <div class="form-check">
+      {{ form.use_manual_queue }}
+      <label class="form-check-label">{{ form.use_manual_queue.label }}</label>
+    </div>
+  </div>
+  <div class="col-md-4 d-flex align-items-end">
+    <div class="form-check">
+      {{ form.is_accepting_permits }}
+      <label class="form-check-label">{{ form.is_accepting_permits.label }}</label>
+    </div>
+  </div>
+  <div class="col-12"><hr><h6>Доступ к порталу АЗС</h6></div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.portal_login.label }}</label>
+    {{ form.portal_login }}
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ form.portal_pin.label }}</label>
+    {{ form.portal_pin }}
+  </div>
+  <div class="col-md-4 d-flex align-items-end">
+    <div class="form-check">
+      {{ form.portal_blocked }}
+      <label class="form-check-label">{{ form.portal_blocked.label }}</label>
+    </div>
+  </div>
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">{% if is_create %}Создать{% else %}Сохранить{% endif %}</button>
+  </div>
+</form>
+{% endblock %}

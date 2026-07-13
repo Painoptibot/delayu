@@ -1,0 +1,62 @@
+{% extends "fuel/public/base.html" %}
+
+{% block title %}Профиль · {{ page_brand }}{% endblock %}
+
+{% block content %}
+<div class="fuel-card">
+  <h1>Профиль</h1>
+  <p class="fuel-muted">{{ citizen.full_name|default:phone_display }}</p>
+  <p class="fuel-muted">Телефон: <strong>{{ phone_display }}</strong></p>
+  {% if citizen.esia_oid %}
+    <p class="fuel-muted">Госуслуги: привязаны</p>
+  {% endif %}
+  {% if citizen.max_chat_id %}
+    <p class="fuel-muted">MAX: <strong>{{ citizen.max_chat_id }}</strong></p>
+  {% endif %}
+</div>
+
+<div class="fuel-card">
+  <h2>Уведомления о пропуске</h2>
+  <p class="fuel-muted">Дублируем параметры пропуска при одобрении заявки — удобно, если на АЗС нет интернета.</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="fuel-field">
+      <label class="fuel-consent__label">
+        <input type="checkbox" name="notify_sms" {% if citizen.notify_sms %}checked{% endif %}>
+        <span>Дублировать пропуск по SMS</span>
+      </label>
+    </div>
+    {% if max_available %}
+    <div class="fuel-field">
+      <label for="max_chat_id">ID чата MAX</label>
+      <input
+        type="text"
+        class="fuel-input"
+        id="max_chat_id"
+        name="max_chat_id"
+        value="{{ citizen.max_chat_id }}"
+        placeholder="user_12345"
+        autocomplete="off"
+      >
+    </div>
+    <div class="fuel-field">
+      <label class="fuel-consent__label">
+        <input type="checkbox" name="notify_max" {% if citizen.notify_max %}checked{% endif %}>
+        <span>Дублировать пропуск в мессенджер MAX</span>
+      </label>
+    </div>
+    {% endif %}
+    {% if max_demo_mode or sms_demo_mode %}
+    <div class="fuel-alert fuel-alert--info">
+      Демо-режим{% if sms_demo_mode and max_demo_mode %} SMS и MAX{% elif max_demo_mode %} MAX{% else %} SMS{% endif %}:
+      сообщения пишутся в журнал доставки платформы.
+    </div>
+    {% endif %}
+    <button type="submit" class="fuel-btn">Сохранить</button>
+  </form>
+</div>
+
+<div class="fuel-actions">
+  <a href="{{ portal_root }}/" class="fuel-btn fuel-btn--secondary">На главную</a>
+</div>
+{% endblock %}

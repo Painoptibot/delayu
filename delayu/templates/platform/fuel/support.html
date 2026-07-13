@@ -1,0 +1,33 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block card_body %}
+<div class="mb-3 d-flex gap-2 flex-wrap">
+  <a href="{% url 'fuel-operator-support' %}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">Все</a>
+  {% for code, label in status_choices %}
+  <a href="?status={{ code }}" class="btn btn-sm {% if status_filter == code %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Дата</th><th>Имя</th><th>Контакт</th><th>Вопрос</th><th>Статус</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tickets %}
+      <tr>
+        <td class="text-nowrap">{{ t.created_at|date:"d.m.Y H:i" }}</td>
+        <td>{{ t.name }}</td>
+        <td>{{ t.contact }}</td>
+        <td>{{ t.question|truncatechars:80 }}</td>
+        <td><span class="badge bg-secondary">{{ t.get_status_display }}</span></td>
+        <td><a href="{% url 'fuel-operator-support-detail' t.pk %}" class="btn btn-sm btn-outline-primary">Открыть</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted">Обращений пока нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

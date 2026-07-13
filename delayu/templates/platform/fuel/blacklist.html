@@ -1,0 +1,54 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block card_body %}
+  <p class="text-muted small mb-3">Госномер: формат <code>А123ВС123</code>. ИНН: 10 цифр (организация) или 12 (физлицо/ИП).</p>
+  <p class="text-muted small mb-3">Снятие ограничения не удаляет запись — она остаётся в журнале серым цветом, проверка ГРЗ/ИНН в системе отключается.</p>
+  <form method="post" class="card card-body mb-4">
+  {% csrf_token %}
+  <h6 class="mb-3">Добавить в чёрный список</h6>
+  {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">{{ form.plate.label }}</label>
+      {{ form.plate }}
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">{{ form.inn.label }}</label>
+      {{ form.inn }}
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">{{ form.reason.label }}</label>
+      {{ form.reason }}
+    </div>
+  </div>
+  <button type="submit" class="btn btn-danger btn-sm mt-3">Добавить</button>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-sm">
+    <thead><tr><th>ГРЗ / ИНН</th><th>Причина</th><th>Дата</th><th>Статус</th><th></th></tr></thead>
+    <tbody>
+      {% for e in entries %}
+      <tr class="{% if not e.is_active %}table-secondary text-muted{% endif %}">
+        <td>{{ e.plate|default:e.inn }}</td>
+        <td>{{ e.reason }}</td>
+        <td>{{ e.created_at|date:"d.m.Y H:i" }}{% if e.deactivated_at %}<br><small>снято {{ e.deactivated_at|date:"d.m.Y H:i" }}</small>{% endif %}</td>
+        <td>{% if e.is_active %}<span class="text-danger">Активно</span>{% else %}<span class="text-muted">Снято</span>{% endif %}</td>
+        <td>
+          <form method="post" action="{% url 'fuel-operator-blacklist-deactivate' e.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm {% if e.is_active %}btn-outline-secondary{% else %}btn-outline-danger{% endif %}">
+              {% if e.is_active %}Снять ограничение{% else %}Восстановить{% endif %}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-muted">Список пуст</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% load static %}
+<script src="{% static 'js/delayu-fuel-operator.js' %}"></script>
+{% endblock %}

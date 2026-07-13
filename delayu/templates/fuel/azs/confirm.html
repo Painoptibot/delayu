@@ -1,0 +1,75 @@
+{% extends "fuel/public/base.html" %}
+{% load static %}
+
+{% block title %}Подтверждение отпуска{% endblock %}
+
+{% block content %}
+<div class="fuel-card">
+  <h1>Подтвердить отпуск</h1>
+  <p class="fuel-muted">Пропуск {{ preview.permit_number }} · {{ preview.plate }}</p>
+  {% if preview.manual_code %}
+    <div class="fuel-manual-code fuel-manual-code--compact">
+      <span class="fuel-manual-code__label">Код пропуска</span>
+      <span class="fuel-manual-code__value">{{ preview.manual_code }}</span>
+    </div>
+  {% endif %}
+  <div style="background:#eff6ff;border-radius:12px;padding:14px;margin-bottom:16px;font-size:14px">
+    Категория: {{ preview.category }}<br>
+    Доступно по пропуску: <strong>{{ preview.max_liters }} л</strong>
+  </div>
+  {% if form.non_field_errors %}<div class="fuel-error">{{ form.non_field_errors }}</div>{% endif %}
+  <div id="fuel-offline-confirm-msg" class="fuel-alert fuel-alert--success" hidden></div>
+  <form method="post" id="fuel-redeem-form">
+    {% csrf_token %}
+    <div class="fuel-field">
+      <label>{{ form.liters.label }}</label>
+      {{ form.liters }}
+    </div>
+    <div class="fuel-field">
+      <label>{{ form.operator_note.label }}</label>
+      {{ form.operator_note }}
+    </div>
+    <button type="submit" class="fuel-btn fuel-btn--success">Зафиксировать отпуск</button>
+    <div class="fuel-actions">
+      <a href="{{ portal_root }}/azs/" class="fuel-btn fuel-btn--secondary">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/fuel-azs-offline.js' %}"></script>
+<script>
+(function() {
+  var form = document.getElementById('fuel-redeem-form');
+  if (!form) return;
+  var preview = {
+    permit_id: {{ preview.permit_id|default:"null" }},
+    plate: '{{ preview.plate|escapejs }}',
+    qr_payload: '{{ preview.qr_payload|default:""|escapejs }}'
+  };
+  form.addEventListener('submit', function(e) {
+    if (navigator.onLine) return;
+    e.preventDefault();
+    var liters = form.querySelector('[name=liters]').value;
+    var note = form.querySelector('[name=operator_note]');
+    FuelAzsOffline.enqueue({
+      permit_id: preview.permit_id,
+      plate: preview.plate,
+      liters: liters,
+      operator_note: note ? note.value : '',
+      qr_payload: preview.qr_payload
+    }).then(function() {
+      var box = document.getElementById('fuel-offline-confirm-msg');
+      box.hidden = false;
+      box.textContent = 'Отпуск сохранён офлайн (' + preview.plate + ', ' + liters + ' л). Синхронизация при появлении сети.';
+      form.querySelectorAll('input,button').forEach(function(el) { el.disabled = true; });
+      FuelAzsOffline.pendingCount().then(function(n) {
+        var badge = document.getElementById('fuel-offline-badge');
+        if (badge) { badge.hidden = false; badge.textContent = 'Офлайн-очередь: ' + n; }
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}

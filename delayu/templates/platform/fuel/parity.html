@@ -1,0 +1,45 @@
+{% extends "platform/_page.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block card_body %}
+  <p class="text-muted small mb-3">
+    Уведомление показывается жителям в портале. После изменения текста или режима баннер снова появится у тех, кто его закрыл.
+  </p>
+
+  {% if preview %}
+    <div class="alert alert-warning mb-4">
+      <strong>Предпросмотр для жителей:</strong><br>{{ preview.message }}
+    </div>
+  {% else %}
+    <div class="alert alert-secondary mb-4">Ограничение сейчас отключено — баннер не показывается.</div>
+  {% endif %}
+
+  <form method="post" class="card card-body">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="form-check mb-3">
+      {{ form.is_enabled }}
+      <label class="form-check-label" for="{{ form.is_enabled.id_for_label }}">{{ form.is_enabled.label }}</label>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.mode.id_for_label }}">{{ form.mode.label }}</label>
+      {{ form.mode }}
+      <div class="form-text">«По календарю» — чётные в чётные дни месяца, нечётные в нечётные.</div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+      {{ form.message }}
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+      <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+      <a href="{% url 'fuel-operator-hub' %}" class="btn btn-outline-secondary btn-sm">К штабу</a>
+    </div>
+  </form>
+
+  {% if rule.updated_at %}
+    <p class="text-muted small mt-3 mb-0">Обновлено: {{ rule.updated_at|date:"d.m.Y H:i" }}</p>
+  {% endif %}
+{% endblock %}
