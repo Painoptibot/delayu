@@ -10,10 +10,18 @@
   <h1>Сканер пропусков</h1>
   <p class="fuel-muted">Смена: {{ stats.count }} отпусков · {{ stats.liters }} л</p>
 
+  {% if stats.recent %}
+    <ul class="fuel-azs-shift-list" aria-label="Отпуски за смену">
+      {% for r in stats.recent %}
+        <li>{{ r.created_at|date:"H:i" }} · {{ r.plate }} · <strong>{{ r.liters }} л</strong></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
   {% if success %}
     <div style="background:#ecfdf5;border:2px solid #10b981;border-radius:12px;padding:16px;text-align:center;margin-bottom:16px">
       <p style="color:#065f46;font-weight:800;font-size:18px">✓ ОТПУСК ЗАФИКСИРОВАН</p>
-      <p style="font-size:13px;margin-top:8px">ГРЗ <strong>{{ success.plate }}</strong> · {{ success.liters }} л</p>
+      <p style="font-size:13px;margin-top:8px">ГРЗ <strong>{{ success.plate }}</strong> · отпущено <strong>{{ success.liters }} л</strong></p>
     </div>
   {% endif %}
 
@@ -27,7 +35,10 @@
   {% if preview and preview.allowed %}
     <div class="fuel-azs-preview fuel-azs-preview--ok">
       <p class="fuel-azs-preview__title">✓ РАЗРЕШЕНО</p>
-      <p class="fuel-azs-preview__meta">ГРЗ <strong>{{ preview.plate }}</strong> · макс. {{ preview.max_liters }} л</p>
+      <p class="fuel-azs-preview__meta">
+        ГРЗ <strong>{{ preview.plate }}</strong> · остаток {{ preview.remaining_liters|default:preview.max_liters }} л
+        {% if preview.citizen_requested_liters %} · житель просил {{ preview.citizen_requested_liters }} л{% endif %}
+      </p>
       {% if preview.manual_code %}
         <div class="fuel-manual-code fuel-manual-code--compact">
           <span class="fuel-manual-code__label">Код пропуска</span>
@@ -39,10 +50,17 @@
   {% endif %}
 
   <div id="fuel-scanner" style="position:relative;overflow:hidden;border-radius:12px;background:#0f172a;min-height:200px;margin:16px 0">
-    <video id="fuel-video" playsinline style="width:100%;display:block"></video>
-    <div class="scan-line" style="height:3px;background:linear-gradient(90deg,transparent,#059669,transparent);animation:scan 2s infinite"></div>
+    <video id="fuel-video" playsinline style="width:100%;display:none"></video>
+    <div id="fuel-scanner-placeholder" class="fuel-scanner-placeholder">
+      Камера выключена — нажмите кнопку ниже или введите код вручную
+    </div>
+    <div class="scan-line" id="fuel-scan-line" style="display:none;height:3px;background:linear-gradient(90deg,transparent,#059669,transparent);animation:scan 2s infinite"></div>
   </div>
-  <p class="fuel-muted" style="text-align:center;font-size:12px">Наведите камеру на QR-пропуск</p>
+  <div class="fuel-scanner-actions">
+    <button type="button" id="fuel-camera-start" class="fuel-btn fuel-btn--secondary">Включить камеру</button>
+    <button type="button" id="fuel-camera-stop" class="fuel-btn fuel-btn--ghost" hidden>Выключить</button>
+  </div>
+  <p class="fuel-muted" style="text-align:center;font-size:12px">Наведите камеру на QR-пропуск после включения</p>
 
   <form method="post" style="margin-top:20px" class="fuel-azs-manual-form">
     {% csrf_token %}
@@ -75,17 +93,50 @@
   const video = document.getElementById('fuel-video');
   const payloadInput = document.getElementById('fuel-qr-payload');
   const portalRoot = '{{ portal_root }}';
+  const startBtn = document.getElementById('fuel-camera-start');
+  const stopBtn = document.getElementById('fuel-camera-stop');
+  const placeholder = document.getElementById('fuel-scanner-placeholder');
+  const scanLine = document.getElementById('fuel-scan-line');
   let scanning = false;
+  let stream = null;
+
+  function stopCamera() {
+    scanning = false;
+    if (stream) {
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      stream = null;
+    }
+    video.srcObject = null;
+    video.style.display = 'none';
+    if (scanLine) scanLine.style.display = 'none';
+    if (placeholder) placeholder.hidden = false;
+    if (startBtn) startBtn.hidden = false;
+    if (stopBtn) stopBtn.hidden = true;
+  }
 
   async function startCamera() {
+    if (!navigator.mediaDevices) {
+      if (placeholder) {
+        placeholder.textContent = 'Камера недоступна — используйте ручной ввод кода';
+      }
+      return;
+    }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       video.srcObject = stream;
+      video.style.display = 'block';
       await video.play();
       scanning = true;
+      if (placeholder) placeholder.hidden = true;
+      if (scanLine) scanLine.style.display = 'block';
+      if (startBtn) startBtn.hidden = true;
+      if (stopBtn) stopBtn.hidden = false;
       requestAnimationFrame(tick);
     } catch (e) {
-      document.getElementById('fuel-scanner').innerHTML = '<p style="color:#94a3b8;padding:20px;text-align:center">Камера недоступна — используйте ручной ввод кода</p>';
+      if (placeholder) {
+        placeholder.hidden = false;
+        placeholder.textContent = 'Не удалось включить камеру — используйте ручной ввод кода';
+      }
     }
   }
 
@@ -102,7 +153,7 @@
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const code = jsQR(imageData.data, imageData.width, imageData.height);
     if (code && code.data) {
-      scanning = false;
+      stopCamera();
       payloadInput.value = code.data;
       const form = document.createElement('form');
       form.method = 'POST';
@@ -127,7 +178,9 @@
     requestAnimationFrame(tick);
   }
 
-  if (navigator.mediaDevices) startCamera();
+  if (startBtn) startBtn.addEventListener('click', startCamera);
+  if (stopBtn) stopBtn.addEventListener('click', stopCamera);
+  window.addEventListener('pagehide', stopCamera);
 })();
 </script>
 {% endblock %}

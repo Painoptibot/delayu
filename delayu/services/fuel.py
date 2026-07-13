@@ -334,6 +334,32 @@ def liters_redeemed_today(subsystem: Subsystem, plate: str) -> Decimal:
     return Decimal(total)
 
 
+def fuel_brand_short(subsystem) -> str:
+    """Короткий заголовок для шапки портала (без дублирования подзаголовка)."""
+    name = (getattr(subsystem, "name", None) or "").strip()
+    if "—" in name:
+        city = name.split("—", 1)[0].strip()
+        return f"Топливный пропуск · {city}"
+    if len(name) > 36:
+        return "Топливный пропуск"
+    if name and "топлив" not in name.lower():
+        return f"Топливный пропуск · {name}"
+    return "Топливный пропуск"
+
+
+def suggest_redeem_liters(permit: FuelPermit) -> Decimal:
+    """Рекомендуемый объём отпуска с учётом остатка, суточного лимита и заявки жителя."""
+    daily = Decimal(permit.category.daily_limit_liters)
+    redeemed_today = liters_redeemed_today(permit.subsystem, permit.plate)
+    daily_remaining = max(Decimal(0), daily - redeemed_today)
+    permit_remaining = Decimal(permit.remaining_liters)
+    cap = min(permit_remaining, daily_remaining)
+    requested = getattr(permit.application, "requested_liters", None)
+    if requested:
+        return min(cap, Decimal(requested))
+    return cap
+
+
 def recommend_azs(subsystem: Subsystem, limit: int = 3) -> list[FuelAzsStation]:
     qs = (
         FuelAzsStation.objects.filter(
@@ -391,6 +417,7 @@ def create_application(
     inn: str = "",
     org_name: str = "",
     preferred_azs: FuelAzsStation | None = None,
+    requested_liters: int | None = None,
 ) -> FuelApplication:
     plate_n = normalize_plate(plate)
     if not validate_plate(plate_n):
@@ -423,6 +450,10 @@ def create_application(
         else FuelApplication.Status.APPROVED
     )
 
+    req_liters = None
+    if requested_liters is not None and requested_liters > 0:
+        req_liters = min(int(requested_liters), int(daily_limit))
+
     app = FuelApplication.objects.create(
         subsystem=subsystem,
         citizen=citizen,
@@ -434,6 +465,7 @@ def create_application(
         org_name=org_name.strip(),
         status=status,
         assigned_azs=assigned_azs,
+        requested_liters=req_liters,
     )
 
     if status == FuelApplication.Status.APPROVED:
@@ -590,6 +622,9 @@ def portal_page_load_touches_checked_at(request) -> bool:
 
 
 def _serialize_portal_azs(azs: FuelAzsStation) -> dict:
+    from delayu.services.fuel_stock import serialize_azs_fuel_stock
+
+    fuel = serialize_azs_fuel_stock(azs)
     return {
         "id": azs.pk,
         "name": azs.name,
@@ -599,6 +634,8 @@ def _serialize_portal_azs(azs: FuelAzsStation) -> dict:
         "fuel_grade": azs.fuel_grade,
         "queue_minutes": azs.queue_minutes,
         "stock_liters": azs.stock_liters,
+        "fuel_stock_summary": fuel["summary"],
+        "fuel_stock": fuel["items"],
         "is_accepting_permits": azs.is_accepting_permits,
         "latitude": float(azs.latitude) if azs.latitude is not None else None,
         "longitude": float(azs.longitude) if azs.longitude is not None else None,
@@ -845,14 +882,18 @@ def preview_redeem(permit: FuelPermit, azs: FuelAzsStation, liters: Decimal) -> 
     _validate_permit_for_redeem(permit, azs, liters)
     daily = permit.category.daily_limit_liters
     redeemed = liters_redeemed_today(permit.subsystem, permit.plate)
+    citizen_requested = getattr(permit.application, "requested_liters", None)
     return {
         "allowed": True,
         "plate": permit.plate,
         "permit_number": permit.number,
         "permit_id": permit.pk,
         "manual_code": permit.manual_code or "",
+        "remaining_liters": int(permit.remaining_liters),
         "max_liters": int(permit.remaining_liters),
+        "suggested_liters": float(liters),
         "requested_liters": float(liters),
+        "citizen_requested_liters": citizen_requested,
         "category": permit.category.name,
         "daily_remaining": float(max(Decimal(0), daily - redeemed - liters)),
     }
@@ -890,7 +931,7 @@ def execute_redeem(
         liters=liters,
         operator_note=operator_note[:255],
     )
-    permit.remaining_liters = max(0, int(permit.remaining_liters - liters))
+    permit.remaining_liters = max(0, int(Decimal(permit.remaining_liters) - liters))
     if permit.remaining_liters <= 0:
         permit.status = FuelPermit.Status.EXPIRED
     permit.qr_payload = build_qr_payload(permit)
@@ -933,14 +974,54 @@ def reject_application(application: FuelApplication, reason: str = "") -> FuelAp
 
 def update_azs_stock(
     azs: FuelAzsStation,
-    stock_liters: int,
+    stock_liters: int | None = None,
     queue_minutes: int | None = None,
     *,
     pump_count: int | None = None,
     avg_refuel_minutes: int | None = None,
     use_manual_queue: bool | None = None,
+    stock_ai92_liters: int | None = None,
+    stock_ai95_liters: int | None = None,
+    stock_diesel_liters: int | None = None,
+    stock_gas_liters: int | None = None,
+    sells_ai92: bool | None = None,
+    sells_ai95: bool | None = None,
+    sells_diesel: bool | None = None,
+    sells_gas: bool | None = None,
 ) -> FuelAzsStation:
-    azs.stock_liters = max(0, stock_liters)
+    from delayu.services.fuel_stock import apply_azs_fuel_stock
+
+    if any(
+        v is not None
+        for v in (
+            stock_ai92_liters,
+            stock_ai95_liters,
+            stock_diesel_liters,
+            stock_gas_liters,
+            sells_ai92,
+            sells_ai95,
+            sells_diesel,
+            sells_gas,
+        )
+    ):
+        apply_azs_fuel_stock(
+            azs,
+            stock_ai92_liters=stock_ai92_liters,
+            stock_ai95_liters=stock_ai95_liters,
+            stock_diesel_liters=stock_diesel_liters,
+            stock_gas_liters=stock_gas_liters,
+            sells_ai92=sells_ai92,
+            sells_ai95=sells_ai95,
+            sells_diesel=sells_diesel,
+            sells_gas=sells_gas,
+        )
+    elif stock_liters is not None:
+        total = max(0, int(stock_liters))
+        grade = (azs.fuel_grade or "АИ-95").upper()
+        if "92" in grade:
+            apply_azs_fuel_stock(azs, stock_ai92_liters=total, stock_ai95_liters=0)
+        else:
+            apply_azs_fuel_stock(azs, stock_ai95_liters=total, stock_ai92_liters=0)
     if pump_count is not None:
         azs.pump_count = max(1, pump_count)
     if avg_refuel_minutes is not None:
@@ -949,11 +1030,6 @@ def update_azs_stock(
         azs.use_manual_queue = use_manual_queue
     if queue_minutes is not None and (use_manual_queue is True or azs.use_manual_queue):
         azs.queue_minutes = max(0, min(queue_minutes, 999))
-    if azs.stock_liters == 0:
-        azs.status = FuelAzsStation.Status.EMPTY
-        azs.is_accepting_permits = False
-    elif azs.stock_liters < 1000:
-        azs.status = FuelAzsStation.Status.LOW
     azs.save()
     from delayu.services.fuel_capacity import refresh_azs_queue
 
@@ -988,6 +1064,16 @@ def operator_dashboard(subsystem: Subsystem) -> dict:
     }
 
 
+def citizen_report_redeem_liters(
+    redeem: FuelRedeem, citizen: FuelCitizen, liters: Decimal | None
+) -> FuelRedeem:
+    if redeem.permit.application.citizen_id != citizen.pk:
+        raise ValueError("Нет доступа к этому отпуску")
+    redeem.citizen_reported_liters = liters
+    redeem.save(update_fields=["citizen_reported_liters"])
+    return redeem
+
+
 def azs_shift_stats(azs: FuelAzsStation) -> dict:
     today = timezone.localdate()
     redeems = FuelRedeem.objects.filter(azs=azs, created_at__date=today)
@@ -996,4 +1082,5 @@ def azs_shift_stats(azs: FuelAzsStation) -> dict:
         "count": redeems.count(),
         "liters": total,
         "last": redeems.order_by("-created_at").first(),
+        "recent": list(redeems.order_by("-created_at")[:8]),
     }

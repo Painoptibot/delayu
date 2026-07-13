@@ -44,9 +44,26 @@
     <label class="form-label">{{ form.status.label }}</label>
     {{ form.status }}
   </div>
-  <div class="col-md-4">
-    <label class="form-label">{{ form.stock_liters.label }}</label>
-    {{ form.stock_liters }}
+  <div class="col-12"><hr><h6>Остатки по видам топлива</h6></div>
+  <div class="col-md-3">
+    <div class="form-check mb-2">{{ form.sells_ai92 }} <label class="form-check-label">{{ form.sells_ai92.label }}</label></div>
+    <label class="form-label">{{ form.stock_ai92_liters.label }}</label>
+    {{ form.stock_ai92_liters }}
+  </div>
+  <div class="col-md-3">
+    <div class="form-check mb-2">{{ form.sells_ai95 }} <label class="form-check-label">{{ form.sells_ai95.label }}</label></div>
+    <label class="form-label">{{ form.stock_ai95_liters.label }}</label>
+    {{ form.stock_ai95_liters }}
+  </div>
+  <div class="col-md-3">
+    <div class="form-check mb-2">{{ form.sells_diesel }} <label class="form-check-label">{{ form.sells_diesel.label }}</label></div>
+    <label class="form-label">{{ form.stock_diesel_liters.label }}</label>
+    {{ form.stock_diesel_liters }}
+  </div>
+  <div class="col-md-3">
+    <div class="form-check mb-2">{{ form.sells_gas }} <label class="form-check-label">{{ form.sells_gas.label }}</label></div>
+    <label class="form-label">{{ form.stock_gas_liters.label }}</label>
+    {{ form.stock_gas_liters }}
   </div>
   <div class="col-md-4">
     <label class="form-label">{{ form.queue_minutes.label }}</label>

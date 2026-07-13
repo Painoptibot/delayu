@@ -48,6 +48,25 @@
   top: 50%;
   transform: translateY(-50%);
 }
+.fuel-header--guest .fuel-header__inner {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+.fuel-header--guest .fuel-logo {
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.25;
+  padding-right: 0;
+  white-space: normal;
+}
+.fuel-header--guest .fuel-nav--guest {
+  position: static;
+  transform: none;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
 .fuel-nav--azs {
   position: absolute;
   right: 16px;
@@ -759,6 +778,99 @@
   margin: 4px 0 0;
   font-size: 13px;
   color: #475569;
+}
+.fuel-redeem-report {
+  margin-top: 10px;
+  list-style: none;
+}
+.fuel-redeem-report__label {
+  display: block;
+  font-size: 13px;
+}
+.fuel-redeem-report__row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.fuel-input--compact {
+  max-width: 120px;
+  padding: 8px 10px;
+}
+.fuel-btn--compact {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.fuel-azs-shift-list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.fuel-azs-shift-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+.fuel-scanner-placeholder {
+  color: #94a3b8;
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 14px;
+}
+.fuel-scanner-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.fuel-fuel-stock-panel {
+  margin: 16px 0;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+.fuel-fuel-stock-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.fuel-fuel-stock-list__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  font-size: 14px;
+}
+.fuel-fuel-stock-list__item--ok .fuel-fuel-stock-list__value {
+  color: #047857;
+}
+.fuel-fuel-stock-list__item--empty .fuel-fuel-stock-list__value--none {
+  color: #b45309;
+}
+.fuel-fuel-stock-inline {
+  display: inline-block;
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.35;
+}
+.fuel-azs-item__fuel-stock {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+.fuel-fuel-stock-form-grid {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 .fuel-permit-meta {
   text-align: center;

@@ -1,4 +1,5 @@
 {% extends "platform/_page.html" %}
+{% load static fuel_portal %}
 {% block title %}{{ page_title }}{% endblock %}
 {% block header_actions %}
   <a href="{% url 'fuel-operator-azs-create' %}" class="btn btn-primary btn-sm">+ Добавить АЗС</a>
@@ -58,7 +59,7 @@
         </td>
         <td>{{ s.district|default:"—" }}</td>
         <td data-station-status>{{ s.get_status_display }}</td>
-        <td data-station-stock>{{ s.stock_liters }} л</td>
+        <td data-station-stock><small>{% include "fuel/public/_azs_fuel_stock_inline.html" with azs=s %}</small></td>
         <td data-station-queue>{{ s.queue_minutes }} мин</td>
         <td class="text-nowrap">
           {% if not s.is_archived %}
@@ -84,7 +85,6 @@
 </div>
 
 <div data-fuel-live data-fuel-live-url="{{ live_api_url }}" data-fuel-live-mode="azs"></div>
-{% load static %}
 <script src="{% static 'js/delayu-fuel-operator.js' %}"></script>
 <script src="{% static 'js/delayu-fuel-live.js' %}"></script>
 {% endblock %}

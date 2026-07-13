@@ -77,19 +77,28 @@ def operator_live_payload(subsystem: Subsystem) -> dict:
         .select_related("azs", "permit")
         .order_by("-created_at")[:10]
     )
+    from delayu.services.fuel_stock import serialize_azs_fuel_stock
+
     stations = (
         subsystem.fuel_azs_stations.filter(is_archived=False)
         .order_by("name")
-        .values(
-            "id",
-            "name",
-            "stock_liters",
-            "queue_minutes",
-            "status",
-            "is_accepting_permits",
-            "portal_blocked",
-        )
     )
+    station_payload = []
+    for s in stations:
+        fuel = serialize_azs_fuel_stock(s)
+        station_payload.append(
+            {
+                "id": s.id,
+                "name": s.name,
+                "stock_liters": s.stock_liters,
+                "fuel_stock_summary": fuel["summary"],
+                "fuel_stock": fuel["items"],
+                "queue_minutes": s.queue_minutes,
+                "status": s.status,
+                "is_accepting_permits": s.is_accepting_permits,
+                "portal_blocked": s.portal_blocked,
+            }
+        )
     return {
         "ok": True,
         "updated_at": timezone.now().isoformat(),
@@ -116,5 +125,5 @@ def operator_live_payload(subsystem: Subsystem) -> dict:
             }
             for r in redeems
         ],
-        "stations": list(stations),
+        "stations": station_payload,
     }

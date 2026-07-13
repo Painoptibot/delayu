@@ -38,7 +38,8 @@
           {% elif azs.status == 'low' %}<span class="fuel-status fuel-status--warn">● Мало</span>
           {% elif azs.status == 'busy' %}<span class="fuel-status fuel-status--bad">● Перегрузка</span>
           {% else %}<span class="fuel-status fuel-status--bad">● Нет бензина</span>{% endif %}
-          · ~{{ azs.queue_minutes }} мин
+          · ~{{ azs.queue_minutes }} мин<br>
+          <span class="fuel-fuel-stock-inline">{% include "fuel/public/_azs_fuel_stock_inline.html" with azs=azs %}</span>
         </p>
         <p class="fuel-muted fuel-azs-item__map-address">{{ azs.address }}</p>
       </div>
@@ -61,7 +62,9 @@
       <div class="fuel-azs-item__content" data-fuel-azs-apply>
         <h3 class="fuel-azs-item__map-title">{{ azs.name }}</h3>
         <p class="fuel-muted fuel-azs-item__map-address">{{ azs.district }} · {{ azs.address }}</p>
-        <p class="fuel-azs-item__map-meta">Очередь ~{{ azs.queue_minutes }} мин · {{ azs.stock_liters }} л
+        <p class="fuel-azs-item__map-meta">
+          Очередь ~{{ azs.queue_minutes }} мин<br>
+          {% include "fuel/public/_azs_fuel_stock_inline.html" with azs=azs %}
           {% if not azs.is_accepting_permits %} · <strong>стоп пропусков</strong>{% endif %}
         </p>
       </div>

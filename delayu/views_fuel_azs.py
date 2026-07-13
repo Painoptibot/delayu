@@ -27,6 +27,7 @@ from delayu.services.fuel import (
     logout_azs,
     preview_redeem,
     resolve_permit,
+    suggest_redeem_liters,
     update_azs_stock,
 )
 from delayu.views_fuel_public import FuelPortalContextMixin, fuel_portal_url
@@ -145,10 +146,11 @@ class FuelAzsScanView(FuelPortalContextMixin, View):
                     },
                 )
                 return render(request, self.template_name, ctx, status=400)
-            default_liters = min(Decimal(permit.remaining_liters), Decimal(permit.category.daily_limit_liters))
+            default_liters = suggest_redeem_liters(permit)
             preview = preview_redeem(permit, station, default_liters)
             preview["permit_id"] = permit.pk
             preview["default_liters"] = float(default_liters)
+            preview["suggested_liters"] = float(default_liters)
             if qr_payload:
                 preview["qr_payload"] = qr_payload
             request.session["fuel_redeem_preview"] = preview
@@ -186,7 +188,9 @@ class FuelAzsConfirmView(FuelPortalContextMixin, View):
         preview = request.session.get("fuel_redeem_preview")
         if not preview:
             return redirect(fuel_portal_url(request, "fuel-azs-scan"))
-        form = FuelAzsRedeemForm(initial={"liters": preview.get("default_liters")})
+        remaining = Decimal(str(preview.get("remaining_liters", preview.get("max_liters", 0))))
+        initial_liters = preview.get("suggested_liters") or preview.get("default_liters")
+        form = FuelAzsRedeemForm(initial={"liters": initial_liters}, max_liters=remaining)
         ctx = self.get_portal_context(request, {"station": station, "preview": preview, "form": form})
         return render(request, self.template_name, ctx)
 
@@ -196,7 +200,8 @@ class FuelAzsConfirmView(FuelPortalContextMixin, View):
         preview = request.session.get("fuel_redeem_preview")
         if not preview:
             return redirect(fuel_portal_url(request, "fuel-azs-scan"))
-        form = FuelAzsRedeemForm(request.POST)
+        remaining = Decimal(str(preview.get("remaining_liters", preview.get("max_liters", 0))))
+        form = FuelAzsRedeemForm(request.POST, max_liters=remaining)
         if form.is_valid():
             permit = FuelPermit.objects.filter(pk=preview["permit_id"], subsystem=subsystem).first()
             if not permit:
@@ -234,7 +239,14 @@ class FuelAzsStockView(FuelPortalContextMixin, View):
         station = get_session_azs(request, subsystem)
         form = FuelAzsStockForm(
             initial={
-                "stock_liters": station.stock_liters,
+                "stock_ai92_liters": station.stock_ai92_liters,
+                "stock_ai95_liters": station.stock_ai95_liters,
+                "stock_diesel_liters": station.stock_diesel_liters,
+                "stock_gas_liters": station.stock_gas_liters,
+                "sells_ai92": station.sells_ai92,
+                "sells_ai95": station.sells_ai95,
+                "sells_diesel": station.sells_diesel,
+                "sells_gas": station.sells_gas,
                 "queue_minutes": station.queue_minutes,
                 "pump_count": station.pump_count,
                 "avg_refuel_minutes": station.avg_refuel_minutes,
@@ -261,11 +273,19 @@ class FuelAzsStockView(FuelPortalContextMixin, View):
                 queue = None
             update_azs_stock(
                 station,
-                form.cleaned_data["stock_liters"],
+                None,
                 queue,
                 pump_count=form.cleaned_data["pump_count"],
                 avg_refuel_minutes=form.cleaned_data["avg_refuel_minutes"],
                 use_manual_queue=form.cleaned_data.get("use_manual_queue", False),
+                stock_ai92_liters=form.cleaned_data.get("stock_ai92_liters") or 0,
+                stock_ai95_liters=form.cleaned_data.get("stock_ai95_liters") or 0,
+                stock_diesel_liters=form.cleaned_data.get("stock_diesel_liters") or 0,
+                stock_gas_liters=form.cleaned_data.get("stock_gas_liters") or 0,
+                sells_ai92=form.cleaned_data.get("sells_ai92", False),
+                sells_ai95=form.cleaned_data.get("sells_ai95", False),
+                sells_diesel=form.cleaned_data.get("sells_diesel", False),
+                sells_gas=form.cleaned_data.get("sells_gas", False),
             )
             from delayu.services.fuel_events import log_fuel_event
 
@@ -273,7 +293,8 @@ class FuelAzsStockView(FuelPortalContextMixin, View):
                 subsystem,
                 "azs",
                 "azs.stock_update",
-                f"Обновлён остаток: {form.cleaned_data['stock_liters']} л, колонок {form.cleaned_data['pump_count']}",
+                f"Обновлён остаток: {station.stock_ai92_liters}/{station.stock_ai95_liters} бензин, "
+                f"диз {station.stock_diesel_liters}, газ {station.stock_gas_liters} л",
                 azs=station,
                 object_type="FuelAzsStation",
                 object_id=station.pk,
@@ -311,10 +332,14 @@ class FuelAzsVerifyApiView(FuelPortalContextMixin, View):
         payload = request.POST.get("qr_payload", "")
         try:
             permit = resolve_permit(subsystem, qr_payload=payload)
-            liters = min(Decimal(permit.remaining_liters), Decimal("30"))
+            liters = suggest_redeem_liters(permit)
             data = preview_redeem(permit, station, liters)
             data["permit_id"] = permit.pk
-            request.session["fuel_redeem_preview"] = {**data, "default_liters": float(liters)}
+            request.session["fuel_redeem_preview"] = {
+                **data,
+                "default_liters": float(liters),
+                "suggested_liters": float(liters),
+            }
             return JsonResponse(data)
         except RedeemError as exc:
             return JsonResponse({"allowed": False, "code": exc.code, "message": exc.message}, status=400)

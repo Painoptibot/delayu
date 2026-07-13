@@ -10,12 +10,18 @@ from django.views import View
 from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
 
-from delayu.forms_fuel import FuelApplicationForm, FuelCitizenLoginForm, FuelCitizenOtpForm
+from delayu.forms_fuel import (
+    FuelApplicationForm,
+    FuelCitizenLoginForm,
+    FuelCitizenOtpForm,
+    FuelCitizenRedeemReportForm,
+)
 from delayu.middleware.fuel_portal import require_fuel_subsystem
-from delayu.models_fuel import FuelApplication, FuelAzsStation, FuelCategory, FuelPermit
+from delayu.models_fuel import FuelApplication, FuelAzsStation, FuelCategory, FuelPermit, FuelRedeem
 from delayu.services.fuel import (
     application_form_initial,
     citizen_dashboard,
+    citizen_report_redeem_liters,
     create_application,
     format_phone_display,
     fuel_azs_status_updated_at,
@@ -73,14 +79,20 @@ class FuelPortalContextMixin:
 
         subsystem = require_fuel_subsystem(request)
         citizen = get_session_citizen(request, subsystem)
+        from delayu.services.fuel import (
+            fuel_brand_short,
+            get_session_azs,
+            portal_public_banners,
+        )
+
         ctx = {
             "subsystem": subsystem,
             "citizen": citizen,
             "portal_root": getattr(request, "fuel_portal_root", "") or "",
             "page_brand": f"Топливный пропуск · {subsystem.name}",
+            "page_brand_short": fuel_brand_short(subsystem),
             "brand_color": subsystem.primary_color or "#2563eb",
         }
-        from delayu.services.fuel import portal_public_banners, get_session_azs
         from delayu.services.fuel_notify import max_available
 
         root = getattr(request, "fuel_portal_root", "") or ""
@@ -322,6 +334,7 @@ class FuelApplicationCreateView(FuelPortalContextMixin, View):
                     inn=form.cleaned_data.get("inn", ""),
                     org_name=form.cleaned_data.get("org_name", ""),
                     preferred_azs=preferred,
+                    requested_liters=form.cleaned_data.get("requested_liters"),
                 )
             except ValueError as exc:
                 form.add_error(None, str(exc))
@@ -602,6 +615,7 @@ class FuelApplicationSyncApiView(View):
                     "inn": payload.get("inn", ""),
                     "org_name": payload.get("org_name", ""),
                     "preferred_azs": payload.get("preferred_azs") or None,
+                    "requested_liters": payload.get("requested_liters") or None,
                     "agree_rules": "on" if payload.get("agree_rules") else "",
                 },
                 subsystem=subsystem,
@@ -628,6 +642,7 @@ class FuelApplicationSyncApiView(View):
                     inn=form.cleaned_data.get("inn", ""),
                     org_name=form.cleaned_data.get("org_name", ""),
                     preferred_azs=preferred,
+                    requested_liters=form.cleaned_data.get("requested_liters"),
                 )
             except ValueError as exc:
                 results.append({"local_id": local_id, "ok": False, "message": str(exc)})
@@ -805,3 +820,42 @@ class FuelSupportView(FuelPortalContextMixin, View):
             return redirect(fuel_portal_url(request, "fuel-support"))
         ctx = self.get_portal_context(request, {"form": form})
         return render(request, self.template_name, ctx, status=400)
+
+
+@method_decorator(csrf_protect, name="dispatch")
+@method_decorator(fuel_login_required, name="dispatch")
+class FuelCitizenRedeemReportView(FuelPortalContextMixin, View):
+    """Необязательное подтверждение жителем фактического объёма заправки."""
+
+    def post(self, request, pk: int):
+        from django.contrib import messages
+
+        subsystem = require_fuel_subsystem(request)
+        citizen = get_session_citizen(request, subsystem)
+        redeem = get_object_or_404(
+            FuelRedeem,
+            pk=pk,
+            subsystem=subsystem,
+            permit__application__citizen=citizen,
+        )
+        form = FuelCitizenRedeemReportForm(request.POST)
+        next_url = request.POST.get("next") or fuel_portal_url(
+            request, "fuel-application-detail", pk=redeem.permit.application_id
+        )
+        if form.is_valid():
+            liters = form.cleaned_data.get("liters")
+            try:
+                citizen_report_redeem_liters(redeem, citizen, liters)
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            else:
+                if liters:
+                    messages.success(
+                        request,
+                        f"Указано: {liters} л по отпуску от {redeem.created_at:%d.%m.%Y %H:%M}",
+                    )
+                else:
+                    messages.success(request, "Подтверждение объёма снято")
+        else:
+            messages.error(request, "Проверьте указанный объём")
+        return redirect(next_url)

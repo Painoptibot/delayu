@@ -1,4 +1,5 @@
 {% extends "fuel/public/base.html" %}
+{% load fuel_portal %}
 
 {% block title %}Остаток топлива{% endblock %}
 
@@ -13,15 +14,49 @@
     осталось слотов {{ capacity.apps_remaining }}
   </div>
   {% endif %}
+  <div class="fuel-fuel-stock-panel">
+    <h2 class="fuel-section-title">Сейчас в наличии</h2>
+    {% include "fuel/public/_azs_fuel_stock.html" with azs=station %}
+    <p class="fuel-muted fuel-hint">Бензин по пропускам: {{ station.stock_liters }} л (АИ-92 + АИ-95)</p>
+  </div>
   {% if saved %}
-    <div class="fuel-alert fuel-alert--success">Данные обновлены. Штаб видит актуальный остаток.</div>
+    <div class="fuel-alert fuel-alert--success">Данные обновлены. Штаб и карта видят актуальные остатки.</div>
   {% endif %}
   <form method="post">
     {% csrf_token %}
-    <div class="fuel-field">
-      <label>{{ form.stock_liters.label }}</label>
-      {{ form.stock_liters }}
+    <h2 class="fuel-section-title">Обновить остатки</h2>
+    <p class="fuel-muted fuel-hint">Укажите литры по каждому виду топлива. Снимите галочку, если вид не продаётся на этой АЗС.</p>
+    <div class="fuel-fuel-stock-form-grid">
+      <div class="fuel-field fuel-field--check">
+        <label>{{ form.sells_ai92 }} {{ form.sells_ai92.label }}</label>
+      </div>
+      <div class="fuel-field">
+        <label>{{ form.stock_ai92_liters.label }}</label>
+        {{ form.stock_ai92_liters }}
+      </div>
+      <div class="fuel-field fuel-field--check">
+        <label>{{ form.sells_ai95 }} {{ form.sells_ai95.label }}</label>
+      </div>
+      <div class="fuel-field">
+        <label>{{ form.stock_ai95_liters.label }}</label>
+        {{ form.stock_ai95_liters }}
+      </div>
+      <div class="fuel-field fuel-field--check">
+        <label>{{ form.sells_diesel }} {{ form.sells_diesel.label }}</label>
+      </div>
+      <div class="fuel-field">
+        <label>{{ form.stock_diesel_liters.label }}</label>
+        {{ form.stock_diesel_liters }}
+      </div>
+      <div class="fuel-field fuel-field--check">
+        <label>{{ form.sells_gas }} {{ form.sells_gas.label }}</label>
+      </div>
+      <div class="fuel-field">
+        <label>{{ form.stock_gas_liters.label }}</label>
+        {{ form.stock_gas_liters }}
+      </div>
     </div>
+    <h2 class="fuel-section-title">Очередь и колонки</h2>
     <div class="fuel-field">
       <label>{{ form.pump_count.label }}</label>
       {{ form.pump_count }}

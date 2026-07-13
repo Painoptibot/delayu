@@ -86,7 +86,19 @@ class FuelAzsStation(models.Model):
     status = models.CharField(
         "Статус", max_length=16, choices=Status.choices, default=Status.OK
     )
-    stock_liters = models.PositiveIntegerField("Остаток, л", default=0)
+    stock_liters = models.PositiveIntegerField(
+        "Остаток бензина (сумма), л",
+        default=0,
+        help_text="Авто: АИ-92 + АИ-95, для программы пропусков",
+    )
+    stock_ai92_liters = models.PositiveIntegerField("АИ-92, л", default=0)
+    stock_ai95_liters = models.PositiveIntegerField("АИ-95, л", default=0)
+    stock_diesel_liters = models.PositiveIntegerField("Дизель, л", default=0)
+    stock_gas_liters = models.PositiveIntegerField("Газ (СУГ), л", default=0)
+    sells_ai92 = models.BooleanField("Продаёт АИ-92", default=True)
+    sells_ai95 = models.BooleanField("Продаёт АИ-95", default=True)
+    sells_diesel = models.BooleanField("Продаёт дизель", default=True)
+    sells_gas = models.BooleanField("Продаёт газ", default=False)
     queue_minutes = models.PositiveSmallIntegerField("Очередь, мин", default=0)
     is_accepting_permits = models.BooleanField("Принимает пропуска", default=True)
     fuel_grade = models.CharField("Марка", max_length=32, default="АИ-95")
@@ -147,6 +159,12 @@ class FuelApplication(models.Model):
         related_name="assigned_applications",
     )
     reject_reason = models.TextField("Причина отказа", blank=True)
+    requested_liters = models.PositiveSmallIntegerField(
+        "Запрашиваемый объём, л",
+        null=True,
+        blank=True,
+        help_text="Необязательно: желаемый объём топлива по заявке",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
@@ -221,6 +239,13 @@ class FuelRedeem(models.Model):
     plate = models.CharField("Госномер", max_length=16)
     liters = models.DecimalField("Литры", max_digits=6, decimal_places=2)
     operator_note = models.CharField("Примечание", max_length=255, blank=True)
+    citizen_reported_liters = models.DecimalField(
+        "Объём по данным жителя, л",
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

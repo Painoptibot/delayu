@@ -1,0 +1,22 @@
+{% if r.citizen_reported_liters %}
+  <span class="fuel-muted"> · житель: {{ r.citizen_reported_liters }} л</span>
+{% endif %}
+<form method="post" action="{{ portal_root }}/redeems/{{ r.pk }}/report/" class="fuel-redeem-report">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.path }}">
+  <label class="fuel-redeem-report__label">
+    <span class="fuel-muted">Указать фактический объём (необязательно)</span>
+    <span class="fuel-redeem-report__row">
+      <input
+        type="number"
+        name="liters"
+        class="fuel-input fuel-input--compact"
+        step="0.1"
+        min="0.1"
+        placeholder="{% if r.citizen_reported_liters %}{{ r.citizen_reported_liters }}{% else %}{{ r.liters }}{% endif %}"
+        value="{% if r.citizen_reported_liters %}{{ r.citizen_reported_liters }}{% endif %}"
+      >
+      <button type="submit" class="fuel-btn fuel-btn--ghost fuel-btn--compact">Сохранить</button>
+    </span>
+  </label>
+</form>

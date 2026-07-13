@@ -1,5 +1,5 @@
 {% extends "fuel/public/base.html" %}
-{% load static %}
+{% load static fuel_portal %}
 
 {% block title %}Новая заявка · {{ page_brand }}{% endblock %}
 
@@ -45,6 +45,12 @@
       <label for="id_org_name">{{ form.org_name.label }}</label>
       {{ form.org_name }}
     </div>
+    <div class="fuel-field">
+      <label for="id_requested_liters">{{ form.requested_liters.label }}</label>
+      {{ form.requested_liters }}
+      <p class="fuel-muted fuel-hint">Необязательно — поможет оператору АЗС и штабу понять желаемый объём</p>
+      {% if form.requested_liters.errors %}<div class="fuel-error">{{ form.requested_liters.errors }}</div>{% endif %}
+    </div>
 
     <h2 class="fuel-section-title">Предпочтительная АЗС</h2>
     <p class="fuel-muted">Система может направить на менее загруженную точку</p>
@@ -75,6 +81,7 @@
             <span class="fuel-azs-item__body">
               <span class="fuel-azs-item__title">{{ azs.name }}</span>
               <span class="fuel-azs-item__meta">{{ azs.address }} · ~{{ azs.queue_minutes }} мин</span>
+            <span class="fuel-azs-item__fuel-stock">{% include "fuel/public/_azs_fuel_stock_inline.html" with azs=azs %}</span>
             </span>
           </label>
         {% empty %}

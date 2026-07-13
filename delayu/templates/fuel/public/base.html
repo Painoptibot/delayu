@@ -19,10 +19,10 @@
   data-fuel-portal-root="{{ portal_root }}"
   data-fuel-is-citizen="{% if citizen %}1{% else %}0{% endif %}"
 >
-  <header class="fuel-header{% if body_class == 'fuel-body--azs' %} fuel-header--azs{% endif %}">
+  <header class="fuel-header{% if body_class == 'fuel-body--azs' %} fuel-header--azs{% elif not citizen and not azs_station %} fuel-header--guest{% endif %}">
     <div class="fuel-header__inner{% if azs_station %} fuel-header__inner--azs-auth{% endif %}">
       <a href="{% if azs_station %}{{ portal_root }}/azs/{% else %}{{ portal_root }}/{% endif %}" class="fuel-logo{% if azs_station %} fuel-logo--azs{% endif %}">
-        {% if azs_station %}{{ azs_station.name }}{% elif body_class == 'fuel-body--azs' %}Портал АЗС{% else %}{{ page_brand }}{% endif %}
+        {% if azs_station %}{{ azs_station.name }}{% elif body_class == 'fuel-body--azs' %}Портал АЗС{% elif not citizen and not azs_station %}{{ page_brand_short }}{% else %}{{ page_brand }}{% endif %}
       </a>
       {% if azs_station %}
         <nav class="fuel-nav fuel-nav--azs" aria-label="Портал АЗС">

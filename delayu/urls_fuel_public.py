@@ -19,6 +19,11 @@ fuel_urlpatterns = [
         views.FuelApplicationDetailView.as_view(),
         name="fuel-application-detail",
     ),
+    path(
+        "redeems/<int:pk>/report/",
+        views.FuelCitizenRedeemReportView.as_view(),
+        name="fuel-redeem-report",
+    ),
     path("permits/<int:pk>/", views.FuelPermitQrView.as_view(), name="fuel-permit-qr"),
     path(
         "permits/<int:pk>/qr.svg",

@@ -12,6 +12,7 @@ from delayu.models import Subsystem
 from delayu.models_fuel import FuelAzsStation, FuelBlacklistEntry
 from delayu.services.fuel import normalize_inn, normalize_plate
 from delayu.services.fuel_events import log_fuel_event
+from delayu.services.fuel_stock import apply_azs_fuel_stock
 
 
 def _unique_azs_code(subsystem: Subsystem, base: str) -> str:
@@ -59,13 +60,22 @@ def create_azs_station(subsystem: Subsystem, data: dict, *, user=None, request=N
         latitude=data.get("latitude"),
         longitude=data.get("longitude"),
         status=data.get("status") or FuelAzsStation.Status.OK,
-        stock_liters=max(0, int(data.get("stock_liters") or 0)),
+        stock_ai92_liters=max(0, int(data.get("stock_ai92_liters") or 0)),
+        stock_ai95_liters=max(0, int(data.get("stock_ai95_liters") or 0)),
+        stock_diesel_liters=max(0, int(data.get("stock_diesel_liters") or 0)),
+        stock_gas_liters=max(0, int(data.get("stock_gas_liters") or 0)),
+        sells_ai92=bool(data.get("sells_ai92", True)),
+        sells_ai95=bool(data.get("sells_ai95", True)),
+        sells_diesel=bool(data.get("sells_diesel", True)),
+        sells_gas=bool(data.get("sells_gas", False)),
         queue_minutes=max(0, min(int(data.get("queue_minutes") or 0), 999)),
         fuel_grade=data.get("fuel_grade", "АИ-95").strip() or "АИ-95",
         is_accepting_permits=bool(data.get("is_accepting_permits", True)),
         portal_login=portal_login,
         portal_pin=portal_pin,
     )
+    apply_azs_fuel_stock(station)
+    station.save()
     log_fuel_event(
         subsystem,
         "operator",
@@ -91,7 +101,14 @@ def update_azs_station(
         "latitude",
         "longitude",
         "status",
-        "stock_liters",
+        "stock_ai92_liters",
+        "stock_ai95_liters",
+        "stock_diesel_liters",
+        "stock_gas_liters",
+        "sells_ai92",
+        "sells_ai95",
+        "sells_diesel",
+        "sells_gas",
         "queue_minutes",
         "pump_count",
         "avg_refuel_minutes",
@@ -107,7 +124,16 @@ def update_azs_station(
         if key not in data:
             continue
         val = data[key]
-        if key in ("stock_liters", "queue_minutes", "pump_count", "avg_refuel_minutes", "max_apps_override"):
+        if key in (
+            "stock_ai92_liters",
+            "stock_ai95_liters",
+            "stock_diesel_liters",
+            "stock_gas_liters",
+            "queue_minutes",
+            "pump_count",
+            "avg_refuel_minutes",
+            "max_apps_override",
+        ):
             if val in (None, "") and key == "max_apps_override":
                 val = None
             else:
@@ -118,11 +144,20 @@ def update_azs_station(
                     val = max(1, val)
                 elif key == "avg_refuel_minutes":
                     val = max(1, val)
-        elif key in ("use_manual_queue", "portal_blocked", "is_accepting_permits"):
+        elif key in (
+            "use_manual_queue",
+            "portal_blocked",
+            "is_accepting_permits",
+            "sells_ai92",
+            "sells_ai95",
+            "sells_diesel",
+            "sells_gas",
+        ):
             val = bool(val)
         elif key in ("portal_login", "portal_pin", "name", "network", "address", "district", "fuel_grade"):
             val = str(val or "").strip()
         setattr(station, key, val)
+    apply_azs_fuel_stock(station)
     station.save()
     from delayu.services.fuel_capacity import refresh_azs_queue
 

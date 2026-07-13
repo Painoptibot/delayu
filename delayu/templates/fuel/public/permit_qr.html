@@ -29,7 +29,11 @@
       <p class="fuel-redeem-summary__title">Уже заправлено: <strong>{{ permit_usage.redeemed_total }} л</strong></p>
       <ul class="fuel-redeem-summary__list">
         {% for r in permit_usage.redeems %}
-          <li>{{ r.created_at|date:"d.m.Y H:i" }} · {{ r.azs.name }} · <strong>{{ r.liters }} л</strong></li>
+          <li>
+            {{ r.created_at|date:"d.m.Y H:i" }} · {{ r.azs.name }} · отпущено <strong>{{ r.liters }} л</strong>
+            {% if r.citizen_reported_liters %} · житель: {{ r.citizen_reported_liters }} л{% endif %}
+          </li>
+          <li class="fuel-redeem-report">{% include "fuel/public/_redeem_citizen_report.html" with r=r %}</li>
         {% endfor %}
       </ul>
     </div>

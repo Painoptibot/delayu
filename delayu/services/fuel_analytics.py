@@ -34,6 +34,7 @@ def _azs_status_color(status: str) -> str:
 
 def azs_map_points(subsystem: Subsystem) -> list[dict]:
     from delayu.services.fuel_capacity import azs_capacity_snapshot, get_portal_settings
+    from delayu.services.fuel_stock import azs_fuel_stock_summary
 
     settings = get_portal_settings(subsystem)
     points = []
@@ -41,6 +42,7 @@ def azs_map_points(subsystem: Subsystem) -> list[dict]:
         if azs.latitude is None or azs.longitude is None:
             continue
         cap = azs_capacity_snapshot(azs, settings)
+        fuel_summary = azs_fuel_stock_summary(azs)
         points.append(
             {
                 "lat": float(azs.latitude),
@@ -48,7 +50,7 @@ def azs_map_points(subsystem: Subsystem) -> list[dict]:
                 "title": azs.name,
                 "address": azs.address,
                 "badge": (
-                    f"~{cap['queue_minutes_computed']} мин · {azs.stock_liters} л · "
+                    f"~{cap['queue_minutes_computed']} мин · {fuel_summary} · "
                     f"заявок {cap['apps_submitted']}/{cap['max_applications']}"
                 ),
                 "color": _azs_status_color(azs.status),
@@ -61,6 +63,7 @@ def azs_map_points(subsystem: Subsystem) -> list[dict]:
                 "max_applications": cap["max_applications"],
                 "queue_minutes": cap["queue_minutes_computed"],
                 "stock_liters": azs.stock_liters,
+                "fuel_stock_summary": fuel_summary,
             }
         )
     return points

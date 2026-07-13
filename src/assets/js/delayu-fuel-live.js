@@ -76,7 +76,11 @@
       if (!row) return;
       var stock = row.querySelector('[data-station-stock]');
       var queue = row.querySelector('[data-station-queue]');
-      if (stock) stock.textContent = s.stock_liters + ' л';
+      if (stock) {
+        stock.innerHTML = s.fuel_stock_summary
+          ? '<small>' + s.fuel_stock_summary + '</small>'
+          : s.stock_liters + ' л';
+      }
       if (queue) queue.textContent = s.queue_minutes + ' мин';
       var accepting = row.querySelector('[data-fuel-accepting-cell]');
       if (accepting) {

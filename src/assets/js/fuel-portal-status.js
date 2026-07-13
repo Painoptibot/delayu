@@ -45,6 +45,16 @@
     return root + '/login/?next=' + encodeURIComponent(apply);
   }
 
+  function fuelStockLine(azs) {
+    if (azs.fuel_stock_summary) return escapeHtml(azs.fuel_stock_summary);
+    if (azs.fuel_stock && azs.fuel_stock.length) {
+      return azs.fuel_stock.filter(function (i) { return i.sells; }).map(function (i) {
+        return i.label + ': ' + (i.liters > 0 ? i.liters + ' л' : 'нет');
+      }).join(' · ');
+    }
+    return azs.stock_liters + ' л бензина';
+  }
+
   function statusBadgeHtml(azs) {
     var labels = {
       ok: ['ok', 'Есть ' + escapeHtml(azs.fuel_grade || 'АИ-95')],
@@ -213,8 +223,8 @@
       ? '★ ' + escapeHtml(azs.name)
       : escapeHtml(azs.name);
     var meta = options.recommended
-      ? statusBadgeHtml(azs) + ' · ~' + azs.queue_minutes + ' мин'
-      : 'Очередь ~' + azs.queue_minutes + ' мин · ' + azs.stock_liters + ' л'
+      ? statusBadgeHtml(azs) + ' · ~' + azs.queue_minutes + ' мин<br><span class="fuel-fuel-stock-inline">' + fuelStockLine(azs) + '</span>'
+      : 'Очередь ~' + azs.queue_minutes + ' мин<br><span class="fuel-fuel-stock-inline">' + fuelStockLine(azs) + '</span>'
         + (azs.is_accepting_permits ? '' : ' · <strong>стоп пропусков</strong>');
     var address = options.recommended
       ? '<p class="fuel-muted fuel-azs-item__map-address">' + escapeHtml(azs.address) + '</p>'

@@ -24,14 +24,16 @@
         <td>{{ app.created_at|date:"d.m.Y H:i" }}</td>
         <td>{{ app.citizen.full_name }}<br><small class="text-muted">{{ app.citizen.phone }}</small></td>
         <td>{{ app.plate }}</td>
-        <td>{{ app.category.name }}</td>
+        <td>{{ app.category.name }}{% if app.requested_liters %}<br><small class="text-muted">запрос {{ app.requested_liters }} л</small>{% endif %}</td>
         <td>{{ app.assigned_azs.name|default:"—" }}</td>
         <td>
           {% if app.permit %}
             {% with redeems=app.permit.redeems.all %}
               {% if redeems %}
                 {% for r in redeems|slice:":1" %}
-                  <strong>{{ r.liters }} л</strong><br>
+                  <strong>{{ r.liters }} л</strong>
+                  {% if r.citizen_reported_liters %}<br><small class="text-muted">житель: {{ r.citizen_reported_liters }} л</small>{% endif %}
+                  <br>
                   <small class="text-muted">{{ r.created_at|date:"d.m H:i" }} · {{ r.azs.name }}</small>
                 {% endfor %}
               {% else %}

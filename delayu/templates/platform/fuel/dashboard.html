@@ -1,4 +1,5 @@
 {% extends "platform/_page.html" %}
+{% load fuel_portal %}
 {% load static %}
 {% block title %}{{ page_title }}{% endblock %}
 {% block card_body %}
@@ -85,7 +86,7 @@
         <td>{{ row.station.name }}</td>
         <td>{{ row.station.district|default:"—" }}</td>
         <td>{{ row.station.get_status_display }}</td>
-        <td>{{ row.station.stock_liters }} л</td>
+        <td><small>{% include "fuel/public/_azs_fuel_stock_inline.html" with azs=row.station %}</small></td>
         <td>{{ row.queue_computed }} мин</td>
         <td>{{ row.apps_submitted }}/{{ row.max_applications }}</td>
         <td>{{ row.apps_remaining }}</td>

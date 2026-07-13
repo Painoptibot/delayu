@@ -15,7 +15,10 @@
   {% endif %}
   <div style="background:#eff6ff;border-radius:12px;padding:14px;margin-bottom:16px;font-size:14px">
     Категория: {{ preview.category }}<br>
-    Доступно по пропуску: <strong>{{ preview.max_liters }} л</strong>
+    Остаток по пропуску: <strong>{{ preview.remaining_liters|default:preview.max_liters }} л</strong>
+    {% if preview.citizen_requested_liters %}
+      <br>Житель указал в заявке: <strong>{{ preview.citizen_requested_liters }} л</strong>
+    {% endif %}
   </div>
   {% if form.non_field_errors %}<div class="fuel-error">{{ form.non_field_errors }}</div>{% endif %}
   <div id="fuel-offline-confirm-msg" class="fuel-alert fuel-alert--success" hidden></div>

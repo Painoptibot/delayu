@@ -1,0 +1,17 @@
+{% load fuel_portal %}
+<ul class="fuel-fuel-stock-list">
+  {% for item in azs|fuel_stock_rows %}
+    {% if item.sells %}
+      <li class="fuel-fuel-stock-list__item{% if item.available %} fuel-fuel-stock-list__item--ok{% else %} fuel-fuel-stock-list__item--empty{% endif %}">
+        <span class="fuel-fuel-stock-list__label">{{ item.label }}</span>
+        {% if item.liters %}
+          <strong class="fuel-fuel-stock-list__value">{{ item.liters }} л</strong>
+        {% else %}
+          <span class="fuel-fuel-stock-list__value fuel-fuel-stock-list__value--none">нет</span>
+        {% endif %}
+      </li>
+    {% endif %}
+  {% empty %}
+    <li class="fuel-muted">Нет данных по видам топлива</li>
+  {% endfor %}
+</ul>

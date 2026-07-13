@@ -17,6 +17,9 @@
   <table class="fuel-table" style="margin-top:16px">
     <tr><th>Госномер</th><td>{{ application.plate }}</td></tr>
     <tr><th>Категория</th><td>{{ application.category.name }} · {{ application.category.daily_limit_liters }} л/сутки</td></tr>
+    {% if application.requested_liters %}
+      <tr><th>Желаемый объём</th><td>{{ application.requested_liters }} л</td></tr>
+    {% endif %}
     <tr><th>Дата</th><td>{{ application.created_at|date:"d.m.Y H:i" }}</td></tr>
     {% if application.assigned_azs %}
       <tr><th>АЗС</th><td>{{ application.assigned_azs.name }}</td></tr>
@@ -33,7 +36,11 @@
         <p class="fuel-redeem-summary__title">Заправлено по пропуску: <strong>{{ permit_usage.redeemed_total }} л</strong></p>
         <ul class="fuel-redeem-summary__list">
           {% for r in permit_usage.redeems %}
-            <li>{{ r.created_at|date:"d.m.Y H:i" }} · {{ r.azs.name }} · {{ r.liters }} л</li>
+            <li>
+              {{ r.created_at|date:"d.m.Y H:i" }} · {{ r.azs.name }} · отпущено <strong>{{ r.liters }} л</strong>
+              {% if r.citizen_reported_liters %} · житель указал {{ r.citizen_reported_liters }} л{% endif %}
+            </li>
+            <li class="fuel-redeem-report">{% include "fuel/public/_redeem_citizen_report.html" with r=r %}</li>
           {% endfor %}
         </ul>
       </div>

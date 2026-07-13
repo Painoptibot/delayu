@@ -162,6 +162,19 @@ class FuelApplicationForm(forms.Form):
         required=False,
         widget=forms.HiddenInput(),
     )
+    requested_liters = forms.IntegerField(
+        label="Желаемый объём, л",
+        required=False,
+        min_value=1,
+        max_value=500,
+        widget=forms.NumberInput(
+            attrs={
+                "class": "fuel-input",
+                "step": "1",
+                "placeholder": "Необязательно",
+            }
+        ),
+    )
 
     def __init__(self, *args, subsystem=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -191,6 +204,17 @@ class FuelApplicationForm(forms.Form):
         if not validate_inn(inn_n):
             raise forms.ValidationError("Некорректный ИНН: 10 цифр (юрлицо) или 12 (физлицо/ИП)")
         return inn_n
+
+    def clean_requested_liters(self):
+        value = self.cleaned_data.get("requested_liters")
+        if value in (None, ""):
+            return None
+        category = self.cleaned_data.get("category")
+        if category and value > category.daily_limit_liters:
+            raise forms.ValidationError(
+                f"Не больше суточного лимита категории ({category.daily_limit_liters} л)"
+            )
+        return value
 
 
 class FuelApplicationStatusFilterForm(forms.Form):
@@ -229,6 +253,26 @@ class FuelAzsRedeemForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "fuel-input"}),
     )
 
+    def __init__(self, *args, max_liters=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if max_liters is not None:
+            cap = Decimal(str(max_liters))
+            self.fields["liters"].max_value = cap
+            self.fields["liters"].widget.attrs["max"] = str(cap)
+
+
+class FuelCitizenRedeemReportForm(forms.Form):
+    liters = forms.DecimalField(
+        label="Фактически заправлено, л",
+        min_value=Decimal("0.1"),
+        max_value=Decimal("500"),
+        decimal_places=1,
+        required=False,
+        widget=forms.NumberInput(
+            attrs={"class": "fuel-input", "step": "0.1", "placeholder": "Необязательно"}
+        ),
+    )
+
 
 class FuelAzsManualCodeForm(forms.Form):
     manual_code = forms.CharField(
@@ -247,10 +291,52 @@ class FuelAzsManualCodeForm(forms.Form):
 
 
 class FuelAzsStockForm(forms.Form):
-    stock_liters = forms.IntegerField(
-        label="Остаток топлива, л",
+    stock_ai92_liters = forms.IntegerField(
+        label="АИ-92, л",
         min_value=0,
-        widget=forms.NumberInput(attrs={"class": "fuel-input"}),
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "fuel-input", "placeholder": "0"}),
+    )
+    stock_ai95_liters = forms.IntegerField(
+        label="АИ-95, л",
+        min_value=0,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "fuel-input", "placeholder": "0"}),
+    )
+    stock_diesel_liters = forms.IntegerField(
+        label="Дизель, л",
+        min_value=0,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "fuel-input", "placeholder": "0"}),
+    )
+    stock_gas_liters = forms.IntegerField(
+        label="Газ (СУГ), л",
+        min_value=0,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "fuel-input", "placeholder": "0"}),
+    )
+    sells_ai92 = forms.BooleanField(
+        label="Продаём АИ-92",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "fuel-check"}),
+    )
+    sells_ai95 = forms.BooleanField(
+        label="Продаём АИ-95",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "fuel-check"}),
+    )
+    sells_diesel = forms.BooleanField(
+        label="Продаём дизель",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "fuel-check"}),
+    )
+    sells_gas = forms.BooleanField(
+        label="Продаём газ",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "fuel-check"}),
     )
     pump_count = forms.IntegerField(
         label="Рабочих колонок",
@@ -418,7 +504,14 @@ class FuelAzsStationForm(forms.ModelForm):
             "latitude",
             "longitude",
             "status",
-            "stock_liters",
+            "stock_ai92_liters",
+            "stock_ai95_liters",
+            "stock_diesel_liters",
+            "stock_gas_liters",
+            "sells_ai92",
+            "sells_ai95",
+            "sells_diesel",
+            "sells_gas",
             "queue_minutes",
             "pump_count",
             "avg_refuel_minutes",
@@ -438,7 +531,14 @@ class FuelAzsStationForm(forms.ModelForm):
             "latitude": forms.NumberInput(attrs={"class": "form-control", "step": "0.000001"}),
             "longitude": forms.NumberInput(attrs={"class": "form-control", "step": "0.000001"}),
             "status": forms.Select(attrs={"class": "form-select"}),
-            "stock_liters": forms.NumberInput(attrs={"class": "form-control"}),
+            "stock_ai92_liters": forms.NumberInput(attrs={"class": "form-control"}),
+            "stock_ai95_liters": forms.NumberInput(attrs={"class": "form-control"}),
+            "stock_diesel_liters": forms.NumberInput(attrs={"class": "form-control"}),
+            "stock_gas_liters": forms.NumberInput(attrs={"class": "form-control"}),
+            "sells_ai92": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "sells_ai95": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "sells_diesel": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "sells_gas": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "queue_minutes": forms.NumberInput(attrs={"class": "form-control"}),
             "pump_count": forms.NumberInput(attrs={"class": "form-control"}),
             "avg_refuel_minutes": forms.NumberInput(attrs={"class": "form-control"}),

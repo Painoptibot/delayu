@@ -212,6 +212,7 @@
       vehicle_make: (fd.get('vehicle_make') || '').toString().trim(),
       inn: (fd.get('inn') || '').toString().trim(),
       org_name: (fd.get('org_name') || '').toString().trim(),
+      requested_liters: (fd.get('requested_liters') || '').toString().trim(),
       preferred_azs: preferred ? preferred.value : (fd.get('preferred_azs') || ''),
       agree_rules: form.querySelector('#id_agree_rules') ? form.querySelector('#id_agree_rules').checked : true,
     };

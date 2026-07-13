@@ -8,7 +8,10 @@
   <div class="fuel-redeem-summary">
     <p class="fuel-redeem-summary__title">Заправлено: <strong>{{ permit_usage.redeemed_total }} л</strong></p>
     {% for r in permit_usage.redeems|slice:":3" %}
-      <p class="fuel-redeem-summary__line">{{ r.created_at|date:"d.m H:i" }} · {{ r.azs.name }} · {{ r.liters }} л</p>
+      <p class="fuel-redeem-summary__line">
+        {{ r.created_at|date:"d.m H:i" }} · {{ r.azs.name }} · {{ r.liters }} л
+        {% if r.citizen_reported_liters %} (житель: {{ r.citizen_reported_liters }} л){% endif %}
+      </p>
     {% endfor %}
   </div>
 {% endif %}
