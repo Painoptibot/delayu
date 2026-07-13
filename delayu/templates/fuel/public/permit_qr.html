@@ -1,4 +1,5 @@
 {% extends "fuel/public/base.html" %}
+{% load fuel_portal %}
 
 {% block title %}QR {{ permit.number }} · {{ page_brand }}{% endblock %}
 
@@ -26,16 +27,17 @@
   {% endif %}
   {% if permit_usage.redeemed_total %}
     <div class="fuel-redeem-summary">
-      <p class="fuel-redeem-summary__title">Уже заправлено: <strong>{{ permit_usage.redeemed_total }} л</strong></p>
+      <p class="fuel-redeem-summary__title">Уже заправлено: <strong>{{ permit_usage.display_total }} л</strong></p>
       <ul class="fuel-redeem-summary__list">
         {% for r in permit_usage.redeems %}
           <li>
-            {{ r.created_at|date:"d.m.Y H:i" }} · {{ r.azs.name }} · отпущено <strong>{{ r.liters }} л</strong>
-            {% if r.citizen_reported_liters %} · житель: {{ r.citizen_reported_liters }} л{% endif %}
+            {{ r.created_at|date:"d.m.Y H:i" }} · {{ r.azs.name }} · отпущено <strong>{{ r|redeem_display_liters }} л</strong>
           </li>
-          <li class="fuel-redeem-report">{% include "fuel/public/_redeem_citizen_report.html" with r=r %}</li>
         {% endfor %}
       </ul>
+      {% for r in permit_usage.redeems %}
+        {% include "fuel/public/_redeem_citizen_report.html" with r=r %}
+      {% endfor %}
     </div>
   {% endif %}
   {% if permit.assigned_azs %}

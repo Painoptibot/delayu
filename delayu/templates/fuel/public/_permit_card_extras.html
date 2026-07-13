@@ -1,3 +1,4 @@
+{% load fuel_portal %}
 {% if permit.manual_code %}
   <div class="fuel-manual-code">
     <span class="fuel-manual-code__label">Код для ручного ввода на АЗС</span>
@@ -6,11 +7,10 @@
 {% endif %}
 {% if permit_usage and permit_usage.redeemed_total %}
   <div class="fuel-redeem-summary">
-    <p class="fuel-redeem-summary__title">Заправлено: <strong>{{ permit_usage.redeemed_total }} л</strong></p>
+    <p class="fuel-redeem-summary__title">Заправлено: <strong>{{ permit_usage.display_total }} л</strong></p>
     {% for r in permit_usage.redeems|slice:":3" %}
       <p class="fuel-redeem-summary__line">
-        {{ r.created_at|date:"d.m H:i" }} · {{ r.azs.name }} · {{ r.liters }} л
-        {% if r.citizen_reported_liters %} (житель: {{ r.citizen_reported_liters }} л){% endif %}
+        {{ r.created_at|date:"d.m H:i" }} · {{ r.azs.name }} · {{ r|redeem_display_liters }} л
       </p>
     {% endfor %}
   </div>

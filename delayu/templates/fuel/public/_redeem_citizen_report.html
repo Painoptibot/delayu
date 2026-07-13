@@ -1,6 +1,3 @@
-{% if r.citizen_reported_liters %}
-  <span class="fuel-muted"> · житель: {{ r.citizen_reported_liters }} л</span>
-{% endif %}
 <form method="post" action="{{ portal_root }}/redeems/{{ r.pk }}/report/" class="fuel-redeem-report">
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.path }}">

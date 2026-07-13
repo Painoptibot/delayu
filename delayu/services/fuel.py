@@ -906,8 +906,16 @@ def permit_fuel_usage(permit: FuelPermit) -> dict:
     redeems = list(permit.redeems.select_related("azs").order_by("-created_at")[:10])
     agg = permit.redeems.aggregate(total=Sum("liters"))
     redeemed_total = agg["total"] or Decimal(0)
+    display_total = Decimal(0)
+    for r in redeems:
+        display_total += (
+            r.citizen_reported_liters
+            if r.citizen_reported_liters is not None
+            else r.liters
+        )
     return {
         "redeemed_total": redeemed_total,
+        "display_total": display_total,
         "remaining": int(permit.remaining_liters),
         "max_liters": int(permit.max_liters),
         "redeems": redeems,
