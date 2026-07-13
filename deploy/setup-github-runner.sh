@@ -50,6 +50,11 @@ sudo -u delayu ./config.sh \
 ./svc.sh install delayu
 ./svc.sh start
 
+echo "==> sudoers (passwordless deploy для runner delayu)"
+cp "${APP_DIR}/deploy/sudoers-delayu-deploy" /etc/sudoers.d/delayu-deploy
+chmod 440 /etc/sudoers.d/delayu-deploy
+visudo -c
+
 echo ""
 echo "Runner установлен. Проверка:"
 echo "  GitHub → Settings → Actions → Runners — должен быть Online (delayu-vps)"
