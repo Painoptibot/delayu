@@ -319,6 +319,9 @@ FUEL_PLATFORM_BASE_DOMAIN = os.getenv("FUEL_PLATFORM_BASE_DOMAIN", "delau.tech")
 FUEL_SUPPORT_EMAIL = os.getenv("FUEL_SUPPORT_EMAIL", "support@delau.tech")
 FUEL_SUPPORT_PHONE = os.getenv("FUEL_SUPPORT_PHONE", "8 (800) 100-00-00")
 FUEL_SMS_DEMO_MODE = os.getenv("FUEL_SMS_DEMO_MODE", "true").lower() in ("1", "true", "yes")
+# ID счётчика Яндекс.Метрики для портала топлива (житель / АЗС / штаб). Пусто — не подключать.
+_FUEL_YM_RAW = (os.getenv("FUEL_YANDEX_METRIKA_ID", "") or "").strip()
+FUEL_YANDEX_METRIKA_ID = _FUEL_YM_RAW if _FUEL_YM_RAW.isdigit() else ""
 
 # Версия платформы для паспорта продукта и реестра
 DELAYU_PLATFORM_VERSION = os.getenv("DELAYU_PLATFORM_VERSION", "2.2.0")

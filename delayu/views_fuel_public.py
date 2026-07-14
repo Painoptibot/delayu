@@ -97,11 +97,14 @@ class FuelPortalContextMixin:
 
         root = getattr(request, "fuel_portal_root", "") or ""
         azs_station = get_session_azs(request, subsystem)
+        path = getattr(request, "path", "") or ""
         ctx["azs_station"] = azs_station
         ctx["portal_banners"] = portal_public_banners(subsystem)
         ctx["max_available"] = max_available(subsystem)
         ctx["fuel_support_email"] = settings.FUEL_SUPPORT_EMAIL
         ctx["fuel_support_phone"] = settings.FUEL_SUPPORT_PHONE
+        ctx["yandex_metrika_id"] = getattr(settings, "FUEL_YANDEX_METRIKA_ID", "") or ""
+        ctx["fuel_metrika_surface"] = "azs" if (azs_station or "/azs/" in path) else "citizen"
         ctx["portal_legal_privacy_url"] = f"{root}/legal/privacy/"
         ctx["portal_legal_rules_url"] = f"{root}/legal/rules/"
         ctx["portal_support_url"] = f"{root}/support/"

@@ -92,6 +92,17 @@ class FuelOperatorMixin(LoginRequiredMixin, PlatformLayoutMixin):
         request.fuel_operator_membership = membership
         return super(LoginRequiredMixin, self).dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        from django.conf import settings
+
+        ctx = super().get_context_data(**kwargs)
+        m = getattr(self.request, "fuel_operator_membership", None)
+        ctx["yandex_metrika_id"] = getattr(settings, "FUEL_YANDEX_METRIKA_ID", "") or ""
+        ctx["fuel_metrika_surface"] = "operator"
+        if m:
+            ctx.setdefault("subsystem", m.subsystem)
+        return ctx
+
 
 class FuelOperatorHubView(FuelOperatorMixin, TemplateView):
     template_name = "platform/fuel/hub.html"

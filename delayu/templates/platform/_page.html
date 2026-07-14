@@ -7,3 +7,7 @@
 </div><div class="card-body">{% block card_body %}{% endblock %}</div></div>
 {% if uzhv_pwa_enabled %}{% include "platform/uzhv/_pwa.html" %}{% endif %}
 {% endblock %}
+{% block page_js %}
+{{ block.super }}
+{% if yandex_metrika_id %}{% include "fuel/public/_yandex_metrika.html" %}{% endif %}
+{% endblock %}

@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="{% static 'css/fuel-citizen.css' %}">
   <link rel="manifest" href="{{ portal_root }}/manifest.webmanifest">
   <style>:root { --fuel-brand: {{ brand_color }}; }</style>
+  {% include "fuel/public/_yandex_metrika.html" %}
 </head>
 <body
   class="fuel-body{% if body_class %} {{ body_class }}{% endif %}{% if citizen and body_class != 'fuel-body--azs' %} fuel-body--tabs{% endif %}"
