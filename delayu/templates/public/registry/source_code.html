@@ -1,0 +1,25 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}<style>.public-docs{max-width:960px;margin:0 auto;padding:2rem 1rem 4rem}</style>{% endblock %}
+{% block content %}
+<div class="public-docs">
+  <h1 class="h4 mb-2">{{ page_title }}</h1>
+  <p class="text-muted small mb-3">{{ doc.product_name }} · {{ doc.vendor }} · v{{ doc.version }}</p>
+  {% include "public/registry/_nav.html" with docs_tab="source" %}
+  <a href="{% url 'public-registry-export' 'source-code' %}" class="btn btn-sm btn-primary mb-4">Скачать PDF</a>
+
+  <div class="card mb-3"><div class="card-header"><h6 class="mb-0">Хранение исходного текста</h6></div>
+    <div class="card-body small">{{ doc.source_storage }}</div></div>
+  <div class="card mb-3"><div class="card-header"><h6 class="mb-0">Хранение объектного кода</h6></div>
+    <div class="card-body small">{{ doc.object_storage }}</div></div>
+  <div class="card mb-3"><div class="card-header"><h6 class="mb-0">Средства сборки</h6></div>
+    <div class="card-body small">{{ doc.build_tools }}</div></div>
+  <div class="card mb-3"><div class="card-header"><h6 class="mb-0">Адрес технических средств (исходный и объектный код)</h6></div>
+    <div class="card-body small">{{ doc.location_address }}</div></div>
+
+  <h2 class="h6 mt-4 mb-3">Лицензионные ключи</h2>
+  <div class="card mb-3"><div class="card-body small">{{ doc.license_keys }}</div></div>
+  <div class="card mb-3"><div class="card-header"><h6 class="mb-0">Адрес (лицензионные ключи)</h6></div>
+    <div class="card-body small">{{ doc.license_location }}</div></div>
+</div>
+{% endblock %}

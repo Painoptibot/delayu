@@ -221,9 +221,10 @@ class InboundClassifyPreviewView(ModulePermissionMixin, View):
 
     def get(self, request):
         subject = (request.GET.get("subject") or "").strip()
-        if len(subject) < 3:
+        body = (request.GET.get("body") or "").strip()
+        if len(subject) < 3 and len(body) < 3:
             return JsonResponse({"detail": "subject_too_short"}, status=400)
-        result = ai.classify_correspondence(subject)
+        result = ai.classify_correspondence(subject, body)
         return JsonResponse(result)
 
 

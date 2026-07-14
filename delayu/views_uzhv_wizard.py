@@ -186,6 +186,7 @@ class UzhvAppealWizardCreateView(UzhvSubsystemMixin, ModulePermissionMixin, Temp
                     "form": kwargs.get("form")
                     or HousingAppealRegisterForm(subsystem=sub, initial=initial),
                     "sla_days": HousingAppeal.SLA_DAYS,
+                    "classify_preview_url": reverse("uzhv-appeal-classify-preview"),
                     "wizard_cancel_url": reverse("uzhv-appeals"),
                 }
             )

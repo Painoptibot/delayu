@@ -516,3 +516,83 @@ def run_report_query(subsystem, query_key: str, *, period_days=30) -> dict:
     title = tpl.name if tpl else REPORT_QUERY_KEYS.get(query_key, query_key)
     columns = list(base["rows"][0].keys()) if base.get("rows") else []
     return {**base, "columns": columns, "title": title}
+
+
+def ai_risk_dashboard(subsystem, *, sla_days=30):
+    """Дашборд рисков сроков: обращения УЖВ + дела, heatmap по исполнителям (AI-P0-07)."""
+    from collections import defaultdict
+
+    from django.contrib.auth import get_user_model
+
+    from delayu.models_uzhv import HousingAppeal
+
+    User = get_user_model()
+    today = timezone.now().date()
+    risk_until = today + timedelta(days=7)
+
+    appeals_qs = HousingAppeal.objects.filter(subsystem=subsystem).exclude(
+        status__in=[HousingAppeal.Status.ANSWERED, HousingAppeal.Status.CLOSED]
+    ).select_related("assignee", "citizen")
+
+    overdue_appeals = []
+    due_soon_appeals = []
+    for ap in appeals_qs:
+        row = {
+            "number": ap.appeal_number,
+            "subject": ap.subject[:80],
+            "due_date": ap.due_date,
+            "days_left": ap.days_left,
+            "assignee": ap.assignee,
+            "url": f"/uzhv/appeals/{ap.pk}/edit/",
+        }
+        if ap.due_date < today:
+            overdue_appeals.append(row)
+        elif ap.due_date <= risk_until:
+            due_soon_appeals.append(row)
+
+    heatmap: dict[int, dict] = defaultdict(
+        lambda: {"user": None, "overdue": 0, "due_soon": 0, "cases_overdue": 0}
+    )
+
+    def bump(user, field):
+        if not user:
+            return
+        heatmap[user.pk]["user"] = user
+        heatmap[user.pk][field] += 1
+
+    for row in overdue_appeals:
+        bump(row["assignee"], "overdue")
+    for row in due_soon_appeals:
+        bump(row["assignee"], "due_soon")
+
+    cases_overdue = CaseFile.objects.filter(
+        subsystem=subsystem,
+        is_archived=False,
+        due_date__lt=today,
+    ).exclude(status=CaseFile.Status.DONE).select_related("assignee")
+    for case in cases_overdue[:50]:
+        bump(case.assignee, "cases_overdue")
+
+    heat_rows = sorted(
+        heatmap.values(),
+        key=lambda r: (r["overdue"] + r["cases_overdue"], r["due_soon"]),
+        reverse=True,
+    )
+    for row in heat_rows:
+        total = row["overdue"] + row["due_soon"] + row["cases_overdue"]
+        row["total"] = total
+        row["level"] = (
+            "high" if row["overdue"] + row["cases_overdue"] > 0 else "medium" if row["due_soon"] else "low"
+        )
+
+    return {
+        "sla_days": sla_days,
+        "overdue_appeals": sorted(overdue_appeals, key=lambda r: r["due_date"])[:30],
+        "due_soon_appeals": sorted(due_soon_appeals, key=lambda r: r["due_date"])[:20],
+        "heatmap": heat_rows[:15],
+        "summary": {
+            "appeals_overdue": len(overdue_appeals),
+            "appeals_due_soon": len(due_soon_appeals),
+            "cases_overdue": cases_overdue.count(),
+        },
+    }

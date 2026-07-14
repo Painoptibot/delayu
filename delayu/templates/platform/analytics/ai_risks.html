@@ -1,0 +1,93 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/analytics/_nav.html" %}
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card border-danger h-100">
+      <div class="card-body">
+        <p class="text-muted small mb-1">Обращения просрочены (SLA {{ dashboard.sla_days }} дн.)</p>
+        <h3 class="text-danger mb-0">{{ dashboard.summary.appeals_overdue }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-warning h-100">
+      <div class="card-body">
+        <p class="text-muted small mb-1">Обращения — срок ≤ 7 дней</p>
+        <h3 class="text-warning mb-0">{{ dashboard.summary.appeals_due_soon }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <p class="text-muted small mb-1">Дела M22 просрочены</p>
+        <h3 class="mb-0">{{ dashboard.summary.cases_overdue }}</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header"><h6 class="mb-0">Heatmap по исполнителям</h6></div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr><th>Исполнитель</th><th>Просроч. обращения</th><th>Скоро срок</th><th>Дела</th><th>Нагрузка</th></tr>
+      </thead>
+      <tbody>
+        {% for row in dashboard.heatmap %}
+        <tr>
+          <td>{{ row.user.get_full_name|default:row.user.username }}</td>
+          <td>{% if row.overdue %}<span class="badge bg-danger">{{ row.overdue }}</span>{% else %}—{% endif %}</td>
+          <td>{% if row.due_soon %}<span class="badge bg-warning text-dark">{{ row.due_soon }}</span>{% else %}—{% endif %}</td>
+          <td>{% if row.cases_overdue %}<span class="badge bg-secondary">{{ row.cases_overdue }}</span>{% else %}—{% endif %}</td>
+          <td style="min-width:8rem">
+            <div class="progress" style="height:8px">
+              <div class="progress-bar bg-{% if row.level == 'high' %}danger{% elif row.level == 'medium' %}warning{% else %}success{% endif %}"
+                   style="width:{% widthratio row.total 10 100 %}%"></div>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted p-3">Нет данных по исполнителям</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header text-danger"><h6 class="mb-0">Просроченные обращения</h6></div>
+      <ul class="list-group list-group-flush">
+        {% for a in dashboard.overdue_appeals %}
+        <li class="list-group-item small">
+          <a href="{{ a.url }}">{{ a.number }}</a> — {{ a.subject }}
+          <span class="text-danger">до {{ a.due_date|date:"d.m.Y" }}</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted">Нет просроченных</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header text-warning"><h6 class="mb-0">Срок истекает в ближайшие 7 дней</h6></div>
+      <ul class="list-group list-group-flush">
+        {% for a in dashboard.due_soon_appeals %}
+        <li class="list-group-item small">
+          <a href="{{ a.url }}">{{ a.number }}</a> — {{ a.subject }}
+          <span class="text-muted">до {{ a.due_date|date:"d.m.Y" }} ({{ a.days_left }} дн.)</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted">Нет объектов</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

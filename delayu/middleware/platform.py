@@ -15,6 +15,7 @@ SKIP_MEMBERSHIP_PREFIXES = (
     "/admin/",
     "/api/v1/health/",
     "/docs/tz/",
+    "/docs/registry/",
     "/fuel/",
 )
 
@@ -25,6 +26,7 @@ TWO_FACTOR_SKIP_PREFIXES = (
     "/admin/",
     "/api/v1/health/",
     "/docs/tz/",
+    "/docs/registry/",
 )
 
 

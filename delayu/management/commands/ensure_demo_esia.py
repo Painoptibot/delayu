@@ -7,7 +7,7 @@ from delayu.models import Subsystem
 
 
 class Command(BaseCommand):
-    help = "Создать/обновить 2 кнопки «ЕСИА (демо)» на странице входа"
+    help = "Создать/обновить одну кнопку «ЕСИА (демо)» на странице входа"
 
     def handle(self, *args, **options):
         seed = SeedUzhvCommand()
@@ -16,6 +16,11 @@ class Command(BaseCommand):
             seed._seed_sso_demo(subsystem)
             count += 1
         if count:
-            self.stdout.write(self.style.SUCCESS(f"ЕСИА (демо) обновлены для {count} подсистем(ы)"))
+            self.stdout.write(self.style.SUCCESS(f"ЕСИА (демо) обновлена для {count} подсистем(ы)"))
         else:
             self.stdout.write("Подсистема uzhv не найдена — сначала: python manage.py seed_uzhv")
+        from delayu.models import SsoProvider
+
+        disabled = SsoProvider.objects.filter(client_id="demo-esia-org", is_active=True).update(is_active=False)
+        if disabled:
+            self.stdout.write(f"Отключено дублей ЕСИА (org): {disabled}")

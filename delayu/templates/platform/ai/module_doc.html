@@ -1,0 +1,119 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ai/_nav.html" %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-muted small mb-0">
+      Для экспертизы реестра российского ПО · {{ doc.product_name }} v{{ doc.version }} · {{ doc.vendor }}
+    </p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'platform-ai-module-export' %}" class="btn btn-sm btn-primary"><i class="ri-file-pdf-line"></i> PDF</a>
+    <a href="{% url 'platform-demo-guide' %}" class="btn btn-sm btn-outline-secondary">Демо реестра</a>
+    <a href="{% url 'platform-registry-application' %}" class="btn btn-sm btn-outline-secondary">Заявление</a>
+    <a href="{% url 'platform-ai-ocr' %}" class="btn btn-sm btn-outline-primary">Демо OCR</a>
+  </div>
+</div>
+
+<div class="alert alert-info small mb-4">
+  <strong>URL для заявления:</strong> <code>/ai/module/</code> —
+  описание функций ИИ, экраны проверки и принципы HITL. Сформировано {{ doc.generated_at|date:"d.m.Y H:i" }}.
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><h6 class="mb-0">Общие сведения</h6></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-sm-5">Продукт</dt><dd class="col-sm-7">{{ doc.product_name }}</dd>
+          <dt class="col-sm-5">Класс реестра</dt><dd class="col-sm-7">09.01 — BPM / управление процессами</dd>
+          <dt class="col-sm-5">Модули ИИ</dt><dd class="col-sm-7">M47–M56 (хаб, поиск, OCR, классификация, HITL)</dd>
+          {% if doc.subsystem %}
+          <dt class="col-sm-5">Подсистема демо</dt><dd class="col-sm-7">{{ doc.subsystem.name }}</dd>
+          {% endif %}
+          {% if doc.policy %}
+          <dt class="col-sm-5">Модель (AiPolicy)</dt><dd class="col-sm-7">{{ doc.policy.model_name }}</dd>
+          <dt class="col-sm-5">Лимит запросов/день</dt><dd class="col-sm-7">{{ doc.policy.max_requests_per_day }}</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><h6 class="mb-0">Технологии модуля ИИ</h6></div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for s in doc.stack %}
+            <tr><td class="text-muted ps-4">{{ s.layer }}</td><td>{{ s.tech }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header"><h6 class="mb-0">Функции (как в заявлении реестра)</h6></div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Функция</th>
+            <th>Описание</th>
+            <th>Экраны / API</th>
+            <th>Аудит</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fn in doc.functions %}
+          <tr>
+            <td><code>{{ fn.id }}</code></td>
+            <td>{{ fn.title }}</td>
+            <td class="small">{{ fn.description }}</td>
+            <td class="small">
+              {% for p in fn.screens %}<code>{{ p }}</code>{% if not forloop.last %}<br>{% endif %}{% endfor %}
+              {% if fn.apis %}
+              <div class="text-muted mt-1">{% for a in fn.apis %}<span>{{ a }}</span>{% if not forloop.last %}; {% endif %}{% endfor %}</div>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ fn.audit }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header"><h6 class="mb-0">Принципы применения ИИ</h6></div>
+  <div class="card-body">
+    <ul class="mb-0">
+      {% for p in doc.principles %}
+      <li class="mb-2">{{ p }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h6 class="mb-0">Сценарий проверки на демо-стенде (≈5 мин)</h6></div>
+  <div class="card-body">
+    <ol class="mb-0">
+      <li class="mb-2"><strong>ИИ-1:</strong> создать входящее обращение → получить классификацию → подтвердить тему.</li>
+      <li class="mb-2"><strong>ИИ-2:</strong> на странице малоимущих загрузить TXT/PDF заявления → кнопка <em>ИИ</em> → проверить поля → применить.</li>
+      <li class="mb-2"><strong>ИИ-4:</strong> <code>/ai/search/</code> — семантический поиск по делу или документу.</li>
+      <li class="mb-2"><strong>ИИ-7:</strong> <code>/ai/hitl/</code> и <code>/administration/audit/</code> — журнал запросов и подтверждений.</li>
+    </ol>
+  </div>
+</div>
+{% endblock %}

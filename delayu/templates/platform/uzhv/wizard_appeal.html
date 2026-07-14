@@ -23,6 +23,16 @@
         </div>
       </div>
       <div id="uzhv-s2" class="content">
+        {% if ai_enabled %}
+        <div class="card mb-3 border-primary d-none" id="appealAiPanel">
+          <div class="card-body py-2 small">
+            <h6 class="mb-1"><i class="ri-robot-line"></i> Классификация ИИ</h6>
+            <p class="mb-1" id="appealAiTheme">—</p>
+            <p class="mb-1 text-muted" id="appealAiRoute"></p>
+            <ul class="mb-0 ps-3" id="appealAiReasons"></ul>
+          </div>
+        </div>
+        {% endif %}
         <div class="row g-0">
           {% include "platform/uzhv/_wizard_field.html" with field=form.subject col=12 %}
           {% include "platform/uzhv/_wizard_field.html" with field=form.body col=12 %}
@@ -44,4 +54,10 @@
     </div>
   </div>
 </form>
+{% endblock %}
+{% block wizard_js %}
+{% if ai_enabled and classify_preview_url %}
+<script src="{% static 'js/delayu-appeal-ai.js' %}"></script>
+<script>window.delayuAppealAi = { classifyUrl: '{{ classify_preview_url|escapejs }}' };</script>
+{% endif %}
 {% endblock %}

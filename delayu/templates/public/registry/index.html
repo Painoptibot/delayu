@@ -1,0 +1,113 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block page_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/delayu-landing.css' %}" />
+<style>
+.public-docs { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+.public-docs__header { margin-bottom: 2rem; }
+.public-docs .card { border-radius: 12px; }
+.public-docs code { font-size: 0.85em; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="public-docs">
+  <header class="public-docs__header">
+    <a href="{% url 'platform-landing' %}" class="d-inline-flex align-items-center gap-2 text-body mb-3 text-decoration-none">
+      <span class="app-brand-logo demo">{% include 'partials/logo.html' %}</span>
+      <strong>ДелаЮ</strong> · ЮГИт
+    </a>
+    <h1 class="h3 mb-2">{{ page_title }}</h1>
+    <p class="text-muted small mb-0">
+      Публичная документация для реестра Минцифры · v{{ hub.version }} · {{ hub.generated_at|date:"d.m.Y" }}
+    </p>
+  </header>
+  {% include "public/registry/_nav.html" with docs_tab="hub" %}
+
+  <div class="alert alert-info small">
+    <strong>Для заявления в реестр</strong> укажите URL этой страницы:
+    <code>{{ hub.registry_form_url }}</code>
+    · демо-стенд: <code>{{ hub.demo_url }}</code>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header"><h6 class="mb-0">Функциональные характеристики</h6></div>
+        <div class="card-body small">
+          <p>Модульная платформа учёта обращений, дел, документооборота, BPM, отчётности и администрирования.</p>
+          <p class="mb-2">Конфигурация <strong>АИС УЖВ</strong>: жилищный учёт, малоимущие, очередь, жилфонд, обращения (SLA 30 дн.), отчёты.</p>
+          <p class="mb-0">Модуль ИИ: классификация обращений, OCR/NER, полнота пакета, поиск, риски, черновики (HITL).</p>
+          <a href="{% url 'public-registry-passport' %}" class="btn btn-sm btn-outline-primary mt-3">Паспорт продукта</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header"><h6 class="mb-0">Установка и эксплуатация</h6></div>
+        <div class="card-body small">
+          <ul class="mb-0 ps-3">
+            {% for note in hub.demo.admin_notes %}
+            <li class="mb-2">{{ note }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0">Обновления (релизы → delau.tech)</h6></div>
+    <div class="card-body small">
+      <ul class="mb-0 ps-3">
+        {% for note in hub.deploy_notes %}
+        <li class="mb-2">{{ note }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0">Демо для экспертизы</h6></div>
+    <div class="card-body small">
+      <p>Логин <code>uzhv_spec</code> / <code>uzhv_spec</code> · сценарий проверки ~5 мин.</p>
+      <a href="{% url 'public-registry-demo' %}" class="btn btn-sm btn-primary">Инструкция и шаги</a>
+      <a href="{% url 'login' %}" class="btn btn-sm btn-outline-secondary ms-2">Открыть систему</a>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0">Версии</h6></div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Версия</th><th>Дата</th><th>Описание</th></tr></thead>
+        <tbody>
+          {% for rel in hub.releases %}
+          <tr>
+            <td><strong>v{{ rel.version }}</strong>{% if rel.is_current %} <span class="badge bg-label-primary">текущая</span>{% endif %}</td>
+            <td>{{ rel.released_at|date:"d.m.Y" }}</td>
+            <td class="text-muted">{{ rel.title }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="text-muted p-3">v{{ hub.version }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h6 class="mb-0">PDF и материалы</h6></div>
+    <div class="card-body d-flex flex-wrap gap-2">
+      <a href="{% url 'public-registry-export' 'passport' %}" class="btn btn-sm btn-outline-secondary">Паспорт PDF</a>
+      <a href="{% url 'public-registry-export' 'demo' %}" class="btn btn-sm btn-outline-secondary">Демо PDF</a>
+      <a href="{% url 'public-registry-export' 'ai' %}" class="btn btn-sm btn-outline-secondary">Модуль ИИ PDF</a>
+      <a href="{% url 'public-registry-export' 'application' %}" class="btn btn-sm btn-outline-secondary">Заявление PDF</a>
+      <a href="{% url 'public-registry-export' 'tariffs' %}" class="btn btn-sm btn-outline-secondary">Тарифы PDF</a>
+      <a href="{% url 'public-registry-export' 'source-code' %}" class="btn btn-sm btn-outline-secondary">Техсредства PDF</a>
+      <a href="{% url 'platform-tz-download' %}" class="btn btn-sm btn-outline-secondary">ТЗ платформы</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

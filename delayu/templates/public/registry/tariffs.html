@@ -1,0 +1,46 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}<style>.public-docs{max-width:960px;margin:0 auto;padding:2rem 1rem 4rem}</style>{% endblock %}
+{% block content %}
+<div class="public-docs">
+  <h1 class="h4 mb-2">{{ page_title }}</h1>
+  <p class="text-muted small mb-3">
+    {{ tariff.product_name }} ({{ tariff.product_line }}) · {{ tariff.vendor }} · v{{ tariff.version }}
+    · действует с {{ tariff.effective_date|date:"d.m.Y" }}
+  </p>
+  {% include "public/registry/_nav.html" with docs_tab="tariffs" %}
+  <div class="d-flex gap-2 mb-4">
+    <a href="{% url 'public-registry-export' 'tariffs' %}" class="btn btn-sm btn-primary">Скачать PDF</a>
+  </div>
+
+  <div class="alert alert-secondary small">{{ tariff.summary }}</div>
+
+  {% for comp in tariff.components %}
+  <div class="card mb-3">
+    <div class="card-header"><h6 class="mb-0">{{ comp.title }}</h6></div>
+    <div class="card-body small">{{ comp.text }}</div>
+  </div>
+  {% endfor %}
+
+  <div class="card mb-3">
+    <div class="card-header"><h6 class="mb-0">Факторы формирования стоимости</h6></div>
+    <div class="card-body"><ul class="small mb-0">{% for f in tariff.pricing_factors %}<li>{{ f }}</li>{% endfor %}</ul></div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header"><h6 class="mb-0">Государственные и муниципальные заказчики</h6></div>
+    <div class="card-body small">{{ tariff.gov_procurement }}</div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header"><h6 class="mb-0">Коммерческие заказчики</h6></div>
+    <div class="card-body small">{{ tariff.commercial }}</div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body small text-muted">{{ tariff.demo_note }}</div>
+  </div>
+
+  <p class="small text-muted mb-0">{{ tariff.disclaimer }}</p>
+</div>
+{% endblock %}

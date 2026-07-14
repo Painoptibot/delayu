@@ -33,6 +33,7 @@ from delayu.views_comms import *  # noqa: F401, F403
 from delayu.views_integrations import *  # noqa: F401, F403
 from delayu.views_audio import *  # noqa: F401, F403
 from delayu.views_ai import *  # noqa: F401, F403
+from delayu.views_document_ai import *  # noqa: F401, F403
 from delayu.views_infra import *  # noqa: F401, F403
 from delayu.views_operations import *  # noqa: F401, F403
 from delayu.views_exploitation import *  # noqa: F401, F403
@@ -58,14 +59,9 @@ class LoginView(AuthView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        from delayu.models import SsoProvider
-        from delayu.services.sso import active_sso_providers
+        from delayu.services.sso import login_page_esia_providers
 
-        ctx["sso_providers"] = [
-            p
-            for p in active_sso_providers()
-            if p.provider_type == SsoProvider.ProviderType.ESIA and (p.metadata or {}).get("demo")
-        ]
+        ctx["sso_providers"] = login_page_esia_providers()
         from delayu.login_scene import LOGIN_SCENE_BADGES
 
         ctx["login_scene_badges"] = LOGIN_SCENE_BADGES

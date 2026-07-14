@@ -1171,6 +1171,7 @@ class AiPolicy(models.Model):
     model_name = models.CharField(max_length=64, default="demo-local")
     max_requests_per_day = models.PositiveIntegerField(default=500)
     allow_pii = models.BooleanField(default=False, verbose_name="Разрешить ПДн в промптах")
+    ai_enabled = models.BooleanField(default=True, verbose_name="ИИ включён для подсистемы")
     notes = models.TextField(blank=True)
 
     class Meta:

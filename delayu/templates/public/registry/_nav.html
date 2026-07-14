@@ -1,0 +1,17 @@
+<nav class="public-docs__nav mb-4">
+  <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'public-registry-docs' %}" class="btn btn-sm {% if docs_tab == 'hub' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Обзор</a>
+      <a href="{% url 'public-registry-passport' %}" class="btn btn-sm {% if docs_tab == 'passport' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Паспорт</a>
+      <a href="{% url 'public-registry-demo' %}" class="btn btn-sm {% if docs_tab == 'demo' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Демо</a>
+      <a href="{% url 'public-registry-ai' %}" class="btn btn-sm {% if docs_tab == 'ai' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Модуль ИИ</a>
+      <a href="{% url 'public-registry-application' %}" class="btn btn-sm {% if docs_tab == 'application' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Заявление</a>
+      <a href="{% url 'public-registry-tariffs' %}" class="btn btn-sm {% if docs_tab == 'tariffs' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Тарифы</a>
+      <a href="{% url 'public-registry-source-code' %}" class="btn btn-sm {% if docs_tab == 'source' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Исходный код</a>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'platform-landing' %}" class="btn btn-sm btn-text-secondary">delau.tech</a>
+      <a href="{% url 'login' %}" class="btn btn-sm btn-primary">Войти в систему</a>
+    </div>
+  </div>
+</nav>

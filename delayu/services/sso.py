@@ -24,6 +24,28 @@ def active_sso_providers(*, subsystem=None):
     return qs.order_by("name")
 
 
+def login_page_esia_providers():
+    """Одна кнопка ЕСИА на странице входа (демо, без дублей между подсистемами)."""
+    from delayu.models import SsoProvider
+
+    seen: dict[str, SsoProvider] = {}
+    for provider in active_sso_providers():
+        if provider.provider_type != SsoProvider.ProviderType.ESIA:
+            continue
+        if not (provider.metadata or {}).get("demo"):
+            continue
+        client_id = (provider.client_id or "").strip() or f"pk-{provider.pk}"
+        if client_id in seen:
+            continue
+        seen[client_id] = provider
+    for preferred_id in ("demo-esia-fl", "demo-esia-org"):
+        if preferred_id in seen:
+            return [seen[preferred_id]]
+    if seen:
+        return [next(iter(seen.values()))]
+    return []
+
+
 def build_authorize_url(provider, request) -> str:
     """URL IdP или демо-callback для локальной отладки."""
     state = secrets.token_urlsafe(24)

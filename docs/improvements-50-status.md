@@ -1,7 +1,8 @@
 # Статус 50 улучшений — платформа «ДелаЮ» (newsystem)
 
-**Обновлено:** 27.05.2026  
+**Обновлено:** 14.07.2026  
 **Подсистема для проверки:** `pilot`  
+**Roadmap (ИИ + реестр + УЖВ):** [roadmap-uluchsheniya-delayu.md](./roadmap-uluchsheniya-delayu.md)  
 **DoD:** D1 API · D2 UI · D3 права · D4 аудит · D5 seed · D6 не stub  
 **Приёмка:** [acceptance-50.md](./acceptance-50.md) · **Задачи:** [improvements-50-tasks.md](./improvements-50-tasks.md)
 
@@ -66,6 +67,12 @@
 - `#27` — SHA-256 в списке документов 360°
 - `#10` — org scope (продолжение)
 - F0 — `acceptance-50.md`, `improvements-50-tasks.md`
+
+## Волна S7 — ИИ под реестр (P0, июль 2026)
+
+См. [roadmap-uluchsheniya-delayu.md](./roadmap-uluchsheniya-delayu.md): **AI-P0-01…12**, **DEMO-P0-01…02**.
+
+Приоритет: OCR/NER, полнота пакета, документация на стенде, сквозной демо-сценарий для экспертизы.
 
 ## F7 — acceptance smoke
 

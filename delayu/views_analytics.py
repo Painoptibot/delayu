@@ -304,6 +304,23 @@ class OverdueMonitorView(ModulePermissionMixin, TemplateView):
         return ctx
 
 
+class AiRisksDashboardView(ModulePermissionMixin, TemplateView):
+    """AI-P0-07 — риски просрочки обращений УЖВ и heatmap исполнителей."""
+
+    module_code = "M20"
+    template_name = "platform/analytics/ai_risks.html"
+
+    def get_context_data(self, **kwargs):
+        from delayu.services.analytics import ai_risk_dashboard
+
+        ctx = super().get_context_data(**kwargs)
+        m = _ctx_membership(self)
+        ctx["analytics_tab"] = "ai_risks"
+        ctx["page_title"] = "Риски сроков (ИИ)"
+        ctx["dashboard"] = ai_risk_dashboard(m.subsystem)
+        return ctx
+
+
 class DepartmentAnalyticsView(ModulePermissionMixin, TemplateView):
     module_code = "M21"
     template_name = "platform/analytics/departments.html"

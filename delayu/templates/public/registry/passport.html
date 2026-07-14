@@ -1,0 +1,40 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/delayu-landing.css' %}" /><style>.public-docs{max-width:960px;margin:0 auto;padding:2rem 1rem 4rem}</style>{% endblock %}
+{% block content %}
+<div class="public-docs">
+  <h1 class="h4 mb-3">{{ page_title }}</h1>
+  {% include "public/registry/_nav.html" with docs_tab="passport" %}
+  <div class="d-flex gap-2 mb-4">
+    <a href="{% url 'public-registry-export' 'passport' %}" class="btn btn-sm btn-primary">PDF</a>
+  </div>
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card"><div class="card-header"><h6 class="mb-0">Общие сведения</h6></div>
+        <div class="card-body small">
+          <dl class="row mb-0">
+            <dt class="col-4">Продукт</dt><dd class="col-8">{{ passport.product_name }}</dd>
+            <dt class="col-4">Правообладатель</dt><dd class="col-8">{{ passport.vendor }}</dd>
+            <dt class="col-4">Версия</dt><dd class="col-8">{{ passport.version }}</dd>
+            <dt class="col-4">Класс</dt><dd class="col-8">{{ passport.registry_class }}</dd>
+            <dt class="col-4">ОКПД2</dt><dd class="col-8">{{ passport.okpd2 }}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card"><div class="card-header"><h6 class="mb-0">Стек</h6></div>
+        <div class="card-body p-0"><table class="table table-sm mb-0"><tbody>
+          {% for s in passport.stack %}<tr><td class="text-muted ps-3">{{ s.layer }}</td><td>{{ s.tech }}</td></tr>{% endfor %}
+        </tbody></table></div>
+      </div>
+    </div>
+  </div>
+  <div class="card mb-4"><div class="card-header"><h6 class="mb-0">ИИ-сценарии</h6></div>
+    <div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Модуль</th><th>Сценарий</th><th>Примечание</th></tr></thead><tbody>
+      {% for a in passport.ai_scenarios %}<tr><td><code>{{ a.code }}</code></td><td>{{ a.title }}</td><td class="text-muted small">{{ a.note }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  </div>
+</div>
+{% endblock %}

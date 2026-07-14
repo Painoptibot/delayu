@@ -1,0 +1,31 @@
+<div class="modal fade" id="uzhvOcrModal" tabindex="-1" aria-labelledby="uzhvOcrModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="uzhvOcrModalLabel">ИИ: распознавание документа</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <div id="uzhvOcrLoading" class="text-center py-4 d-none">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="small text-muted mt-2 mb-0">Распознавание…</p>
+        </div>
+        <div id="uzhvOcrError" class="alert alert-danger d-none"></div>
+        <div id="uzhvOcrWarnings"></div>
+        <p id="uzhvOcrMeta" class="small text-muted d-none"></p>
+        <form id="uzhvOcrApplyForm" class="d-none">
+          <p class="small">Отметьте поля для переноса в карточку гражданина / дело. Решение фиксируется в журнале ИИ.</p>
+          <div id="uzhvOcrFields" class="mb-3"></div>
+          <details>
+            <summary class="small">Фрагмент текста</summary>
+            <pre id="uzhvOcrText" class="small bg-light p-2 mt-2" style="max-height:160px;overflow:auto;"></pre>
+          </details>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary d-none" id="uzhvOcrApplyBtn">Применить выбранное</button>
+      </div>
+    </div>
+  </div>
+</div>

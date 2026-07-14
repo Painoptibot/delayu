@@ -57,5 +57,5 @@ class NerForm(BootstrapFormMixin, forms.Form):
 class AiPolicyForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = AiPolicy
-        fields = ["model_name", "max_requests_per_day", "allow_pii", "notes"]
+        fields = ["model_name", "max_requests_per_day", "allow_pii", "ai_enabled", "notes"]
         widgets = {"notes": forms.Textarea(attrs={"class": BOOTSTRAP, "rows": 3})}

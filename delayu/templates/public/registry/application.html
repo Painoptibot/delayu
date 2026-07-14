@@ -1,0 +1,15 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}<style>.public-docs{max-width:960px;margin:0 auto;padding:2rem 1rem 4rem}</style>{% endblock %}
+{% block content %}
+<div class="public-docs">
+  <h1 class="h4 mb-3">{{ page_title }}</h1>
+  {% include "public/registry/_nav.html" with docs_tab="application" %}
+  <a href="{% url 'public-registry-export' 'application' %}" class="btn btn-sm btn-primary mb-4">PDF</a>
+  {% for field in application.fields %}
+  <div class="card mb-3"><div class="card-header py-2"><h6 class="mb-0 small">{{ field.label }}</h6></div>
+    <div class="card-body pt-2 pb-2"><pre class="small mb-0" style="white-space:pre-wrap">{{ field.value }}</pre></div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

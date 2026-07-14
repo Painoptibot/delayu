@@ -1,20 +1,44 @@
 {% extends layout_path %}
+{% load static %}
 {% block title %}{{ page_title }} — ДелаЮ{% endblock %}
 {% block content %}
 <div class="alert alert-info">
   Срок ответа на обращение — <strong>{{ sla_days }} календарных дней</strong> с даты поступления.
   При регистрации создаётся запись во входящей корреспонденции (M24).
 </div>
+
+{% if ai_enabled %}
+<div class="card mb-3 border-primary d-none" id="appealAiPanel">
+  <div class="card-body py-3">
+    <div class="d-flex align-items-start gap-2">
+      <i class="ri-robot-line text-primary fs-4"></i>
+      <div class="flex-grow-1 small">
+        <h6 class="mb-1">Подсказка ИИ (классификация)</h6>
+        <p class="mb-1" id="appealAiTheme">—</p>
+        <p class="mb-1 text-muted" id="appealAiRoute"></p>
+        <ul class="mb-0 ps-3" id="appealAiReasons"></ul>
+        <span class="badge bg-label-info mt-1" id="appealAiConfidence"></span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="card mb-3">
   <div class="card-header"><h5 class="mb-0">{{ page_title }}</h5></div>
   <div class="card-body">
-    <form method="post" action="{% if appeal %}{% url 'uzhv-appeal-edit' appeal.pk %}{% else %}{% url 'uzhv-appeal-create' %}{% endif %}">
+    <form method="post" action="{% if appeal %}{% url 'uzhv-appeal-edit' appeal.pk %}{% else %}{% url 'uzhv-appeal-create' %}{% endif %}" id="appealMainForm">
       {% csrf_token %}
       <input type="hidden" name="action" value="save">
       {% include "platform/uzhv/_form_fields.html" %}
       <div class="d-flex gap-2 flex-wrap">
         <button type="submit" class="btn btn-primary">{% if appeal %}Сохранить{% else %}Зарегистрировать{% endif %}</button>
         <a href="{% url 'uzhv-appeals' %}" class="btn btn-outline-secondary">Отмена</a>
+        {% if appeal and ai_enabled %}
+        <button type="button" class="btn btn-outline-info" id="btnAppealDraftAi">
+          <i class="ri-magic-line"></i> Черновик ответа (ИИ)
+        </button>
+        {% endif %}
         {% if appeal %}
         <a href="{% url 'uzhv-appeal-response-docx' appeal.pk %}" class="btn btn-outline-secondary">
           <i class="ri-file-word-line"></i> Проект ответа (docx)
@@ -96,5 +120,16 @@
   </div>
 </div>
 {% endif %}
+{% endif %}
+{% endblock %}
+{% block page_js %}{{ block.super }}
+{% if ai_enabled and classify_preview_url %}
+<script src="{% static 'js/delayu-appeal-ai.js' %}"></script>
+<script>
+  window.delayuAppealAi = {
+    classifyUrl: '{{ classify_preview_url|escapejs }}',
+    draftUrl: '{% if draft_response_url %}{{ draft_response_url|escapejs }}{% endif %}'
+  };
+</script>
 {% endif %}
 {% endblock %}

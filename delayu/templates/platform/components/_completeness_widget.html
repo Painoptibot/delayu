@@ -1,0 +1,25 @@
+<div class="card mb-3 border-{% if completeness.complete %}success{% else %}warning{% endif %}">
+  <div class="card-header d-flex justify-content-between align-items-center py-2">
+    <h6 class="mb-0"><i class="ri-checkbox-multiple-line me-1"></i> Полнота комплекта (ИИ-3)</h6>
+    <span class="badge bg-{% if completeness.complete %}success{% else %}warning{% endif %}">
+      {% widthratio completeness.score 1 100 %}%
+    </span>
+  </div>
+  <div class="card-body py-2">
+    <p class="small mb-2 {% if completeness.complete %}text-success{% else %}text-warning{% endif %}">
+      {{ completeness.summary }}
+    </p>
+    <ul class="list-unstyled mb-0 small">
+      {% for c in completeness.checks %}
+      <li class="mb-1">
+        {% if c.ok %}
+        <i class="ri-checkbox-circle-line text-success"></i>
+        {% else %}
+        <i class="ri-close-circle-line text-danger"></i>
+        {% endif %}
+        {{ c.label }}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>

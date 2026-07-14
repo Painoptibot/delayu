@@ -17,6 +17,13 @@ class PlatformLayoutMixin:
         from delayu.services.demo_mode import is_demo_mode
 
         context["demo_mode"] = is_demo_mode(self.request)
+        membership = context.get("active_membership") or get_active_membership(self.request.user)
+        if membership:
+            from delayu.services.ai import is_ai_enabled
+
+            context["ai_enabled"] = is_ai_enabled(membership.subsystem)
+        else:
+            context["ai_enabled"] = False
         if membership:
             context["menu_json"] = {"menu": build_menu_for_membership(membership)}
             context.setdefault(

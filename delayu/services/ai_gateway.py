@@ -59,6 +59,9 @@ def invoke(
     from delayu.services.ai import get_or_create_policy
 
     policy = get_or_create_policy(subsystem)
+    if not policy.ai_enabled:
+        raise AiGatewayError("ai_disabled", "ИИ отключён для этой подсистемы (AiPolicy)")
+
     if _usage_today(subsystem) >= policy.max_requests_per_day:
         raise AiGatewayError("limit_exceeded", "Дневной лимит запросов ИИ исчерпан")
 

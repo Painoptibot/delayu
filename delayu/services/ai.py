@@ -1,7 +1,7 @@
 """ИИ-сервисы: rule-based + журнал (M47–M66)."""
 import re
 
-from delayu.models import CaseFile, KnowledgeArticle
+from delayu.models import AiRequestLog, CaseFile, KnowledgeArticle
 
 
 def assistant_chat(subsystem, user, question: str) -> str:
@@ -24,17 +24,99 @@ def assistant_chat(subsystem, user, question: str) -> str:
     return invoke(subsystem, user, "M47", question, run)
 
 
-def classify_correspondence(subject: str) -> dict:
-    subject_l = subject.lower()
+def classify_correspondence(subject: str, body: str = "") -> dict:
+    text = f"{subject} {body}".strip().lower()
     reasons: list[str] = []
-    if "жалоб" in subject_l:
-        reasons.append("ключевое слово «жалоб»")
-        return {"theme": "Жалоба", "priority": 1, "reasons": reasons, "confidence": 0.91}
-    if "заяв" in subject_l:
-        reasons.append("ключевое слово «заяв»")
-        return {"theme": "Заявление", "priority": 2, "reasons": reasons, "confidence": 0.88}
+
+    routes = {
+        "Жалоба": {
+            "route": "УЖВ — обращения граждан",
+            "department": "Отдел регистрации обращений",
+            "assignee_role": "uzhv_queue_spec",
+        },
+        "Малоимущие": {
+            "route": "УЖВ — учёт малоимущих",
+            "department": "Отдел социальной поддержки",
+            "assignee_role": "uzhv_queue_spec",
+        },
+        "Жилищный фонд": {
+            "route": "УЖВ — жилфонд",
+            "department": "Отдел жилищного фонда",
+            "assignee_role": "uzhv_contract_spec",
+        },
+        "Переселение": {
+            "route": "УЖВ — переселение",
+            "department": "Отдел переселения",
+            "assignee_role": "uzhv_head",
+        },
+        "Дети-сироты": {
+            "route": "УЖВ — дети-сироты",
+            "department": "Отдел опеки и сирот",
+            "assignee_role": "uzhv_orphan_spec",
+        },
+        "Договоры": {
+            "route": "УЖВ — договорной отдел",
+            "department": "Отдел договоров",
+            "assignee_role": "uzhv_contract_spec",
+        },
+        "Учёт нуждающихся": {
+            "route": "УЖВ — очередь",
+            "department": "Отдел учёта нуждающихся",
+            "assignee_role": "uzhv_queue_spec",
+        },
+        "Заявление": {
+            "route": "УЖВ — приём заявлений",
+            "department": "Отдел регистрации",
+            "assignee_role": "uzhv_queue_spec",
+        },
+        "Справки и документы": {
+            "route": "УЖВ — документооборот",
+            "department": "Общий реестр",
+            "assignee_role": "uzhv_queue_spec",
+        },
+        "Обращение": {
+            "route": "УЖВ — общий реестр",
+            "department": "Общий реестр",
+            "assignee_role": "uzhv_queue_spec",
+        },
+    }
+
+    rules: list[tuple[tuple[str, ...], str, int, float]] = [
+        (("жалоб", "возмущ"), "Жалоба", 1, 0.91),
+        (("малоимущ", "прожиточ", "доход"), "Малоимущие", 2, 0.90),
+        (("жилфонд", "мкд", "помещен"), "Жилищный фонд", 2, 0.89),
+        (("пересел", "аварийн"), "Переселение", 2, 0.88),
+        (("сирот", "опек"), "Дети-сироты", 2, 0.88),
+        (("договор", "найм", "соцнайм"), "Договоры", 3, 0.86),
+        (("очеред", "учёт", "учет"), "Учёт нуждающихся", 2, 0.87),
+        (("заяв", "заявлен"), "Заявление", 2, 0.88),
+        (("справк", "выписк"), "Справки и документы", 3, 0.82),
+    ]
+    for markers, theme, priority, confidence in rules:
+        if any(m in text for m in markers):
+            reasons.append(f"маркер темы «{theme}»")
+            meta = routes[theme]
+            return {
+                "theme": theme,
+                "priority": priority,
+                "route": meta["route"],
+                "department": meta["department"],
+                "assignee_role": meta["assignee_role"],
+                "reasons": reasons,
+                "confidence": confidence,
+            }
+
     reasons.append("нет специфичных маркеров — класс «Обращение»")
-    return {"theme": "Обращение", "priority": 3, "reasons": reasons, "confidence": 0.72}
+    meta = routes["Обращение"]
+    return {
+        "theme": "Обращение",
+        "priority": 3,
+        "route": meta["route"],
+        "department": meta["department"],
+        "assignee_role": meta["assignee_role"],
+        "reasons": reasons,
+        "confidence": 0.72,
+    }
 
 
 def summarize_case(case: CaseFile) -> str:
@@ -120,32 +202,9 @@ def extract_entities(text: str) -> dict:
 
 
 def case_completeness(case: CaseFile) -> list[dict]:
-    checks = []
-    checks.append(
-        {
-            "ok": bool(case.assignee_id),
-            "label": "Назначен исполнитель",
-        }
-    )
-    checks.append(
-        {
-            "ok": case.documents.filter(is_current=True).exists(),
-            "label": "Есть документы",
-        }
-    )
-    checks.append(
-        {
-            "ok": bool(case.description.strip()),
-            "label": "Заполнено описание",
-        }
-    )
-    checks.append(
-        {
-            "ok": case.due_date is not None,
-            "label": "Указан срок",
-        }
-    )
-    return checks
+    from delayu.services.document_completeness import casefile_completeness
+
+    return casefile_completeness(case)
 
 
 def predict_due_date(case: CaseFile) -> str:
@@ -215,11 +274,66 @@ def get_or_create_policy(subsystem):
     return policy
 
 
+def is_ai_enabled(subsystem) -> bool:
+    if not subsystem:
+        return False
+    return get_or_create_policy(subsystem).ai_enabled
+
+
+def draft_appeal_response(appeal) -> dict:
+    """Черновик ответа на обращение УЖВ (AI-P0-08, HITL)."""
+    from delayu.models_uzhv import HousingAppeal
+
+    cls = classify_correspondence(appeal.subject, appeal.body or "")
+    citizen = appeal.citizen.full_name if appeal.citizen else "заявитель"
+    case_ref = ""
+    if appeal.housing_case_id:
+        case_ref = f" Учётное дело {appeal.housing_case.case_number}."
+
+    if cls["theme"] == "Жалоба":
+        conclusion = HousingAppeal.ConclusionKind.INFO
+        middle = (
+            "Ваше обращение рассмотрено. По результатам проверки сообщаем следующее: "
+            "информация по существу вопроса будет направлена дополнительно в установленный срок. "
+            "Приносим извинения за доставленные неудобства."
+        )
+    elif cls["theme"] == "Малоимущие":
+        conclusion = HousingAppeal.ConclusionKind.HOUSING
+        middle = (
+            "По вопросу признания (сохранения статуса) малоимущих сообщаем, что заявление "
+            "принято к рассмотрению. Для принятия решения необходим полный пакет документов "
+            "согласно перечню, установленному регламентом."
+        )
+    else:
+        conclusion = HousingAppeal.ConclusionKind.INFO
+        middle = (
+            f"По сути обращения ({cls['theme'].lower()}) сообщаем, что сведения проверены. "
+            "Ответ подготовлен на основании данных информационной системы УЖВ."
+        )
+
+    draft = (
+        f"Уважаемый(ая) {citizen}!\n\n"
+        f"На Ваше обращение № {appeal.appeal_number} от {appeal.received_at:%d.%m.%Y} "
+        f"(срок ответа — до {appeal.due_date:%d.%m.%Y}){case_ref}\n\n"
+        f"{middle}\n\n"
+        "Данный текст сформирован автоматически и требует проверки специалистом "
+        "перед регистрацией исходящего ответа.\n\n"
+        "С уважением,\n"
+        "Управление по жилищным вопросам"
+    )
+    return {
+        "draft": draft,
+        "conclusion_kind": conclusion,
+        "classification": cls,
+    }
+
+
 def serialize_ai_policy(policy) -> dict:
     return {
         "model_name": policy.model_name,
         "max_requests_per_day": policy.max_requests_per_day,
         "allow_pii": policy.allow_pii,
+        "ai_enabled": policy.ai_enabled,
         "notes": policy.notes,
     }
 
@@ -235,9 +349,24 @@ def update_ai_policy(policy, payload: dict) -> dict:
     if "allow_pii" in payload:
         policy.allow_pii = bool(payload["allow_pii"])
         fields.append("allow_pii")
+    if "ai_enabled" in payload:
+        policy.ai_enabled = bool(payload["ai_enabled"])
+        fields.append("ai_enabled")
     if "notes" in payload:
         policy.notes = str(payload["notes"])
         fields.append("notes")
     if fields:
         policy.save(update_fields=fields)
     return serialize_ai_policy(policy)
+
+
+def _log(subsystem, user, module_code: str, prompt: str, response: str, *, meta: dict | None = None):
+    """Запись в AiRequestLog (используется views_ai)."""
+    AiRequestLog.objects.create(
+        subsystem=subsystem,
+        module_code=module_code,
+        user=user,
+        prompt=(prompt or "")[:8000],
+        response=(response or "")[:8000],
+        meta=meta or {},
+    )

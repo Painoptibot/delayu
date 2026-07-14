@@ -155,6 +155,10 @@ class CaseDetailView(ModulePermissionMixin, DetailView):
         )
         ctx["ai_summary"] = ai.summarize_case(self.object)
         ctx["ai_risk"] = ai.risk_overdue(self.object)
+        ctx["completeness"] = ai.case_completeness(self.object)
+        from delayu.services.document_completeness import casefile_completeness_summary
+
+        ctx["completeness_pack"] = casefile_completeness_summary(self.object)
         ctx["can_m06_change"] = user_can(self.request.user, "M06", "change")
         ctx["can_archive"] = user_can(self.request.user, "M06", "archive")
         ctx["can_change"] = user_can(self.request.user, "M22", "change")

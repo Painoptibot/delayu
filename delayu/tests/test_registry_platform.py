@@ -12,8 +12,11 @@ from delayu.models import (
 )
 from delayu.services.registry_platform import (
     build_product_passport,
+    build_registry_application,
     export_compliance_csv,
+    export_demo_guide_pdf,
     export_passport_pdf,
+    export_registry_application_pdf,
     seed_registry_catalog,
 )
 
@@ -56,6 +59,32 @@ def test_build_product_passport(registry_sub):
     assert data["modules_count"] >= 2
     assert len(data["ai_scenarios"]) >= 3
     assert len(data["glossary"]) >= 1
+    assert "09.01" in data["registry_class"]
+    assert "62.01.29" in data["okpd2"]
+
+
+@pytest.mark.django_db
+def test_build_registry_application(registry_sub):
+    data = build_registry_application(registry_sub)
+    assert data["product_name"] == "ДелаЮ"
+    assert len(data["fields"]) >= 10
+    ai_field = next(f for f in data["fields"] if f["id"] == "ai_usage")
+    assert "HITL" in ai_field["value"]
+    assert data["checklist"]
+
+
+@pytest.mark.django_db
+def test_export_registry_application_pdf(registry_sub):
+    resp = export_registry_application_pdf(registry_sub)
+    assert resp.status_code == 200
+    assert "application/pdf" in resp["Content-Type"]
+
+
+@pytest.mark.django_db
+def test_export_demo_guide_pdf(registry_sub):
+    resp = export_demo_guide_pdf(registry_sub)
+    assert resp.status_code == 200
+    assert "application/pdf" in resp["Content-Type"]
 
 
 @pytest.mark.django_db

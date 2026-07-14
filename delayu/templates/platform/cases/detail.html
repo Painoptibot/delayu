@@ -98,6 +98,11 @@
   {% endif %}
   <p>{{ case.description }}</p>
   {% include "platform/cases/_extra_fields.html" %}
+  {% if completeness_pack %}
+  {% with completeness=completeness_pack %}
+  {% include "platform/components/_completeness_widget.html" %}
+  {% endwith %}
+  {% endif %}
 </div></div>
 {% endif %}
 
@@ -215,6 +220,11 @@
 {% if active_tab == 'ai' %}
 <div class="card mb-4"><div class="card-body">
   <h6 class="mb-3">ИИ-анализ дела</h6>
+  {% if completeness_pack %}
+  {% with completeness=completeness_pack %}
+  {% include "platform/components/_completeness_widget.html" %}
+  {% endwith %}
+  {% endif %}
   <div class="alert alert-info small mb-2"><strong>Краткое содержание:</strong> {{ ai_summary }}</div>
   <div class="alert alert-{% if ai_risk.risk == 'high' %}danger{% elif ai_risk.risk == 'medium' %}warning{% else %}secondary{% endif %} small mb-0">
     <strong>Риск просрочки:</strong> {{ ai_risk.message }}

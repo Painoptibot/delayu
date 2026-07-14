@@ -211,28 +211,65 @@ def _pdf_font_name() -> str:
     return "Helvetica"
 
 
-def rows_to_pdf_bytes(title: str, rows: list[list]) -> bytes:
+def _pdf_paragraph(text, style) -> "Paragraph":
+    from reportlab.platypus import Paragraph
+    from xml.sax.saxutils import escape
+
+    safe = escape(str(text if text is not None else ""))
+    safe = safe.replace("\n", "<br/>")
+    return Paragraph(safe, style)
+
+
+def rows_to_pdf_bytes(
+    title: str,
+    rows: list[list],
+    *,
+    portrait: bool = False,
+) -> bytes:
     """PDF через reportlab; при отсутствии пакета — HTML для печати в PDF."""
     try:
         from reportlab.lib import colors
         from reportlab.lib.pagesizes import A4, landscape
         from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
         from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+        from xml.sax.saxutils import escape
 
         font = _pdf_font_name()
         bold_font = "UzHVExport-Bold" if font == "UzHVExport" else "Helvetica-Bold"
+        pagesize = A4 if portrait else landscape(A4)
 
         buf = io.BytesIO()
-        doc = SimpleDocTemplate(buf, pagesize=landscape(A4), leftMargin=24, rightMargin=24)
+        doc = SimpleDocTemplate(
+            buf,
+            pagesize=pagesize,
+            leftMargin=28,
+            rightMargin=28,
+            topMargin=28,
+            bottomMargin=28,
+        )
         styles = getSampleStyleSheet()
         title_style = ParagraphStyle(
-            "UzHVTitle", parent=styles["Title"], fontName=font
+            "UzHVTitle", parent=styles["Title"], fontName=font, fontSize=14, leading=18
         )
         normal_style = ParagraphStyle(
-            "UzHVNormal", parent=styles["Normal"], fontName=font
+            "UzHVNormal", parent=styles["Normal"], fontName=font, fontSize=9, leading=12
+        )
+        cell_style = ParagraphStyle(
+            "UzHVCell",
+            parent=styles["Normal"],
+            fontName=font,
+            fontSize=8,
+            leading=11,
+            wordWrap="CJK",
+        )
+        header_cell_style = ParagraphStyle(
+            "UzHVHeaderCell",
+            parent=cell_style,
+            fontName=bold_font,
+            textColor=colors.white,
         )
         story = [
-            Paragraph(title, title_style),
+            Paragraph(escape(title), title_style),
             Spacer(1, 8),
             Paragraph(
                 f"Сформировано: {timezone.now():%d.%m.%Y %H:%M}",
@@ -241,7 +278,22 @@ def rows_to_pdf_bytes(title: str, rows: list[list]) -> bytes:
             Spacer(1, 12),
         ]
         if rows:
-            table = Table(rows, repeatRows=1)
+            page_width = pagesize[0] - doc.leftMargin - doc.rightMargin
+            n_cols = max(len(r) for r in rows)
+            if n_cols == 2:
+                col_widths = [page_width * 0.24, page_width * 0.76]
+            elif n_cols == 3:
+                col_widths = [page_width * 0.07, page_width * 0.33, page_width * 0.60]
+            else:
+                col_widths = [page_width / n_cols] * n_cols
+
+            wrapped_rows = []
+            for r_idx, row in enumerate(rows):
+                style = header_cell_style if r_idx == 0 else cell_style
+                padded = list(row) + [""] * (n_cols - len(row))
+                wrapped_rows.append([_pdf_paragraph(cell, style) for cell in padded[:n_cols]])
+
+            table = Table(wrapped_rows, colWidths=col_widths, repeatRows=1)
             table.setStyle(
                 TableStyle(
                     [
@@ -252,6 +304,10 @@ def rows_to_pdf_bytes(title: str, rows: list[list]) -> bytes:
                         ("FONTSIZE", (0, 0), (-1, -1), 8),
                         ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
                         ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                        ("TOPPADDING", (0, 0), (-1, -1), 4),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                     ]
                 )
             )
@@ -277,7 +333,7 @@ def rows_to_printable_html_bytes(title: str, rows: list[list]) -> bytes:
 body {{ font-family: Arial, sans-serif; margin: 24px; }}
 h1 {{ font-size: 18px; }}
 table {{ border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 16px; }}
-th, td {{ border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }}
+th, td {{ border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; word-wrap: break-word; overflow-wrap: anywhere; }}
 th {{ background: #1e88e5; color: #fff; }}
 .meta {{ color: #666; font-size: 12px; }}
 @media print {{ body {{ margin: 0; }} }}

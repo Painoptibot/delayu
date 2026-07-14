@@ -3,7 +3,7 @@ import json
 from datetime import date, timedelta
 
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
@@ -1111,6 +1111,9 @@ class UzhvAppealCreateView(UzhvSubsystemMixin, ModulePermissionMixin, TemplateVi
             ),
         )
         ctx["sla_days"] = HousingAppeal.SLA_DAYS
+        from django.urls import reverse
+
+        ctx["classify_preview_url"] = reverse("uzhv-appeal-classify-preview")
         return ctx
 
     def post(self, request):
@@ -1159,6 +1162,11 @@ class UzhvAppealUpdateView(UzhvSubsystemMixin, ModulePermissionMixin, TemplateVi
         ctx["attachments"] = appeal.attachments.select_related("uploaded_by").all()
         ctx["attachment_form"] = kwargs.get("attachment_form", HousingAppealAttachmentForm())
         ctx["status_history"] = appeal.status_history.select_related("changed_by").all()[:20]
+        from django.urls import reverse
+
+        ctx["classify_preview_url"] = reverse("uzhv-appeal-classify-preview")
+        if appeal.pk:
+            ctx["draft_response_url"] = reverse("uzhv-appeal-draft-response", kwargs={"pk": appeal.pk})
         return ctx
 
     def post(self, request, pk):
@@ -1216,6 +1224,63 @@ class UzhvAppealUpdateView(UzhvSubsystemMixin, ModulePermissionMixin, TemplateVi
         return self.render_to_response(
             {**self.get_context_data(), "form": form, "appeal": appeal}
         )
+
+
+class UzhvAppealClassifyPreviewView(UzhvSubsystemMixin, ModulePermissionMixin, View):
+    """ИИ-классификация при регистрации обращения УЖВ (AI-P0-01)."""
+
+    module_code = "M24"
+    required_action = "view"
+
+    def get(self, request):
+        from delayu.services.ai import classify_correspondence, is_ai_enabled
+
+        sub = self.get_subsystem()
+        if not is_ai_enabled(sub):
+            return JsonResponse({"detail": "ai_disabled"}, status=403)
+        subject = (request.GET.get("subject") or "").strip()
+        body = (request.GET.get("body") or "").strip()
+        if len(subject) < 3 and len(body) < 3:
+            return JsonResponse({"detail": "subject_too_short"}, status=400)
+        result = classify_correspondence(subject, body)
+        return JsonResponse(result)
+
+
+class UzhvAppealDraftResponseView(UzhvSubsystemMixin, ModulePermissionMixin, View):
+    """Черновик ответа на обращение (AI-P0-08)."""
+
+    module_code = "M24"
+    required_action = "change"
+
+    def post(self, request, pk):
+        from delayu.services import audit
+        from delayu.services.ai import draft_appeal_response, is_ai_enabled
+
+        sub = self.get_subsystem()
+        if not is_ai_enabled(sub):
+            return JsonResponse({"error": "ИИ отключён"}, status=403)
+        appeal = get_object_or_404(HousingAppeal, pk=pk, subsystem=sub)
+        result = draft_appeal_response(appeal)
+        audit.log_action(
+            request.user,
+            sub,
+            "ai.draft_response",
+            "HousingAppeal",
+            appeal.pk,
+            {"theme": result["classification"]["theme"]},
+            request,
+        )
+        from delayu.services.ai import _log
+
+        _log(
+            sub,
+            request.user,
+            "M53",
+            appeal.subject,
+            result["draft"][:500],
+            meta={"appeal_id": appeal.pk},
+        )
+        return JsonResponse(result)
 
 
 class UzhvFundListView(UzhvSubsystemMixin, ModulePermissionMixin, ListView):
@@ -2163,6 +2228,9 @@ class UzhvLowIncomeView(UzhvSubsystemMixin, ModulePermissionMixin, TemplateView)
                 "conclusion": case.low_income_conclusion,
                 "queue_position": case.queue_position,
             }
+        from delayu.services.document_completeness import housing_case_completeness
+
+        ctx["completeness"] = housing_case_completeness(case)
         return ctx
 
     def post(self, request, pk):

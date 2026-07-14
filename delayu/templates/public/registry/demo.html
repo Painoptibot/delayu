@@ -1,0 +1,25 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}<style>.public-docs{max-width:960px;margin:0 auto;padding:2rem 1rem 4rem}</style>{% endblock %}
+{% block content %}
+<div class="public-docs">
+  <h1 class="h4 mb-3">{{ page_title }}</h1>
+  {% include "public/registry/_nav.html" with docs_tab="demo" %}
+  <a href="{% url 'public-registry-export' 'demo' %}" class="btn btn-sm btn-primary mb-4">PDF</a>
+  <div class="alert alert-info small">URL стенда: <code>{{ guide.base_url }}</code></div>
+  <div class="card mb-4"><div class="card-header"><h6 class="mb-0">Учётные записи</h6></div>
+    <div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>Роль</th><th>Логин</th><th>Пароль</th></tr></thead><tbody>
+      {% for c in guide.credentials %}<tr><td>{{ c.role }}</td><td><code>{{ c.login }}</code></td><td><code>{{ c.password }}</code></td></tr>{% endfor %}
+    </tbody></table></div>
+  </div>
+  <div class="card mb-4"><div class="card-header"><h6 class="mb-0">Сценарий проверки</h6></div>
+    <div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>#</th><th>Шаг</th><th>URL</th></tr></thead><tbody>
+      {% for step in guide.steps %}<tr><td>{{ step.n }}</td><td>{{ step.title }}<div class="text-muted small">{{ step.hint }}</div></td><td class="small"><code>{{ step.path }}</code></td></tr>{% endfor %}
+    </tbody></table></div>
+  </div>
+  <div class="card"><div class="card-header"><h6 class="mb-0">Screencast</h6></div>
+    <div class="card-body"><ol class="small mb-0">{% for line in guide.screencast_lines %}<li class="mb-2">{{ line }}</li>{% endfor %}</ol></div>
+  </div>
+</div>
+{% endblock %}

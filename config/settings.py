@@ -325,6 +325,9 @@ FUEL_YANDEX_METRIKA_ID = _FUEL_YM_RAW if _FUEL_YM_RAW.isdigit() else ""
 
 # Версия платформы для паспорта продукта и реестра
 DELAYU_PLATFORM_VERSION = os.getenv("DELAYU_PLATFORM_VERSION", "2.2.0")
+DELAYU_DEMO_BASE_URL = os.getenv("DELAYU_DEMO_BASE_URL", "").rstrip("/")
+DELAYU_PUBLIC_SITE_URL = os.getenv("DELAYU_PUBLIC_SITE_URL", "https://delau.tech").rstrip("/")
+DELAYU_ROSPATENT_NUMBER = os.getenv("DELAYU_ROSPATENT_NUMBER", "")
 
 # #6 — глобальный read-only демо-режим (дополняет PiiMaskingPolicy.demo_mode на подсистему)
 DELAYU_DEMO_MODE = os.getenv("DELAYU_DEMO_MODE", "false").lower() in ("1", "true", "yes")

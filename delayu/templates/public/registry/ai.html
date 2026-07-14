@@ -1,0 +1,20 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}<style>.public-docs{max-width:960px;margin:0 auto;padding:2rem 1rem 4rem}</style>{% endblock %}
+{% block content %}
+<div class="public-docs">
+  <h1 class="h4 mb-3">{{ page_title }}</h1>
+  {% include "public/registry/_nav.html" with docs_tab="ai" %}
+  <a href="{% url 'public-registry-export' 'ai' %}" class="btn btn-sm btn-primary mb-4">PDF</a>
+  <p class="text-muted small">{{ doc.product_name }} v{{ doc.version }} · {{ doc.vendor }}</p>
+  {% for fn in doc.functions %}
+  <div class="card mb-3"><div class="card-header"><strong>{{ fn.id }}</strong> — {{ fn.title }}</div>
+    <div class="card-body small">
+      <p>{{ fn.description }}</p>
+      <p class="mb-0 text-muted">Экраны: {% for s in fn.screens %}<code>{{ s }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+    </div>
+  </div>
+  {% endfor %}
+  <div class="card"><div class="card-header">Принципы HITL</div><div class="card-body"><ul class="small mb-0">{% for p in doc.principles %}<li>{{ p }}</li>{% endfor %}</ul></div></div>
+</div>
+{% endblock %}

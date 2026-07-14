@@ -71,3 +71,41 @@ def seed_uzhv_nsi_classifiers(subsystem) -> None:
             code=code,
             defaults={"name": name, "sort_order": order},
         )
+
+    from delayu.services.document_completeness import DEFAULT_CASE_REQUIRED, DEFAULT_UZHV_REQUIRED
+
+    uzhv_req, _ = NSIClassifier.objects.update_or_create(
+        subsystem=subsystem,
+        code="uzhv_required_doc_kinds",
+        defaults={
+            "name": "Обязательные документы учётного дела УЖВ",
+            "description": "Код: «категория|вид_документа» (AI-P0-05)",
+        },
+    )
+    order = 0
+    for category, rows in DEFAULT_UZHV_REQUIRED.items():
+        for doc_kind, label in rows:
+            order += 1
+            NSIValue.objects.update_or_create(
+                classifier=uzhv_req,
+                code=f"{category}|{doc_kind}",
+                defaults={"name": label, "sort_order": order},
+            )
+
+    case_req, _ = NSIClassifier.objects.update_or_create(
+        subsystem=subsystem,
+        code="case_required_doc_types",
+        defaults={
+            "name": "Обязательные типы документов дела (M22)",
+            "description": "Код: «профиль|doc_type»",
+        },
+    )
+    order = 0
+    for profile, rows in DEFAULT_CASE_REQUIRED.items():
+        for doc_type, label in rows:
+            order += 1
+            NSIValue.objects.update_or_create(
+                classifier=case_req,
+                code=f"{profile}|{doc_type}",
+                defaults={"name": label, "sort_order": order},
+            )

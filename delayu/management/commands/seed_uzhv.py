@@ -365,9 +365,9 @@ class Command(BaseCommand):
             subsystem=subsystem,
             client_id="demo-esia-org",
             defaults={
-                "name": "ЕСИА (демо)",
+                "name": "ЕСИА (демо) — организация",
                 "provider_type": SsoProvider.ProviderType.ESIA,
-                "is_active": True,
+                "is_active": False,
                 "metadata": {"demo": True, "profile": "org"},
             },
         )
