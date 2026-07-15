@@ -21,3 +21,10 @@ class SystemView(TemplateView):
         )
 
         return context
+
+    def render_to_response(self, context, **response_kwargs):
+        # handler404/403/… передают status=; без этого ответ был HTTP 200,
+        # и CommonMiddleware не делал APPEND_SLASH-редирект (например /fuel/novorossiysk).
+        if self.status not in ("", None):
+            response_kwargs.setdefault("status", int(self.status))
+        return super().render_to_response(context, **response_kwargs)
