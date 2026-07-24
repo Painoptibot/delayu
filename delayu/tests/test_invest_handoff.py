@@ -8,6 +8,7 @@ from delayu.services.invest_handoff import (
     request_handoff,
     return_handoff,
 )
+from delayu.tests.test_invest_roadmap import assert_roadmap_sla_due_dates
 
 User = get_user_model()
 
@@ -48,6 +49,7 @@ def test_accept_moves_to_support(invest_ctx):
         "commission",
     }
     assert all(item.status == InvestRoadmapItem.Status.OPEN for item in p.roadmap_items.all())
+    assert_roadmap_sla_due_dates(list(p.roadmap_items.all()))
 
 
 @pytest.mark.django_db

@@ -10,6 +10,20 @@ from delayu.services.invest_roadmap import mark_overdue, overdue_items, seed_sup
 
 User = get_user_model()
 
+ROADMAP_DUE_OFFSETS = {
+    "land": 14,
+    "permits": 45,
+    "build": 180,
+    "commission": 365,
+}
+
+
+def assert_roadmap_sla_due_dates(items):
+    today = timezone.now().date()
+    by_code = {item.code: item for item in items}
+    for code, days in ROADMAP_DUE_OFFSETS.items():
+        assert by_code[code].due_at.date() == today + timedelta(days=days)
+
 
 @pytest.fixture
 def invest_ctx(db):
@@ -47,6 +61,7 @@ def test_seed_support_roadmap(invest_ctx):
     codes = [item.code for item in items]
     assert codes == ["land", "permits", "build", "commission"]
     assert all(item.status == InvestRoadmapItem.Status.OPEN for item in items)
+    assert_roadmap_sla_due_dates(items)
 
 
 @pytest.mark.django_db
