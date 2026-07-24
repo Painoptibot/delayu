@@ -84,3 +84,20 @@ class InvestProjectSite(models.Model):
 
     class Meta:
         unique_together = [("project", "site")]
+
+
+class InvestHandoff(models.Model):
+    class Status(models.TextChoices):
+        REQUESTED = "requested", "Запрошена"
+        ACCEPTED = "accepted", "Принята"
+        RETURNED = "returned", "Возвращена"
+
+    project = models.ForeignKey(InvestProject, on_delete=models.CASCADE, related_name="handoffs")
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.REQUESTED)
+    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
