@@ -1,7 +1,9 @@
 import pytest
+from django import forms
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
+from delayu.forms_invest import InvestProjectForm
 from delayu.models import (
     ModuleCatalog,
     Organization,
@@ -81,6 +83,19 @@ def test_invest_project_form_excludes_funnel(client, invest_view_ctx):
 
 
 @pytest.mark.django_db
+def test_invest_project_form_create_stage_choices_start_at_lead(invest_view_ctx):
+    membership = SubsystemMembership.objects.get(
+        user=invest_view_ctx["agency_user"], subsystem=invest_view_ctx["sub"]
+    )
+
+    form = InvestProjectForm(membership=membership)
+
+    assert isinstance(form.fields["stage"], forms.ChoiceField)
+    assert isinstance(form.fields["stage"].widget, forms.Select)
+    assert [value for value, _label in form.fields["stage"].choices] == ["lead", "qualify"]
+
+
+@pytest.mark.django_db
 def test_invest_viewer_cannot_post_create(client, invest_view_ctx):
     client.force_login(invest_view_ctx["viewer_user"])
 
@@ -95,3 +110,30 @@ def test_invest_viewer_cannot_post_create(client, invest_view_ctx):
     )
 
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_invest_project_form_rejects_invalid_stage_transition(invest_view_ctx):
+    project = invest_view_ctx["project"]
+    membership = SubsystemMembership.objects.get(
+        user=invest_view_ctx["agency_user"], subsystem=invest_view_ctx["sub"]
+    )
+
+    form = InvestProjectForm(
+        data={
+            "organization": invest_view_ctx["org"].pk,
+            "code": project.code,
+            "name": project.name,
+            "investor_name": project.investor_name,
+            "industry": project.industry,
+            "stage": "site_pick",
+            "owner": "",
+            "investment_amount": "",
+            "jobs_count": "",
+        },
+        instance=project,
+        membership=membership,
+    )
+
+    assert not form.is_valid()
+    assert "stage" in form.errors

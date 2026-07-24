@@ -12,6 +12,37 @@ User = get_user_model()
 class InvestProjectForm(forms.ModelForm):
     """Project form intentionally omits funnel; the current funnel is display-only."""
 
+    STAGE_LABELS = {
+        "lead": "Лид",
+        "qualify": "Квалификация",
+        "site_pick": "Подбор площадки",
+        "package_ready": "Пакет готов",
+        "handoff": "Передача",
+        "accepted": "Принят",
+        "land": "Земля",
+        "permits": "Разрешения",
+        "build": "Строительство",
+        "commission": "Ввод",
+        "archive": "Архив",
+    }
+    STAGE_TRANSITIONS = {
+        InvestProject.Funnel.ATTRACTION: {
+            "lead": ("lead", "qualify"),
+            "qualify": ("qualify", "site_pick"),
+            "site_pick": ("site_pick", "package_ready"),
+            "package_ready": ("package_ready", "handoff"),
+            "handoff": ("handoff",),
+        },
+        InvestProject.Funnel.SUPPORT: {
+            "accepted": ("accepted", "land"),
+            "land": ("land", "permits"),
+            "permits": ("permits", "build"),
+            "build": ("build", "commission"),
+            "commission": ("commission", "archive"),
+            "archive": ("archive",),
+        },
+    }
+
     class Meta:
         model = InvestProject
         fields = [
@@ -26,7 +57,6 @@ class InvestProjectForm(forms.ModelForm):
             "jobs_count",
         ]
         widgets = {
-            "stage": forms.TextInput(attrs={"placeholder": "lead"}),
             "investment_amount": forms.NumberInput(attrs={"step": "0.01"}),
         }
 
@@ -44,14 +74,48 @@ class InvestProjectForm(forms.ModelForm):
         self.fields["industry"].required = False
         self.fields["investment_amount"].required = False
         self.fields["jobs_count"].required = False
+        stage_field = self.fields["stage"]
+        self.fields["stage"] = forms.ChoiceField(
+            label=stage_field.label,
+            choices=self._stage_choices(),
+            required=stage_field.required,
+            widget=forms.Select,
+        )
 
     @property
     def display_funnel(self):
         value = self.instance.funnel or InvestProject.Funnel.ATTRACTION
         return InvestProject.Funnel(value).label
 
+    def _stage_funnel(self):
+        if self.instance and self.instance.pk:
+            return self.instance.funnel or InvestProject.Funnel.ATTRACTION
+        return InvestProject.Funnel.ATTRACTION
+
+    def _current_stage(self):
+        if self.instance and self.instance.pk:
+            return self.instance.stage
+        return "lead"
+
+    def _allowed_stage_values(self):
+        funnel_transitions = self.STAGE_TRANSITIONS.get(self._stage_funnel(), {})
+        current_stage = self._current_stage()
+        return funnel_transitions.get(current_stage, (current_stage,))
+
+    def _stage_choices(self):
+        return [
+            (stage, self.STAGE_LABELS.get(stage, stage))
+            for stage in self._allowed_stage_values()
+        ]
+
     def clean_organization(self):
         organization = self.cleaned_data["organization"]
         if self.membership and organization.subsystem_id != self.membership.subsystem_id:
             raise forms.ValidationError("Организация должна относиться к активному инвестконтуру.")
         return organization
+
+    def clean_stage(self):
+        stage = self.cleaned_data["stage"]
+        if stage not in self._allowed_stage_values():
+            raise forms.ValidationError("Недопустимый переход стадии для текущей воронки.")
+        return stage
