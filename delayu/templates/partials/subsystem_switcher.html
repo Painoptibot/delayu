@@ -2,7 +2,9 @@
 <li class="nav-item dropdown me-2">
   <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
     <i class="ri-building-line me-1"></i>
-    {% if active_membership %}{{ active_membership.subsystem.name }}{% else %}Контур{% endif %}
+    {% if active_membership %}
+      {% if active_membership.subsystem.industry_template == "invest" %}Инвестконтур{% else %}{{ active_membership.subsystem.name }}{% endif %}
+    {% else %}Контур{% endif %}
   </a>
   <ul class="dropdown-menu">
     {% for m in user_memberships %}
@@ -11,7 +13,7 @@
         {% csrf_token %}
         <input type="hidden" name="membership_id" value="{{ m.pk }}">
         <button type="submit" class="dropdown-item {% if active_membership.pk == m.pk %}active{% endif %}">
-          {{ m.subsystem.name }} · {{ m.role.name }}
+          {% if m.subsystem.industry_template == "invest" %}Инвестконтур{% else %}{{ m.subsystem.name }}{% endif %} · {{ m.role.name }}
         </button>
       </form>
     </li>

@@ -166,6 +166,18 @@ MENU_SECTIONS = [
         ],
     },
     {
+        "header": "Инвестконтур",
+        "template": "invest",
+        "items": [
+            {"url_name": "invest-hub", "codes": ["M22"], "icon": "ri-home-smile-line", "label": "Обзор"},
+            {"url_name": "invest-projects", "codes": ["M22"], "icon": "ri-briefcase-4-line", "label": "Проекты"},
+            {"url_name": "invest-sites", "codes": ["M22"], "icon": "ri-map-pin-line", "label": "Площадки"},
+            {"url_name": "invest-handoffs", "codes": ["M22"], "icon": "ri-exchange-box-line", "label": "Передачи"},
+            {"url_name": "invest-imports", "codes": ["M22"], "icon": "ri-upload-cloud-2-line", "label": "Импорт"},
+            {"url_name": "invest-dashboard", "codes": ["M15"], "icon": "ri-dashboard-3-line", "label": "Дашборд"},
+        ],
+    },
+    {
         "header": "Администрирование",
         "items": [
             {"url_name": "platform-studio", "codes": ["M01"], "icon": "ri-palette-2-line", "label": "Студия ДелаЮ"},

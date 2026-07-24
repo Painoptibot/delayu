@@ -151,7 +151,12 @@ def switch_subsystem(request):
     membership.is_default = True
     membership.save(update_fields=["is_default"])
     messages.success(request, f"Активный контур: {membership.subsystem.name}")
-    return redirect("platform-home")
+    subsystem_home = {
+        "uzhv": "uzhv-hub",
+        "fuel": "fuel-operator-hub",
+        "invest": "invest-hub",
+    }.get(membership.subsystem.industry_template, "platform-home")
+    return redirect(subsystem_home)
 
 
 handler404 = SystemView.as_view(template_name="pages_misc_error.html", status=404)
