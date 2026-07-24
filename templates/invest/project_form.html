@@ -1,0 +1,43 @@
+{% extends layout_path %}
+
+{% block title %}{{ view.page_title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">{{ view.page_title }}</h4>
+    <p class="text-muted mb-0">Воронка проекта отображается справочно и не редактируется на этой форме.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">К списку</a>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="alert alert-secondary" role="status">
+      <strong>Воронка:</strong> {{ form.display_funnel }}
+    </div>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="row g-4">
+        {% for field in form %}
+        <div class="col-md-6">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+          {% for error in field.errors %}
+          <div class="invalid-feedback d-block">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="d-flex justify-content-end gap-2 mt-6">
+        <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Отмена</a>
+        <button class="btn btn-primary" type="submit">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

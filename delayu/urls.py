@@ -11,6 +11,7 @@ from . import (
     views_public,
     views_public_registry,
     views_qr,
+    views_invest,
     views_uzhv_wizard,
     views_welcome,
 )
@@ -992,6 +993,12 @@ urlpatterns = [
     path("uzhv/sw.js", views.UzhvServiceWorkerView.as_view(), name="uzhv-service-worker"),
     path("uzhv/workload/export.xlsx", views.UzhvWorkloadExportView.as_view(), name="uzhv-workload-export-xlsx"),
     path("uzhv/assignee/<int:user_id>/", views.UzhvAssigneeDashboardView.as_view(), name="uzhv-assignee"),
+    # Инвестконтур
+    path("invest/", views_invest.InvestHubView.as_view(), name="invest-hub"),
+    path("invest/projects/", views_invest.InvestProjectListView.as_view(), name="invest-projects"),
+    path("invest/projects/new/", views_invest.InvestProjectCreateView.as_view(), name="invest-project-create"),
+    path("invest/projects/<int:pk>/", views_invest.InvestProjectDetailView.as_view(), name="invest-project-detail"),
+    path("invest/projects/<int:pk>/edit/", views_invest.InvestProjectUpdateView.as_view(), name="invest-project-edit"),
     path("uzhv/create/", views_uzhv_wizard.UzhvCreateHubView.as_view(), name="uzhv-create-hub"),
     path(
         "uzhv/create/chain/",

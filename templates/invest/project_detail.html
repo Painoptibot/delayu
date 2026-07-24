@@ -1,0 +1,46 @@
+{% extends layout_path %}
+
+{% block title %}{{ project.code }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">{{ project.name }}</h4>
+    <p class="text-muted mb-0">{{ project.code }} · {{ project.organization }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">К списку</a>
+    {% if can_change_project %}
+    <a class="btn btn-primary" href="{% url 'invest-project-edit' project.pk %}">Редактировать</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Карточка проекта</h5>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Инвестор</dt>
+          <dd class="col-sm-8">{{ project.investor_name|default:"—" }}</dd>
+          <dt class="col-sm-4">Отрасль</dt>
+          <dd class="col-sm-8">{{ project.industry|default:"—" }}</dd>
+          <dt class="col-sm-4">Воронка</dt>
+          <dd class="col-sm-8">{{ project.get_funnel_display }}</dd>
+          <dt class="col-sm-4">Стадия</dt>
+          <dd class="col-sm-8">{{ project.stage }}</dd>
+          <dt class="col-sm-4">Ответственный</dt>
+          <dd class="col-sm-8">{{ project.owner|default:"—" }}</dd>
+          <dt class="col-sm-4">Инвестиции</dt>
+          <dd class="col-sm-8">{{ project.investment_amount|default:"—" }}</dd>
+          <dt class="col-sm-4">Рабочие места</dt>
+          <dd class="col-sm-8">{{ project.jobs_count|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

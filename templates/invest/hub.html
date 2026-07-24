@@ -1,0 +1,77 @@
+{% extends layout_path %}
+
+{% block title %}Обзор инвестконтура{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Инвестконтур</h4>
+    <p class="text-muted mb-0">Единый обзор инвестиционных проектов активной подсистемы.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
+    {% if can_create_project %}
+    <a class="btn btn-primary" href="{% url 'invest-project-create' %}">Новый проект</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4 mb-6">
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="text-muted mb-1">Всего проектов</div>
+        <div class="display-6">{{ stats.projects_total }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="text-muted mb-1">Привлечение</div>
+        <div class="display-6">{{ stats.attraction }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="text-muted mb-1">Сопровождение</div>
+        <div class="display-6">{{ stats.support }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Последние проекты</h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Код</th>
+          <th>Наименование</th>
+          <th>МО</th>
+          <th>Стадия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for project in recent_projects %}
+        <tr>
+          <td><a href="{% url 'invest-project-detail' project.pk %}">{{ project.code }}</a></td>
+          <td>{{ project.name }}</td>
+          <td>{{ project.organization }}</td>
+          <td>{{ project.stage }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="text-muted">Проектов пока нет.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

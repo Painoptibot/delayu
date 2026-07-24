@@ -1,0 +1,48 @@
+{% extends layout_path %}
+
+{% block title %}Инвестпроекты{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Инвестпроекты</h4>
+    <p class="text-muted mb-0">Проекты доступны с учётом активного членства и роли.</p>
+  </div>
+  {% if can_create_project %}
+  <a class="btn btn-primary" href="{% url 'invest-project-create' %}">Новый проект</a>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Код</th>
+          <th>Наименование</th>
+          <th>Инвестор</th>
+          <th>МО</th>
+          <th>Воронка</th>
+          <th>Стадия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for project in projects %}
+        <tr>
+          <td><a href="{% url 'invest-project-detail' project.pk %}">{{ project.code }}</a></td>
+          <td>{{ project.name }}</td>
+          <td>{{ project.investor_name|default:"—" }}</td>
+          <td>{{ project.organization }}</td>
+          <td>{{ project.get_funnel_display }}</td>
+          <td>{{ project.stage }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-muted">Проектов пока нет.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
