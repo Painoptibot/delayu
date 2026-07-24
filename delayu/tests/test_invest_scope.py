@@ -129,3 +129,13 @@ def test_invest_mo_can_create():
 def test_perm_unknown_module_denied():
     p = perm_for_role("invest_agency", "M99")
     assert p["can_view"] is False
+
+
+def test_perm_unknown_role_denied():
+    p = perm_for_role("other", "M22")
+    assert p == {
+        "can_view": False,
+        "can_create": False,
+        "can_change": False,
+        "can_delete": False,
+    }

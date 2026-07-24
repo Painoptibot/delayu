@@ -49,7 +49,14 @@ ROLE_SPECS: dict[str, dict] = {
 
 
 def perm_for_role(role_code: str, mod_code: str) -> dict:
-    spec = ROLE_SPECS.get(role_code, ROLE_SPECS["invest_viewer"])
+    spec = ROLE_SPECS.get(role_code)
+    if spec is None:
+        return {
+            "can_view": False,
+            "can_create": False,
+            "can_change": False,
+            "can_delete": False,
+        }
     modules = INVEST_MODULE_CODES + ("M01",)
 
     if spec.get("all_modules"):
