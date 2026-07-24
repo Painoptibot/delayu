@@ -1,0 +1,79 @@
+{% extends layout_path %}
+
+{% block title %}Пакет {{ project.code }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Пакет передачи</h4>
+    <p class="text-muted mb-0">{{ project.code }} · {{ project.name }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-project-detail' project.pk %}">К проекту</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-handoffs' %}">Передачи</a>
+  </div>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Чек-лист пакета</h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Документ</th>
+          <th>Обязательный</th>
+          <th>Статус</th>
+          <th>Файл</th>
+          <th class="text-end">Обновить</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.title }}</td>
+          <td>{% if item.required %}Да{% else %}Нет{% endif %}</td>
+          <td>{{ item.get_status_display }}</td>
+          <td>
+            {% if item.file %}
+            <a href="{{ item.file.url }}">{{ item.file.name }}</a>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            {% if can_change_package %}
+            <form class="d-flex justify-content-end gap-2" method="post" enctype="multipart/form-data" action="{% url 'invest-package-item-update' project.pk item.pk %}">
+              {% csrf_token %}
+              <select class="form-select form-select-sm w-auto" name="status" aria-label="Статус {{ item.title }}">
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <input class="form-control form-control-sm w-auto" type="file" name="file">
+              <button class="btn btn-sm btn-primary" type="submit">Сохранить</button>
+            </form>
+            {% else %}
+            <span class="text-muted">Только просмотр</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-muted">Пакет пока пуст.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

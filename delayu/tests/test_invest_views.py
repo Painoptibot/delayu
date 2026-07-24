@@ -1,6 +1,7 @@
 import pytest
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from delayu.forms_invest import InvestProjectForm
@@ -13,7 +14,9 @@ from delayu.models import (
     SubsystemMembership,
     SubsystemModule,
 )
-from delayu.models_invest import InvestProject, InvestProjectSite, InvestSite
+from delayu.models_invest import InvestHandoff, InvestPackageItem, InvestProject, InvestProjectSite, InvestSite
+from delayu.services.invest_handoff import request_handoff
+from delayu.services.invest_package import ensure_package
 from delayu.services.invest_roles import perm_for_role
 
 User = get_user_model()
@@ -91,6 +94,8 @@ def invest_view_ctx(db):
         ("invest-sites", ()),
         ("invest-site-detail", ("site",)),
         ("invest-site-create", ()),
+        ("invest-handoffs", ()),
+        ("invest-package-detail", ("project",)),
     ],
 )
 def test_invest_views_get_200(client, invest_view_ctx, url_name, args):
@@ -181,3 +186,55 @@ def test_invest_site_booking_conflict_shows_error_message(client, invest_view_ct
 
     assert response.status_code == 200
     assert "Площадка занята проектом P-2".encode() in response.content
+
+
+@pytest.mark.django_db
+def test_invest_handoff_request_creates_requested_handoff(client, invest_view_ctx):
+    client.force_login(invest_view_ctx["agency_user"])
+
+    response = client.post(
+        reverse("invest-handoff-request", args=[invest_view_ctx["project"].pk]),
+        {"comment": "Пакет готов"},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    handoff = InvestHandoff.objects.get(project=invest_view_ctx["project"])
+    assert handoff.status == InvestHandoff.Status.REQUESTED
+    assert handoff.comment == "Пакет готов"
+    assert "Передача запрошена".encode() in response.content
+
+
+@pytest.mark.django_db
+def test_invest_handoff_accept_not_ready_shows_error(client, invest_view_ctx):
+    client.force_login(invest_view_ctx["agency_user"])
+    handoff = request_handoff(project=invest_view_ctx["project"], user=invest_view_ctx["agency_user"])
+    ensure_package(invest_view_ctx["project"])
+
+    response = client.post(reverse("invest-handoff-accept", args=[handoff.pk]), follow=True)
+
+    assert response.status_code == 200
+    handoff.refresh_from_db()
+    assert handoff.status == InvestHandoff.Status.REQUESTED
+    assert "Пакет не готов".encode() in response.content
+
+
+@pytest.mark.django_db
+def test_invest_package_item_status_update_uploads_file(client, invest_view_ctx):
+    client.force_login(invest_view_ctx["agency_user"])
+    package = ensure_package(invest_view_ctx["project"])
+    item = package.items.get(code="egrn")
+    upload = SimpleUploadedFile("egrn.pdf", b"pdf", content_type="application/pdf")
+
+    response = client.post(
+        reverse("invest-package-item-update", args=[invest_view_ctx["project"].pk, item.pk]),
+        {"status": InvestPackageItem.Status.ATTACHED, "file": upload},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    item.refresh_from_db()
+    assert item.status == InvestPackageItem.Status.ATTACHED
+    assert item.file.name.startswith("invest/packages/egrn")
+    assert item.file.name.endswith(".pdf")
+    assert "Пункт пакета обновлён".encode() in response.content

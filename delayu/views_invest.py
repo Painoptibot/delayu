@@ -11,9 +11,16 @@ from django.views.generic import CreateView, DetailView, ListView, TemplateView,
 from delayu.forms_invest import InvestProjectForm, InvestSiteForm
 from delayu.mixins import ModulePermissionMixin
 from delayu.models import Subsystem
-from delayu.models_invest import InvestProject, InvestSite
+from delayu.models_invest import InvestHandoff, InvestPackageItem, InvestProject, InvestSite
 from delayu.services.access import get_membership_or_403, user_can
 from delayu.services.invest_booking import InvestBookingError, book_site, select_site
+from delayu.services.invest_handoff import (
+    InvestHandoffError,
+    accept_handoff,
+    request_handoff,
+    return_handoff,
+)
+from delayu.services.invest_package import ensure_package, set_item_status
 from delayu.services.invest_scope import projects_for_membership, sites_for_membership
 
 
@@ -95,6 +102,113 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
         ctx = super().get_context_data(**kwargs)
         ctx["can_change_project"] = user_can(self.request.user, self.module_code, "change")
         return ctx
+
+
+class InvestHandoffListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
+    model = InvestHandoff
+    template_name = "invest/handoffs_list.html"
+    context_object_name = "handoffs"
+    page_title = "Передачи в сопровождение"
+    paginate_by = 25
+
+    def get_queryset(self):
+        projects = projects_for_membership(self.get_membership())
+        return (
+            InvestHandoff.objects.filter(project__in=projects)
+            .select_related("project", "project__organization", "requested_by", "decided_by")
+            .order_by("-created_at")
+        )
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["can_change_handoff"] = user_can(self.request.user, self.module_code, "change")
+        return ctx
+
+
+class InvestHandoffRequestView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(projects_for_membership(self.get_membership()), pk=kwargs["pk"])
+        try:
+            request_handoff(project=project, user=request.user, comment=request.POST.get("comment", ""))
+        except InvestHandoffError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, "Передача запрошена.")
+        return redirect(reverse("invest-handoffs"))
+
+
+class InvestHandoffDecisionView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+    decision = ""
+    success_message = ""
+
+    def get_handoff(self):
+        projects = projects_for_membership(self.get_membership())
+        return get_object_or_404(InvestHandoff.objects.filter(project__in=projects), pk=self.kwargs["pk"])
+
+    def post(self, request, *args, **kwargs):
+        handoff = self.get_handoff()
+        try:
+            if self.decision == "accept":
+                accept_handoff(handoff=handoff, user=request.user)
+            else:
+                return_handoff(
+                    handoff=handoff,
+                    user=request.user,
+                    comment=request.POST.get("comment", handoff.comment),
+                )
+        except InvestHandoffError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, self.success_message)
+        return redirect(reverse("invest-handoffs"))
+
+
+class InvestHandoffAcceptView(InvestHandoffDecisionView):
+    decision = "accept"
+    success_message = "Передача принята."
+
+
+class InvestHandoffReturnView(InvestHandoffDecisionView):
+    decision = "return"
+    success_message = "Передача возвращена."
+
+
+class InvestPackageDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailView):
+    model = InvestProject
+    template_name = "invest/package_detail.html"
+    context_object_name = "project"
+    page_title = "Пакет передачи"
+
+    def get_queryset(self):
+        return projects_for_membership(self.get_membership()).select_related("organization", "owner")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        package = ensure_package(self.object)
+        ctx["package"] = package
+        ctx["items"] = package.items.order_by("id")
+        ctx["status_choices"] = InvestPackageItem.Status.choices
+        ctx["can_change_package"] = user_can(self.request.user, self.module_code, "change")
+        return ctx
+
+
+class InvestPackageItemUpdateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(projects_for_membership(self.get_membership()), pk=kwargs["project_pk"])
+        package = ensure_package(project)
+        item = get_object_or_404(package.items, pk=kwargs["item_pk"])
+        status = request.POST.get("status")
+        if status not in InvestPackageItem.Status.values:
+            messages.error(request, "Некорректный статус пункта пакета.")
+        else:
+            set_item_status(item, status, request.FILES.get("file"))
+            messages.success(request, "Пункт пакета обновлён.")
+        return redirect(reverse("invest-package-detail", args=[project.pk]))
 
 
 class InvestProjectCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, CreateView):

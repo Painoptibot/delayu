@@ -1,0 +1,68 @@
+{% extends layout_path %}
+
+{% block title %}Передачи в сопровождение{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Передачи в сопровождение</h4>
+    <p class="text-muted mb-0">Заявки на перевод проектов из привлечения в сопровождение.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Проект</th>
+          <th>МО</th>
+          <th>Статус</th>
+          <th>Комментарий</th>
+          <th>Запросил</th>
+          <th class="text-end">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for handoff in handoffs %}
+        <tr>
+          <td><a href="{% url 'invest-project-detail' handoff.project.pk %}">{{ handoff.project.code }}</a></td>
+          <td>{{ handoff.project.organization }}</td>
+          <td>{{ handoff.get_status_display }}</td>
+          <td>{{ handoff.comment|default:"—" }}</td>
+          <td>{{ handoff.requested_by }}</td>
+          <td class="text-end">
+            {% if can_change_handoff and handoff.status == "requested" %}
+            <form class="d-inline" method="post" action="{% url 'invest-handoff-accept' handoff.pk %}">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-primary" type="submit">Принять</button>
+            </form>
+            <form class="d-inline" method="post" action="{% url 'invest-handoff-return' handoff.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="comment" value="{{ handoff.comment }}">
+              <button class="btn btn-sm btn-outline-secondary" type="submit">Вернуть</button>
+            </form>
+            {% else %}
+            <span class="text-muted">Нет действий</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-muted">Заявок на передачу пока нет.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

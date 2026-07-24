@@ -11,6 +11,8 @@
   <div class="d-flex gap-2">
     <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">К списку</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">Площадки</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-package-detail' project.pk %}">Пакет</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-handoffs' %}">Передачи</a>
     {% if can_change_project %}
     <a class="btn btn-primary" href="{% url 'invest-project-edit' project.pk %}">Редактировать</a>
     {% endif %}
@@ -40,6 +42,14 @@
           <dt class="col-sm-4">Рабочие места</dt>
           <dd class="col-sm-8">{{ project.jobs_count|default:"—" }}</dd>
         </dl>
+        {% if can_change_project and project.funnel == "attraction" %}
+        <form class="mt-4" method="post" action="{% url 'invest-handoff-request' project.pk %}">
+          {% csrf_token %}
+          <label class="form-label" for="handoff-comment">Комментарий к передаче</label>
+          <textarea class="form-control mb-3" id="handoff-comment" name="comment" rows="2"></textarea>
+          <button class="btn btn-primary" type="submit">Запросить передачу</button>
+        </form>
+        {% endif %}
       </div>
     </div>
   </div>
