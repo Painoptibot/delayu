@@ -101,3 +101,25 @@ class InvestHandoff(models.Model):
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     decided_at = models.DateTimeField(null=True, blank=True)
+
+
+class InvestPackage(models.Model):
+    project = models.ForeignKey(InvestProject, on_delete=models.CASCADE, related_name="packages")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class InvestPackageItem(models.Model):
+    class Status(models.TextChoices):
+        MISSING = "missing", "Нет"
+        PENDING = "pending", "Ожидание"
+        ATTACHED = "attached", "Приложено"
+        OVERDUE = "overdue", "Просрочено"
+
+    package = models.ForeignKey(InvestPackage, on_delete=models.CASCADE, related_name="items")
+    code = models.CharField(max_length=64)
+    title = models.CharField(max_length=255)
+    required = models.BooleanField(default=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.MISSING)
+    file = models.FileField(upload_to="invest/packages/", blank=True)
+    due_at = models.DateTimeField(null=True, blank=True)
