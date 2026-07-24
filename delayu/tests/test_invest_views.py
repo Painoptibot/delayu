@@ -30,16 +30,22 @@ def invest_view_ctx(db):
     module = ModuleCatalog.objects.create(code="M22", name="Инвестпроекты")
     SubsystemModule.objects.create(subsystem=sub, module=module, enabled=True)
     org = Organization.objects.create(subsystem=sub, code="mo1", name="МО-1")
+    other_org = Organization.objects.create(subsystem=sub, code="mo2", name="МО-2")
     agency_role = Role.objects.create(subsystem=sub, code="invest_agency", name="Агентство")
+    dept_role = Role.objects.create(subsystem=sub, code="invest_dept", name="Департамент")
     mo_role = Role.objects.create(subsystem=sub, code="invest_mo", name="МО")
     viewer_role = Role.objects.create(subsystem=sub, code="invest_viewer", name="Наблюдатель")
-    for role in (agency_role, mo_role, viewer_role):
+    for role in (agency_role, dept_role, mo_role, viewer_role):
         RoleModulePermission.objects.create(role=role, module=module, **perm_for_role(role.code, "M22"))
     agency_user = User.objects.create_user("invest_agency", password="x")
+    dept_user = User.objects.create_user("invest_dept", password="x")
     mo_user = User.objects.create_user("invest_mo", password="x")
     viewer_user = User.objects.create_user("invest_viewer", password="x")
     SubsystemMembership.objects.create(
         user=agency_user, subsystem=sub, organization=org, role=agency_role, is_default=True
+    )
+    SubsystemMembership.objects.create(
+        user=dept_user, subsystem=sub, organization=org, role=dept_role, is_default=True
     )
     SubsystemMembership.objects.create(
         user=mo_user, subsystem=sub, organization=org, role=mo_role, is_default=True
@@ -79,7 +85,9 @@ def invest_view_ctx(db):
     return {
         "sub": sub,
         "org": org,
+        "other_org": other_org,
         "agency_user": agency_user,
+        "dept_user": dept_user,
         "mo_user": mo_user,
         "viewer_user": viewer_user,
         "project": project,
@@ -214,7 +222,7 @@ def test_invest_handoff_request_creates_requested_handoff(client, invest_view_ct
 
 @pytest.mark.django_db
 def test_invest_handoff_accept_not_ready_shows_error(client, invest_view_ctx):
-    client.force_login(invest_view_ctx["agency_user"])
+    client.force_login(invest_view_ctx["dept_user"])
     handoff = request_handoff(project=invest_view_ctx["project"], user=invest_view_ctx["agency_user"])
     ensure_package(invest_view_ctx["project"])
 
@@ -224,6 +232,29 @@ def test_invest_handoff_accept_not_ready_shows_error(client, invest_view_ctx):
     handoff.refresh_from_db()
     assert handoff.status == InvestHandoff.Status.REQUESTED
     assert "Пакет не готов".encode() in response.content
+
+
+@pytest.mark.django_db
+def test_invest_agency_cannot_accept_handoff_over_http(client, invest_view_ctx):
+    client.force_login(invest_view_ctx["agency_user"])
+    handoff = request_handoff(project=invest_view_ctx["project"], user=invest_view_ctx["agency_user"])
+
+    response = client.post(reverse("invest-handoff-accept", args=[handoff.pk]))
+
+    assert response.status_code == 403
+    handoff.refresh_from_db()
+    assert handoff.status == InvestHandoff.Status.REQUESTED
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("user_key", ["mo_user", "dept_user"])
+def test_invest_mo_and_dept_cannot_request_handoff_over_http(client, invest_view_ctx, user_key):
+    client.force_login(invest_view_ctx[user_key])
+
+    response = client.post(reverse("invest-handoff-request", args=[invest_view_ctx["project"].pk]))
+
+    assert response.status_code == 403
+    assert not InvestHandoff.objects.filter(project=invest_view_ctx["project"]).exists()
 
 
 @pytest.mark.django_db
@@ -292,3 +323,76 @@ def test_invest_import_denies_agency_and_viewer_roles(client, invest_view_ctx, u
 
     assert response.status_code == 403
     assert invest_view_ctx["sub"].invest_import_batches.count() == 0
+
+
+@pytest.mark.django_db
+def test_invest_mo_cannot_create_project_for_foreign_organization(client, invest_view_ctx):
+    client.force_login(invest_view_ctx["mo_user"])
+
+    response = client.post(
+        reverse("invest-project-create"),
+        {
+            "organization": invest_view_ctx["other_org"].pk,
+            "code": "P-FOREIGN",
+            "name": "Чужой проект",
+            "stage": "lead",
+            "owner": "",
+            "investment_amount": "",
+            "jobs_count": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert not InvestProject.objects.filter(code="P-FOREIGN").exists()
+    assert "Организация должна совпадать с вашим МО".encode() in response.content
+
+
+@pytest.mark.django_db
+def test_invest_mo_cannot_move_project_to_foreign_organization(client, invest_view_ctx):
+    client.force_login(invest_view_ctx["mo_user"])
+    project = invest_view_ctx["project"]
+
+    response = client.post(
+        reverse("invest-project-edit", args=[project.pk]),
+        {
+            "organization": invest_view_ctx["other_org"].pk,
+            "code": project.code,
+            "name": project.name,
+            "investor_name": project.investor_name,
+            "industry": project.industry,
+            "stage": project.stage,
+            "owner": "",
+            "investment_amount": "",
+            "jobs_count": "",
+        },
+    )
+
+    assert response.status_code == 200
+    project.refresh_from_db()
+    assert project.organization == invest_view_ctx["org"]
+    assert "Организация должна совпадать с вашим МО".encode() in response.content
+
+
+@pytest.mark.django_db
+def test_invest_mo_cannot_create_site_for_foreign_organization(client, invest_view_ctx):
+    client.force_login(invest_view_ctx["mo_user"])
+
+    response = client.post(
+        reverse("invest-site-create"),
+        {
+            "organization": invest_view_ctx["other_org"].pk,
+            "cadastral_number": "23:00:0000000:99",
+            "name": "Чужая площадка",
+            "area_ha": "",
+            "land_category": "",
+            "vri": "",
+            "status": InvestSite.Status.ACTUAL,
+            "completeness_pct": "0",
+            "latitude": "",
+            "longitude": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert not InvestSite.objects.filter(cadastral_number="23:00:0000000:99").exists()
+    assert "Организация должна совпадать с вашим МО".encode() in response.content

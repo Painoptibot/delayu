@@ -69,6 +69,9 @@ class InvestProjectForm(forms.ModelForm):
             self.fields["owner"].queryset = User.objects.filter(
                 subsystem_memberships__subsystem=subsystem
             ).distinct()
+        if self._is_mo_membership():
+            self.fields["organization"].initial = membership.organization
+            self.fields["organization"].widget = forms.HiddenInput()
         self.fields["owner"].required = False
         self.fields["investor_name"].required = False
         self.fields["industry"].required = False
@@ -108,10 +111,15 @@ class InvestProjectForm(forms.ModelForm):
             for stage in self._allowed_stage_values()
         ]
 
+    def _is_mo_membership(self):
+        return bool(self.membership and self.membership.role.code == "invest_mo")
+
     def clean_organization(self):
         organization = self.cleaned_data["organization"]
         if self.membership and organization.subsystem_id != self.membership.subsystem_id:
             raise forms.ValidationError("Организация должна относиться к активному инвестконтуру.")
+        if self._is_mo_membership() and organization != self.membership.organization:
+            raise forms.ValidationError("Организация должна совпадать с вашим МО.")
         return organization
 
     def clean_stage(self):
@@ -150,11 +158,19 @@ class InvestSiteForm(forms.ModelForm):
         subsystem = membership.subsystem if membership else getattr(self.instance, "subsystem", None)
         if subsystem:
             self.fields["organization"].queryset = subsystem.organizations.filter(is_active=True)
+        if self._is_mo_membership():
+            self.fields["organization"].initial = membership.organization
+            self.fields["organization"].widget = forms.HiddenInput()
         for field_name in ("area_ha", "land_category", "vri", "latitude", "longitude"):
             self.fields[field_name].required = False
+
+    def _is_mo_membership(self):
+        return bool(self.membership and self.membership.role.code == "invest_mo")
 
     def clean_organization(self):
         organization = self.cleaned_data["organization"]
         if self.membership and organization.subsystem_id != self.membership.subsystem_id:
             raise forms.ValidationError("Организация должна относиться к активному инвестконтуру.")
+        if self._is_mo_membership() and organization != self.membership.organization:
+            raise forms.ValidationError("Организация должна совпадать с вашим МО.")
         return organization

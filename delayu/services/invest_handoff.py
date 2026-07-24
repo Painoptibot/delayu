@@ -3,6 +3,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from delayu.menu import get_active_membership
 from delayu.models_invest import InvestHandoff, InvestProject
 from delayu.services.invest_package import package_is_ready
 from delayu.services.invest_roadmap import seed_support_roadmap
@@ -12,8 +13,21 @@ class InvestHandoffError(Exception):
     pass
 
 
+def _require_handoff_role(*, user, project, allowed_roles, message):
+    membership = get_active_membership(user, project.subsystem_id)
+    if not membership or membership.role.code not in allowed_roles:
+        raise InvestHandoffError(message)
+    return membership
+
+
 @transaction.atomic
 def request_handoff(*, project, user, comment=""):
+    _require_handoff_role(
+        user=user,
+        project=project,
+        allowed_roles={"invest_agency", "invest_admin"},
+        message="Передачу может запросить только агентство",
+    )
     if project.funnel != InvestProject.Funnel.ATTRACTION:
         raise InvestHandoffError("Передача только из воронки привлечения")
     return InvestHandoff.objects.create(
@@ -26,6 +40,12 @@ def request_handoff(*, project, user, comment=""):
 
 @transaction.atomic
 def accept_handoff(*, handoff, user):
+    _require_handoff_role(
+        user=user,
+        project=handoff.project,
+        allowed_roles={"invest_dept", "invest_admin"},
+        message="Решение по передаче доступно только департаменту",
+    )
     if handoff.status != InvestHandoff.Status.REQUESTED:
         raise InvestHandoffError("Решение уже принято")
     if not package_is_ready(handoff.project):
@@ -44,6 +64,12 @@ def accept_handoff(*, handoff, user):
 
 @transaction.atomic
 def return_handoff(*, handoff, user, comment):
+    _require_handoff_role(
+        user=user,
+        project=handoff.project,
+        allowed_roles={"invest_dept", "invest_admin"},
+        message="Решение по передаче доступно только департаменту",
+    )
     if handoff.status != InvestHandoff.Status.REQUESTED:
         raise InvestHandoffError("Решение уже принято")
     handoff.status = InvestHandoff.Status.RETURNED

@@ -82,6 +82,15 @@ def _import_batches_for_membership(membership):
     return qs
 
 
+def _membership_has_role(membership, allowed_role_codes):
+    return membership.role.code in allowed_role_codes
+
+
+def _forbidden_with_message(request, message):
+    messages.error(request, message)
+    return HttpResponseForbidden(message)
+
+
 class InvestHubView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
     template_name = "invest/hub.html"
     page_title = "Обзор инвестконтура"
@@ -163,9 +172,13 @@ class InvestHandoffListView(InvestSubsystemMixin, ModulePermissionMixin, ListVie
 
 class InvestHandoffRequestView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
     required_action = "change"
+    allowed_role_codes = {"invest_agency", "invest_admin"}
 
     def post(self, request, *args, **kwargs):
-        project = get_object_or_404(projects_for_membership(self.get_membership()), pk=kwargs["pk"])
+        membership = self.get_membership()
+        if not _membership_has_role(membership, self.allowed_role_codes):
+            return _forbidden_with_message(request, "Передачу может запросить только агентство")
+        project = get_object_or_404(projects_for_membership(membership), pk=kwargs["pk"])
         try:
             request_handoff(project=project, user=request.user, comment=request.POST.get("comment", ""))
         except InvestHandoffError as exc:
@@ -177,6 +190,7 @@ class InvestHandoffRequestView(InvestForbiddenResponseMixin, InvestSubsystemMixi
 
 class InvestHandoffDecisionView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
     required_action = "change"
+    allowed_role_codes = {"invest_dept", "invest_admin"}
     decision = ""
     success_message = ""
 
@@ -185,6 +199,9 @@ class InvestHandoffDecisionView(InvestForbiddenResponseMixin, InvestSubsystemMix
         return get_object_or_404(InvestHandoff.objects.filter(project__in=projects), pk=self.kwargs["pk"])
 
     def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        if not _membership_has_role(membership, self.allowed_role_codes):
+            return _forbidden_with_message(request, "Решение по передаче доступно только департаменту")
         handoff = self.get_handoff()
         try:
             if self.decision == "accept":
@@ -331,6 +348,9 @@ class InvestProjectCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin
     def form_valid(self, form):
         form.instance.subsystem = self.get_subsystem()
         form.instance.funnel = InvestProject.Funnel.ATTRACTION
+        membership = self.get_membership()
+        if membership.role.code == "invest_mo":
+            form.instance.organization = membership.organization
         messages.success(self.request, "Инвестпроект создан.")
         return super().form_valid(form)
 
@@ -408,6 +428,9 @@ class InvestSiteCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, M
 
     def form_valid(self, form):
         form.instance.subsystem = self.get_subsystem()
+        membership = self.get_membership()
+        if membership.role.code == "invest_mo":
+            form.instance.organization = membership.organization
         messages.success(self.request, "Инвестплощадка создана.")
         return super().form_valid(form)
 
