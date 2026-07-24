@@ -10,6 +10,7 @@
   </div>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">К списку</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">Площадки</a>
     {% if can_change_project %}
     <a class="btn btn-primary" href="{% url 'invest-project-edit' project.pk %}">Редактировать</a>
     {% endif %}

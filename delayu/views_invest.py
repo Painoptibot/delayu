@@ -3,15 +3,18 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseForbidden
-from django.urls import reverse_lazy
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 
-from delayu.forms_invest import InvestProjectForm
+from delayu.forms_invest import InvestProjectForm, InvestSiteForm
 from delayu.mixins import ModulePermissionMixin
 from delayu.models import Subsystem
-from delayu.models_invest import InvestProject
+from delayu.models_invest import InvestProject, InvestSite
 from delayu.services.access import get_membership_or_403, user_can
-from delayu.services.invest_scope import projects_for_membership
+from delayu.services.invest_booking import InvestBookingError, book_site, select_site
+from delayu.services.invest_scope import projects_for_membership, sites_for_membership
 
 
 class InvestSubsystemMixin:
@@ -136,3 +139,84 @@ class InvestProjectUpdateView(InvestSubsystemMixin, ModulePermissionMixin, Updat
     def form_valid(self, form):
         messages.success(self.request, "Инвестпроект обновлён.")
         return super().form_valid(form)
+
+
+class InvestSiteListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
+    model = InvestSite
+    template_name = "invest/sites_list.html"
+    context_object_name = "sites"
+    page_title = "Инвестплощадки"
+    paginate_by = 25
+
+    def get_queryset(self):
+        return sites_for_membership(self.get_membership()).select_related("organization")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["can_create_site"] = user_can(self.request.user, self.module_code, "create")
+        return ctx
+
+
+class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailView):
+    model = InvestSite
+    template_name = "invest/site_detail.html"
+    context_object_name = "site"
+    page_title = "Инвестплощадка"
+
+    def get_queryset(self):
+        return sites_for_membership(self.get_membership()).select_related("organization")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
+        ctx["can_change_site"] = user_can(self.request.user, self.module_code, "change")
+        ctx["project_links"] = self.object.project_links.select_related("project", "project__organization")
+        ctx["projects"] = projects_for_membership(membership).select_related("organization").order_by("code")
+        return ctx
+
+
+class InvestSiteCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, CreateView):
+    model = InvestSite
+    form_class = InvestSiteForm
+    template_name = "invest/site_form.html"
+    page_title = "Новая инвестплощадка"
+    required_action = "create"
+    success_url = reverse_lazy("invest-sites")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["membership"] = self.get_membership()
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.subsystem = self.get_subsystem()
+        messages.success(self.request, "Инвестплощадка создана.")
+        return super().form_valid(form)
+
+
+class InvestSiteActionView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+    action_service = None
+    success_message = ""
+
+    def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        project = get_object_or_404(projects_for_membership(membership), pk=kwargs["project_pk"])
+        site = get_object_or_404(sites_for_membership(membership), pk=kwargs["site_pk"])
+        try:
+            self.action_service(project=project, site=site, user=request.user)
+        except InvestBookingError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, self.success_message)
+        return redirect(reverse("invest-site-detail", args=[site.pk]))
+
+
+class InvestSiteBookView(InvestSiteActionView):
+    action_service = staticmethod(book_site)
+    success_message = "Площадка забронирована."
+
+
+class InvestSiteSelectView(InvestSiteActionView):
+    action_service = staticmethod(select_site)
+    success_message = "Площадка выбрана для проекта."

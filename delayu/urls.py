@@ -999,6 +999,19 @@ urlpatterns = [
     path("invest/projects/new/", views_invest.InvestProjectCreateView.as_view(), name="invest-project-create"),
     path("invest/projects/<int:pk>/", views_invest.InvestProjectDetailView.as_view(), name="invest-project-detail"),
     path("invest/projects/<int:pk>/edit/", views_invest.InvestProjectUpdateView.as_view(), name="invest-project-edit"),
+    path("invest/sites/", views_invest.InvestSiteListView.as_view(), name="invest-sites"),
+    path("invest/sites/new/", views_invest.InvestSiteCreateView.as_view(), name="invest-site-create"),
+    path("invest/sites/<int:pk>/", views_invest.InvestSiteDetailView.as_view(), name="invest-site-detail"),
+    path(
+        "invest/projects/<int:project_pk>/sites/<int:site_pk>/book/",
+        views_invest.InvestSiteBookView.as_view(),
+        name="invest-site-book",
+    ),
+    path(
+        "invest/projects/<int:project_pk>/sites/<int:site_pk>/select/",
+        views_invest.InvestSiteSelectView.as_view(),
+        name="invest-site-select",
+    ),
     path("uzhv/create/", views_uzhv_wizard.UzhvCreateHubView.as_view(), name="uzhv-create-hub"),
     path(
         "uzhv/create/chain/",

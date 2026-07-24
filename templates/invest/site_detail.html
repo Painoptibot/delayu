@@ -1,0 +1,125 @@
+{% extends layout_path %}
+
+{% block title %}{{ site.cadastral_number }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">{{ site.name }}</h4>
+    <p class="text-muted mb-0">{{ site.cadastral_number }} · {{ site.organization }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">К площадкам</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
+  </div>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0">Карточка площадки</h5>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5">Статус</dt>
+          <dd class="col-sm-7">{{ site.get_status_display }}</dd>
+          <dt class="col-sm-5">Площадь, га</dt>
+          <dd class="col-sm-7">{{ site.area_ha|default:"—" }}</dd>
+          <dt class="col-sm-5">Категория земли</dt>
+          <dd class="col-sm-7">{{ site.land_category|default:"—" }}</dd>
+          <dt class="col-sm-5">ВРИ</dt>
+          <dd class="col-sm-7">{{ site.vri|default:"—" }}</dd>
+          <dt class="col-sm-5">Готовность</dt>
+          <dd class="col-sm-7">{{ site.completeness_pct }}%</dd>
+          <dt class="col-sm-5">Координаты</dt>
+          <dd class="col-sm-7">{{ site.latitude|default:"—" }}, {{ site.longitude|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">Связанные проекты</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Код</th>
+              <th>Проект</th>
+              <th>Роль</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for link in project_links %}
+            <tr>
+              <td><a href="{% url 'invest-project-detail' link.project.pk %}">{{ link.project.code }}</a></td>
+              <td>{{ link.project.name }}</td>
+              <td>{{ link.get_role_display }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-muted">Площадка пока не связана с проектами.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Действия по проектам</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Код</th>
+              <th>Проект</th>
+              <th class="text-end">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for project in projects %}
+            <tr>
+              <td><a href="{% url 'invest-project-detail' project.pk %}">{{ project.code }}</a></td>
+              <td>{{ project.name }}</td>
+              <td class="text-end">
+                {% if can_change_site %}
+                <form class="d-inline" method="post" action="{% url 'invest-site-book' project.pk site.pk %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-primary" type="submit">Забронировать</button>
+                </form>
+                <form class="d-inline" method="post" action="{% url 'invest-site-select' project.pk site.pk %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-primary" type="submit">Выбрать</button>
+                </form>
+                {% else %}
+                <span class="text-muted">Только просмотр</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-muted">Проектов пока нет.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

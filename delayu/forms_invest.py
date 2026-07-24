@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 
 from delayu.models import SubsystemMembership
-from delayu.models_invest import InvestProject
+from delayu.models_invest import InvestProject, InvestSite
 
 User = get_user_model()
 
@@ -119,3 +119,42 @@ class InvestProjectForm(forms.ModelForm):
         if stage not in self._allowed_stage_values():
             raise forms.ValidationError("Недопустимый переход стадии для текущей воронки.")
         return stage
+
+
+class InvestSiteForm(forms.ModelForm):
+    """Site form scoped to the active invest subsystem."""
+
+    class Meta:
+        model = InvestSite
+        fields = [
+            "organization",
+            "cadastral_number",
+            "name",
+            "area_ha",
+            "land_category",
+            "vri",
+            "status",
+            "completeness_pct",
+            "latitude",
+            "longitude",
+        ]
+        widgets = {
+            "area_ha": forms.NumberInput(attrs={"step": "0.0001"}),
+            "latitude": forms.NumberInput(attrs={"step": "0.000001"}),
+            "longitude": forms.NumberInput(attrs={"step": "0.000001"}),
+        }
+
+    def __init__(self, *args, membership=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.membership = membership
+        subsystem = membership.subsystem if membership else getattr(self.instance, "subsystem", None)
+        if subsystem:
+            self.fields["organization"].queryset = subsystem.organizations.filter(is_active=True)
+        for field_name in ("area_ha", "land_category", "vri", "latitude", "longitude"):
+            self.fields[field_name].required = False
+
+    def clean_organization(self):
+        organization = self.cleaned_data["organization"]
+        if self.membership and organization.subsystem_id != self.membership.subsystem_id:
+            raise forms.ValidationError("Организация должна относиться к активному инвестконтуру.")
+        return organization

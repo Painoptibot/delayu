@@ -1,0 +1,49 @@
+{% extends layout_path %}
+
+{% block title %}Инвестплощадки{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Инвестплощадки</h4>
+    <p class="text-muted mb-0">Площадки доступны с учётом активного членства и роли.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
+    {% if can_create_site %}
+    <a class="btn btn-primary" href="{% url 'invest-site-create' %}">Новая площадка</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Кадастровый номер</th>
+          <th>Наименование</th>
+          <th>МО</th>
+          <th>Статус</th>
+          <th>Готовность</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for site in sites %}
+        <tr>
+          <td><a href="{% url 'invest-site-detail' site.pk %}">{{ site.cadastral_number }}</a></td>
+          <td>{{ site.name }}</td>
+          <td>{{ site.organization }}</td>
+          <td>{{ site.get_status_display }}</td>
+          <td>{{ site.completeness_pct }}%</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-muted">Площадок пока нет.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

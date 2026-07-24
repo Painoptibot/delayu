@@ -13,7 +13,7 @@ from delayu.models import (
     SubsystemMembership,
     SubsystemModule,
 )
-from delayu.models_invest import InvestProject
+from delayu.models_invest import InvestProject, InvestProjectSite, InvestSite
 from delayu.services.invest_roles import perm_for_role
 
 User = get_user_model()
@@ -48,7 +48,35 @@ def invest_view_ctx(db):
         funnel=InvestProject.Funnel.ATTRACTION,
         stage="lead",
     )
-    return {"sub": sub, "org": org, "agency_user": agency_user, "viewer_user": viewer_user, "project": project}
+    conflict_project = InvestProject.objects.create(
+        subsystem=sub,
+        organization=org,
+        code="P-2",
+        name="Проект 2",
+        funnel=InvestProject.Funnel.ATTRACTION,
+        stage="site_pick",
+    )
+    site = InvestSite.objects.create(
+        subsystem=sub,
+        organization=org,
+        cadastral_number="23:00:0000000:1",
+        name="Площадка 1",
+        status=InvestSite.Status.ACTUAL,
+    )
+    InvestProjectSite.objects.create(
+        project=conflict_project,
+        site=site,
+        role=InvestProjectSite.Role.BOOKED,
+    )
+    return {
+        "sub": sub,
+        "org": org,
+        "agency_user": agency_user,
+        "viewer_user": viewer_user,
+        "project": project,
+        "conflict_project": conflict_project,
+        "site": site,
+    }
 
 
 @pytest.mark.django_db
@@ -60,11 +88,14 @@ def invest_view_ctx(db):
         ("invest-project-detail", ("project",)),
         ("invest-project-create", ()),
         ("invest-project-edit", ("project",)),
+        ("invest-sites", ()),
+        ("invest-site-detail", ("site",)),
+        ("invest-site-create", ()),
     ],
 )
 def test_invest_views_get_200(client, invest_view_ctx, url_name, args):
     client.force_login(invest_view_ctx["agency_user"])
-    resolved_args = [invest_view_ctx[arg].pk if arg == "project" else arg for arg in args]
+    resolved_args = [invest_view_ctx[arg].pk if arg in invest_view_ctx else arg for arg in args]
 
     response = client.get(reverse(url_name, args=resolved_args))
 
@@ -137,3 +168,16 @@ def test_invest_project_form_rejects_invalid_stage_transition(invest_view_ctx):
 
     assert not form.is_valid()
     assert "stage" in form.errors
+
+
+@pytest.mark.django_db
+def test_invest_site_booking_conflict_shows_error_message(client, invest_view_ctx):
+    client.force_login(invest_view_ctx["agency_user"])
+
+    response = client.post(
+        reverse("invest-site-book", args=[invest_view_ctx["project"].pk, invest_view_ctx["site"].pk]),
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert "Площадка занята проектом P-2".encode() in response.content
