@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 from delayu.models import Organization, Subsystem
-from delayu.models_invest import InvestHandoff, InvestProject
+from delayu.models_invest import InvestHandoff, InvestProject, InvestRoadmapItem
 from delayu.services.invest_handoff import (
     InvestHandoffError,
     accept_handoff,
@@ -40,6 +40,14 @@ def test_accept_moves_to_support(invest_ctx):
     assert p.stage == "accepted"
     h.refresh_from_db()
     assert h.status == InvestHandoff.Status.ACCEPTED
+    assert p.roadmap_items.count() == 4
+    assert set(p.roadmap_items.values_list("code", flat=True)) == {
+        "land",
+        "permits",
+        "build",
+        "commission",
+    }
+    assert all(item.status == InvestRoadmapItem.Status.OPEN for item in p.roadmap_items.all())
 
 
 @pytest.mark.django_db

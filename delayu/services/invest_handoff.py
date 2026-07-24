@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from delayu.models_invest import InvestHandoff, InvestProject
 from delayu.services.invest_package import package_is_ready
+from delayu.services.invest_roadmap import seed_support_roadmap
 
 
 class InvestHandoffError(Exception):
@@ -37,6 +38,7 @@ def accept_handoff(*, handoff, user):
     p.funnel = InvestProject.Funnel.SUPPORT
     p.stage = "accepted"
     p.save(update_fields=["funnel", "stage", "updated_at"])
+    seed_support_roadmap(p)
     return p
 
 

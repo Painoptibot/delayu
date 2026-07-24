@@ -123,3 +123,27 @@ class InvestPackageItem(models.Model):
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.MISSING)
     file = models.FileField(upload_to="invest/packages/", blank=True)
     due_at = models.DateTimeField(null=True, blank=True)
+
+
+class InvestRoadmapItem(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", "Открыт"
+        OVERDUE = "overdue", "Просрочено"
+        DONE = "done", "Выполнено"
+
+    project = models.ForeignKey(InvestProject, on_delete=models.CASCADE, related_name="roadmap_items")
+    code = models.CharField(max_length=64)
+    title = models.CharField(max_length=255)
+    due_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.OPEN)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [("project", "code")]
+        ordering = ["due_at", "code"]
+
+    def __str__(self):
+        return f"{self.project.code} — {self.title}"
