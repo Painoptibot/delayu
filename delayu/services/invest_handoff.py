@@ -1,3 +1,5 @@
+"""Handoff service; funnel edits stay service-only until Task 8 forms."""
+
 from django.db import transaction
 from django.utils import timezone
 

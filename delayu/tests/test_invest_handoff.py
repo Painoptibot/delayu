@@ -61,6 +61,15 @@ def test_return_keeps_attraction(invest_ctx):
 
 
 @pytest.mark.django_db
+def test_request_handoff_blocked_when_not_attraction(invest_ctx):
+    p = invest_ctx["project"]
+    p.funnel = InvestProject.Funnel.SUPPORT
+    p.save(update_fields=["funnel"])
+    with pytest.raises(InvestHandoffError, match="Передача только из воронки привлечения"):
+        request_handoff(project=p, user=invest_ctx["user"])
+
+
+@pytest.mark.django_db
 def test_accept_blocked_when_package_not_ready(invest_ctx, monkeypatch):
     monkeypatch.setattr("delayu.services.invest_handoff.package_is_ready", lambda project: False)
     p = invest_ctx["project"]
