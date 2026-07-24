@@ -147,3 +147,57 @@ class InvestRoadmapItem(models.Model):
 
     def __str__(self):
         return f"{self.project.code} — {self.title}"
+
+
+class InvestImportBatch(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Ожидает"
+        REVIEWING = "reviewing", "На проверке"
+        DONE = "done", "Завершён"
+
+    subsystem = models.ForeignKey("Subsystem", on_delete=models.CASCADE, related_name="invest_import_batches")
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.PROTECT, related_name="invest_import_batches",
+    )
+    source_file = models.FileField(upload_to="invest/imports/", blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Import {self.pk} — {self.organization.code}"
+
+
+class InvestImportRow(models.Model):
+    class Action(models.TextChoices):
+        NEW_PROJECT = "new_project", "Новый проект"
+        CHANGED_PROJECT = "changed_project", "Изменён проект"
+        GAP = "gap", "Нет в файле"
+        NEW_SITE = "new_site", "Новая площадка"
+        CHANGED_SITE = "changed_site", "Изменена площадка"
+
+    class Resolution(models.TextChoices):
+        PENDING = "pending", "Ожидает"
+        APPLIED = "applied", "Применено"
+        SKIPPED = "skipped", "Пропущено"
+
+    batch = models.ForeignKey(InvestImportBatch, on_delete=models.CASCADE, related_name="rows")
+    row_number = models.PositiveIntegerField(default=0)
+    action = models.CharField(max_length=32, choices=Action.choices)
+    resolution = models.CharField(max_length=16, choices=Resolution.choices, default=Resolution.PENDING)
+    payload = models.JSONField(default=dict, blank=True)
+    target_project = models.ForeignKey(
+        InvestProject, null=True, blank=True, on_delete=models.SET_NULL, related_name="import_rows",
+    )
+    target_site = models.ForeignKey(
+        InvestSite, null=True, blank=True, on_delete=models.SET_NULL, related_name="import_rows",
+    )
+    applied_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["row_number"]
+
+    def __str__(self):
+        return f"{self.batch_id}#{self.row_number} {self.action}"
