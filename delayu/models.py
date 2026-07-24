@@ -64,6 +64,7 @@ class Subsystem(models.Model):
             ("holding", "Холдинг"),
             ("uzhv", "АИС УЖВ"),
             ("fuel", "Топливный пропуск"),
+            ("invest", "Инвестконтур"),
         ],
     )
     public_subdomain = models.SlugField(
@@ -221,3 +222,4 @@ class SubsystemMembership(models.Model):
 from delayu.models_business import *  # noqa: E402, F403
 from delayu.models_uzhv import *  # noqa: E402, F403
 from delayu.models_fuel import *  # noqa: E402, F403
+from delayu.models_invest import *  # noqa: E402, F403
