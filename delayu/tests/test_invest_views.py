@@ -93,6 +93,7 @@ def invest_view_ctx(db):
     "url_name,args",
     [
         ("invest-hub", ()),
+        ("invest-dashboard", ()),
         ("invest-projects", ()),
         ("invest-project-detail", ("project",)),
         ("invest-project-create", ()),

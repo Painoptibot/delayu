@@ -21,6 +21,7 @@ from delayu.models_invest import (
 )
 from delayu.services.access import get_membership_or_403, user_can
 from delayu.services.invest_booking import InvestBookingError, book_site, select_site
+from delayu.services.invest_dashboard import build_dashboard
 from delayu.services.invest_handoff import (
     InvestHandoffError,
     accept_handoff,
@@ -95,6 +96,16 @@ class InvestHubView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
         }
         ctx["recent_projects"] = projects.select_related("organization", "owner")[:8]
         ctx["can_create_project"] = user_can(self.request.user, self.module_code, "create")
+        return ctx
+
+
+class InvestDashboardView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/dashboard.html"
+    page_title = "Дашборд руководителя"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["dashboard"] = build_dashboard(self.get_subsystem())
         return ctx
 
 

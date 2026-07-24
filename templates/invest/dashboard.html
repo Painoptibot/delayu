@@ -1,0 +1,105 @@
+{% extends layout_path %}
+
+{% block title %}Дашборд руководителя{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Дашборд руководителя</h4>
+    <p class="text-muted mb-0">Сводка по привлечению, сопровождению и узким местам инвестконтура.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-hub' %}">Обзор</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-handoffs' %}">Передачи</a>
+  </div>
+</div>
+
+<div class="row g-4 mb-6">
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="text-muted mb-1">Просрочено шагов</div>
+        <div class="display-6">{{ dashboard.overdue_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="text-muted mb-1">Готовность пакетов</div>
+        <div class="display-6">{{ dashboard.packages_ready_pct }}%</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="text-muted mb-1">Активные брони</div>
+        <div class="display-6">{{ dashboard.active_bookings }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-6">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><h5 class="mb-0">Привлечение по стадиям</h5></div>
+      <div class="card-body">
+        {% for stage, total in dashboard.attraction_counts.items %}
+        <div class="d-flex justify-content-between border-bottom py-2">
+          <span>{{ stage }}</span>
+          <strong>{{ total }}</strong>
+        </div>
+        {% empty %}
+        <p class="text-muted mb-0">Нет проектов в привлечении.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><h5 class="mb-0">Сопровождение по стадиям</h5></div>
+      <div class="card-body">
+        {% for stage, total in dashboard.support_counts.items %}
+        <div class="d-flex justify-content-between border-bottom py-2">
+          <span>{{ stage }}</span>
+          <strong>{{ total }}</strong>
+        </div>
+        {% empty %}
+        <p class="text-muted mb-0">Нет проектов в сопровождении.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Узкие места по МО</h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>МО</th>
+          <th class="text-end">Просрочено</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in dashboard.bottlenecks_by_org %}
+        <tr>
+          <td>{{ row.organization_name }}</td>
+          <td class="text-end">{{ row.overdue_count }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="2" class="text-muted">Просроченных шагов нет.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from delayu.models import Organization, Subsystem
 from delayu.models_invest import InvestRoadmapItem, InvestProject
+from delayu.services.invest_dashboard import build_dashboard
 from delayu.services.invest_roadmap import mark_overdue, overdue_items, seed_support_roadmap
 
 User = get_user_model()
@@ -52,6 +53,21 @@ def test_overdue_items(invest_ctx):
     )
     qs = overdue_items(subsystem=invest_ctx["sub"])
     assert qs.count() == 1
+
+
+@pytest.mark.django_db
+def test_dashboard_counts_past_due_roadmap_items(invest_ctx):
+    InvestRoadmapItem.objects.create(
+        project=invest_ctx["project"],
+        title="Земля",
+        code="land",
+        due_at=timezone.now() - timedelta(days=1),
+        status=InvestRoadmapItem.Status.OPEN,
+    )
+
+    dashboard = build_dashboard(invest_ctx["sub"])
+
+    assert dashboard["overdue_count"] >= 1
 
 
 @pytest.mark.django_db

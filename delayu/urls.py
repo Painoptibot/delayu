@@ -995,6 +995,7 @@ urlpatterns = [
     path("uzhv/assignee/<int:user_id>/", views.UzhvAssigneeDashboardView.as_view(), name="uzhv-assignee"),
     # Инвестконтур
     path("invest/", views_invest.InvestHubView.as_view(), name="invest-hub"),
+    path("invest/dashboard/", views_invest.InvestDashboardView.as_view(), name="invest-dashboard"),
     path("invest/projects/", views_invest.InvestProjectListView.as_view(), name="invest-projects"),
     path("invest/projects/new/", views_invest.InvestProjectCreateView.as_view(), name="invest-project-create"),
     path("invest/projects/<int:pk>/", views_invest.InvestProjectDetailView.as_view(), name="invest-project-detail"),
