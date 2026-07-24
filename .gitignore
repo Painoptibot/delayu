@@ -33,3 +33,5 @@ scripts/cache/
 
 # Node (если позже добавим frontend)
 node_modules/
+
+.worktrees/
