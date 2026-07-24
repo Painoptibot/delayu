@@ -11,7 +11,14 @@ from django.views.generic import CreateView, DetailView, ListView, TemplateView,
 from delayu.forms_invest import InvestProjectForm, InvestSiteForm
 from delayu.mixins import ModulePermissionMixin
 from delayu.models import Subsystem
-from delayu.models_invest import InvestHandoff, InvestPackageItem, InvestProject, InvestSite
+from delayu.models_invest import (
+    InvestHandoff,
+    InvestImportBatch,
+    InvestImportRow,
+    InvestPackageItem,
+    InvestProject,
+    InvestSite,
+)
 from delayu.services.access import get_membership_or_403, user_can
 from delayu.services.invest_booking import InvestBookingError, book_site, select_site
 from delayu.services.invest_handoff import (
@@ -20,6 +27,7 @@ from delayu.services.invest_handoff import (
     request_handoff,
     return_handoff,
 )
+from delayu.services.invest_import import apply_row, parse_mo_file, skip_row
 from delayu.services.invest_package import ensure_package, set_item_status
 from delayu.services.invest_scope import projects_for_membership, sites_for_membership
 
@@ -54,6 +62,23 @@ class InvestForbiddenResponseMixin:
         ):
             return HttpResponseForbidden(f"Нет доступа к {self.module_code}")
         return super().dispatch(request, *args, **kwargs)
+
+
+class InvestImportRoleMixin:
+    allowed_role_codes = {"invest_mo", "invest_dept", "invest_admin"}
+
+    def dispatch(self, request, *args, **kwargs):
+        membership = get_membership_or_403(request)
+        if membership.role.code not in self.allowed_role_codes:
+            return HttpResponseForbidden("Импорт доступен только ролям МО, департамента и администратора")
+        return super().dispatch(request, *args, **kwargs)
+
+
+def _import_batches_for_membership(membership):
+    qs = InvestImportBatch.objects.filter(subsystem=membership.subsystem).select_related("organization")
+    if membership.role.code == "invest_mo":
+        qs = qs.filter(organization=membership.organization)
+    return qs
 
 
 class InvestHubView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
@@ -209,6 +234,74 @@ class InvestPackageItemUpdateView(InvestForbiddenResponseMixin, InvestSubsystemM
             set_item_status(item, status, request.FILES.get("file"))
             messages.success(request, "Пункт пакета обновлён.")
         return redirect(reverse("invest-package-detail", args=[project.pk]))
+
+
+class InvestImportListView(InvestImportRoleMixin, InvestSubsystemMixin, ModulePermissionMixin, ListView):
+    model = InvestImportBatch
+    template_name = "invest/import_list.html"
+    context_object_name = "batches"
+    page_title = "Импорт данных МО"
+    paginate_by = 25
+    http_method_names = ["get", "post", "head", "options"]
+
+    def get_queryset(self):
+        return _import_batches_for_membership(self.get_membership()).order_by("-created_at")
+
+    def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        upload = request.FILES.get("file")
+        if not upload:
+            messages.error(request, "Выберите CSV-файл для импорта.")
+            return redirect(reverse("invest-imports"))
+
+        batch = parse_mo_file(upload, subsystem=membership.subsystem, organization=membership.organization)
+        messages.success(request, "Файл загружен. Проверьте строки перед применением.")
+        return redirect(reverse("invest-import-detail", args=[batch.pk]))
+
+
+class InvestImportDetailView(InvestImportRoleMixin, InvestSubsystemMixin, ModulePermissionMixin, DetailView):
+    model = InvestImportBatch
+    template_name = "invest/import_detail.html"
+    context_object_name = "batch"
+    page_title = "Пакет импорта"
+
+    def get_queryset(self):
+        return _import_batches_for_membership(self.get_membership())
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["rows"] = self.object.rows.select_related("target_project", "target_site").order_by("row_number")
+        return ctx
+
+
+class InvestImportRowActionView(InvestImportRoleMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    action = ""
+
+    def post(self, request, *args, **kwargs):
+        batch = get_object_or_404(_import_batches_for_membership(self.get_membership()), pk=kwargs["batch_pk"])
+        row = get_object_or_404(batch.rows, pk=kwargs["row_pk"])
+        try:
+            if self.action == "apply":
+                apply_row(row, user=request.user)
+                messages.success(request, "Строка применена.")
+            else:
+                skip_row(row)
+                messages.success(request, "Строка пропущена.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+
+        if not batch.rows.filter(resolution=InvestImportRow.Resolution.PENDING).exists():
+            batch.status = InvestImportBatch.Status.DONE
+            batch.save(update_fields=["status"])
+        return redirect(reverse("invest-import-detail", args=[batch.pk]))
+
+
+class InvestImportRowApplyView(InvestImportRowActionView):
+    action = "apply"
+
+
+class InvestImportRowSkipView(InvestImportRowActionView):
+    action = "skip"
 
 
 class InvestProjectCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, CreateView):

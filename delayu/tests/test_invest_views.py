@@ -31,13 +31,18 @@ def invest_view_ctx(db):
     SubsystemModule.objects.create(subsystem=sub, module=module, enabled=True)
     org = Organization.objects.create(subsystem=sub, code="mo1", name="МО-1")
     agency_role = Role.objects.create(subsystem=sub, code="invest_agency", name="Агентство")
+    mo_role = Role.objects.create(subsystem=sub, code="invest_mo", name="МО")
     viewer_role = Role.objects.create(subsystem=sub, code="invest_viewer", name="Наблюдатель")
-    for role in (agency_role, viewer_role):
+    for role in (agency_role, mo_role, viewer_role):
         RoleModulePermission.objects.create(role=role, module=module, **perm_for_role(role.code, "M22"))
     agency_user = User.objects.create_user("invest_agency", password="x")
+    mo_user = User.objects.create_user("invest_mo", password="x")
     viewer_user = User.objects.create_user("invest_viewer", password="x")
     SubsystemMembership.objects.create(
         user=agency_user, subsystem=sub, organization=org, role=agency_role, is_default=True
+    )
+    SubsystemMembership.objects.create(
+        user=mo_user, subsystem=sub, organization=org, role=mo_role, is_default=True
     )
     SubsystemMembership.objects.create(
         user=viewer_user, subsystem=sub, organization=org, role=viewer_role, is_default=True
@@ -75,6 +80,7 @@ def invest_view_ctx(db):
         "sub": sub,
         "org": org,
         "agency_user": agency_user,
+        "mo_user": mo_user,
         "viewer_user": viewer_user,
         "project": project,
         "conflict_project": conflict_project,
@@ -238,3 +244,50 @@ def test_invest_package_item_status_update_uploads_file(client, invest_view_ctx)
     assert item.file.name.startswith("invest/packages/egrn")
     assert item.file.name.endswith(".pdf")
     assert "Пункт пакета обновлён".encode() in response.content
+
+
+@pytest.mark.django_db
+def test_invest_mo_can_upload_apply_and_skip_import_rows(client, invest_view_ctx):
+    client.force_login(invest_view_ctx["mo_user"])
+    upload = SimpleUploadedFile(
+        "mo.csv",
+        b"code,name,stage\nP-NEW,Imported,lead\n",
+        content_type="text/csv",
+    )
+
+    response = client.post(reverse("invest-imports"), {"file": upload}, follow=True)
+
+    assert response.status_code == 200
+    batch = invest_view_ctx["sub"].invest_import_batches.get()
+    new_project_row = batch.rows.get(action="new_project")
+    gap_row = batch.rows.filter(action="gap").first()
+    assert gap_row is not None
+
+    response = client.post(reverse("invest-import-row-apply", args=[batch.pk, new_project_row.pk]), follow=True)
+
+    assert response.status_code == 200
+    assert InvestProject.objects.filter(code="P-NEW", name="Imported").exists()
+    new_project_row.refresh_from_db()
+    assert new_project_row.resolution == "applied"
+
+    response = client.post(reverse("invest-import-row-skip", args=[batch.pk, gap_row.pk]), follow=True)
+
+    assert response.status_code == 200
+    gap_row.refresh_from_db()
+    assert gap_row.resolution == "skipped"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("user_key", ["agency_user", "viewer_user"])
+def test_invest_import_denies_agency_and_viewer_roles(client, invest_view_ctx, user_key):
+    client.force_login(invest_view_ctx[user_key])
+    upload = SimpleUploadedFile(
+        "mo.csv",
+        b"code,name,stage\nP-DENIED,Denied,lead\n",
+        content_type="text/csv",
+    )
+
+    response = client.post(reverse("invest-imports"), {"file": upload})
+
+    assert response.status_code == 403
+    assert invest_view_ctx["sub"].invest_import_batches.count() == 0

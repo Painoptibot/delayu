@@ -1,0 +1,65 @@
+{% extends layout_path %}
+
+{% block title %}Импорт #{{ batch.pk }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Импорт #{{ batch.pk }}</h4>
+    <p class="text-muted mb-0">{{ batch.organization }} · {{ batch.get_status_display }}</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-imports' %}">К импортам</a>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>№</th>
+          <th>Действие</th>
+          <th>Статус</th>
+          <th>Данные</th>
+          <th class="text-end">Операции</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.row_number }}</td>
+          <td>{{ row.get_action_display }}</td>
+          <td>{{ row.get_resolution_display }}</td>
+          <td>
+            {% if row.target_project %}<div>Проект: {{ row.target_project.code }}</div>{% endif %}
+            {% if row.target_site %}<div>Площадка: {{ row.target_site.cadastral_number }}</div>{% endif %}
+            <code>{{ row.payload }}</code>
+          </td>
+          <td class="text-end">
+            {% if row.resolution == "pending" %}
+            <div class="d-inline-flex gap-2">
+              {% if row.action != "gap" %}
+              <form method="post" action="{% url 'invest-import-row-apply' batch.pk row.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-primary" type="submit">Применить</button>
+              </form>
+              {% endif %}
+              <form method="post" action="{% url 'invest-import-row-skip' batch.pk row.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Пропустить</button>
+              </form>
+            </div>
+            {% else %}
+            <span class="text-muted">Обработано</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-muted">Нет строк для проверки.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

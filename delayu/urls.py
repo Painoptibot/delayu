@@ -1002,6 +1002,18 @@ urlpatterns = [
     path("invest/projects/<int:pk>/handoff/request/", views_invest.InvestHandoffRequestView.as_view(), name="invest-handoff-request"),
     path("invest/projects/<int:pk>/package/", views_invest.InvestPackageDetailView.as_view(), name="invest-package-detail"),
     path("invest/projects/<int:project_pk>/package/items/<int:item_pk>/", views_invest.InvestPackageItemUpdateView.as_view(), name="invest-package-item-update"),
+    path("invest/imports/", views_invest.InvestImportListView.as_view(), name="invest-imports"),
+    path("invest/imports/<int:pk>/", views_invest.InvestImportDetailView.as_view(), name="invest-import-detail"),
+    path(
+        "invest/imports/<int:batch_pk>/rows/<int:row_pk>/apply/",
+        views_invest.InvestImportRowApplyView.as_view(),
+        name="invest-import-row-apply",
+    ),
+    path(
+        "invest/imports/<int:batch_pk>/rows/<int:row_pk>/skip/",
+        views_invest.InvestImportRowSkipView.as_view(),
+        name="invest-import-row-skip",
+    ),
     path("invest/handoffs/", views_invest.InvestHandoffListView.as_view(), name="invest-handoffs"),
     path("invest/handoffs/<int:pk>/accept/", views_invest.InvestHandoffAcceptView.as_view(), name="invest-handoff-accept"),
     path("invest/handoffs/<int:pk>/return/", views_invest.InvestHandoffReturnView.as_view(), name="invest-handoff-return"),
