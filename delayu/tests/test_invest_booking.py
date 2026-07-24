@@ -41,6 +41,18 @@ def test_second_book_blocked(invest_ctx):
 
 
 @pytest.mark.django_db
+def test_book_rejects_cross_subsystem(invest_ctx):
+    sub2 = Subsystem.objects.create(code="inv-c", name="C", industry_template="invest", status="active")
+    org2 = Organization.objects.create(subsystem=sub2, code="mo2", name="МО-2")
+    project2 = InvestProject.objects.create(
+        subsystem=sub2, code="P-x", name="Проект X", organization=org2,
+        funnel=InvestProject.Funnel.ATTRACTION, stage="site_pick",
+    )
+    with pytest.raises(InvestBookingError, match="разным подсистемам"):
+        book_site(project=project2, site=invest_ctx["site"], user=invest_ctx["user"])
+
+
+@pytest.mark.django_db
 def test_select_requires_booked_or_promotes(invest_ctx):
     book_site(project=invest_ctx["project"], site=invest_ctx["site"], user=invest_ctx["user"])
     link = select_site(project=invest_ctx["project"], site=invest_ctx["site"], user=invest_ctx["user"])

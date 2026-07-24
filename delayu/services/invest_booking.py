@@ -1,5 +1,5 @@
 from django.db import transaction
-from delayu.models_invest import InvestProjectSite
+from delayu.models_invest import InvestProjectSite, InvestSite
 
 ACTIVE_ROLES = (InvestProjectSite.Role.BOOKED, InvestProjectSite.Role.SELECTED)
 
@@ -10,6 +10,11 @@ class InvestBookingError(Exception):
 
 @transaction.atomic
 def book_site(*, project, site, user) -> InvestProjectSite:
+    site = InvestSite.objects.select_for_update().get(pk=site.pk)
+    if project.subsystem_id != site.subsystem_id:
+        raise InvestBookingError(
+            "Проект и площадка принадлежат разным подсистемам"
+        )
     conflict = (
         InvestProjectSite.objects.select_for_update()
         .filter(site=site, role__in=ACTIVE_ROLES)
