@@ -1,0 +1,7 @@
+# Delayu overlay for Odysseus — bind loopback only.
+# Usage (from repo root, after vendor checkout):
+#   docker compose -f vendor/odysseus/docker-compose.yml -f deploy/odysseus/compose.delayu.yml up -d --build
+services:
+  odysseus:
+    ports:
+      - "127.0.0.1:7000:7000"

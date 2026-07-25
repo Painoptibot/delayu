@@ -14,6 +14,7 @@ from . import (
     views_invest,
     views_invest_automation,
     views_invest_bitrix,
+    views_odysseus,
     views_uzhv_wizard,
     views_welcome,
 )
@@ -468,6 +469,23 @@ urlpatterns = [
     path("ai/hitl/create/", views.AiHitlCreateView.as_view(), name="platform-ai-hitl-create"),
     path("ai/knowledge/", views.KnowledgeListView.as_view(), name="platform-knowledge"),
     path("ai/knowledge/new/", views.KnowledgeCreateView.as_view(), name="platform-knowledge-create"),
+    path("ai/odysseus/", views_odysseus.OdysseusShellView.as_view(), name="platform-odysseus"),
+    path(
+        "ai/odysseus/settings/",
+        views_odysseus.OdysseusSettingsView.as_view(),
+        name="platform-odysseus-settings",
+    ),
+    path(
+        "ai/odysseus/proxy/<path:path>",
+        views_odysseus.OdysseusProxyView.as_view(),
+        name="platform-odysseus-proxy",
+    ),
+    path(
+        "ai/odysseus/proxy/",
+        views_odysseus.OdysseusProxyView.as_view(),
+        name="platform-odysseus-proxy-root",
+        kwargs={"path": ""},
+    ),
     # M42–M45
     path("integrations/", views.IntegrationHubView.as_view(), name="platform-integrations"),
     path("integrations/endpoints/", views.IntegrationEndpointsView.as_view(), name="platform-integration-endpoints"),

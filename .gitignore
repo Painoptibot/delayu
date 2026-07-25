@@ -35,3 +35,7 @@ scripts/cache/
 node_modules/
 
 .worktrees/
+
+# Odysseus vendor (AGPL) — managed pin, not committed
+vendor/odysseus/
+

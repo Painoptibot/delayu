@@ -3,7 +3,7 @@ from django.db import models
 
 
 class ModuleCatalog(models.Model):
-    """Каталог функциональных модулей M01–M86."""
+    """Каталог функциональных модулей M01–M87+."""
 
     class Group(models.TextChoices):
         CORE = "core", "Ядро"
@@ -228,3 +228,4 @@ from delayu.models_business import *  # noqa: E402, F403
 from delayu.models_uzhv import *  # noqa: E402, F403
 from delayu.models_fuel import *  # noqa: E402, F403
 from delayu.models_invest import *  # noqa: E402, F403
+from delayu.models_odysseus import *  # noqa: E402, F403

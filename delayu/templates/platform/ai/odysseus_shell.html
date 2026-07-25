@@ -1,0 +1,69 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ai/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="mb-0 text-body-secondary">Локальный AI workspace (M87), прокси в Делаю</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if can_manage %}
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'platform-odysseus-settings' %}">Настройки</a>
+    {% endif %}
+    {% if config.enabled %}
+    <a class="btn btn-primary btn-sm" href="{{ workspace_href }}" {% if config.embed_mode == 'new_tab' %}target="_blank" rel="noopener"{% endif %}>Открыть workspace</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <p class="text-muted mb-1">Статус</p>
+        {% if config.enabled %}
+          <span class="badge bg-label-success">включён</span>
+        {% else %}
+          <span class="badge bg-label-secondary">выключен</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <p class="text-muted mb-1">Health</p>
+        {% if config.last_health_ok %}
+          <span class="badge bg-label-success">OK</span>
+        {% else %}
+          <span class="badge bg-label-warning">нет данных / down</span>
+        {% endif %}
+        {% if config.last_health_at %}
+        <div class="small text-muted mt-1">{{ config.last_health_at }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <p class="text-muted mb-1">Pin</p>
+        <code>{{ config.pinned_ref|default:"—" }}</code>
+        <div class="small text-muted mt-1">{{ config.base_url }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if config.enabled and config.embed_mode != 'new_tab' %}
+<div class="card">
+  <div class="card-header">Workspace</div>
+  <div class="card-body p-0" style="min-height:70vh">
+    <iframe title="Odysseus" src="{% url 'platform-odysseus-proxy-root' %}" class="w-100 border-0" style="min-height:70vh"></iframe>
+  </div>
+</div>
+{% elif not config.enabled %}
+<div class="alert alert-secondary">Включите Odysseus в настройках и поднимите локальный контейнер (см. docs/odysseus-local.md).</div>
+{% endif %}
+{% endblock %}

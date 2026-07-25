@@ -99,6 +99,7 @@ MENU_SECTIONS = [
             {"url_name": "platform-ai-assistant", "codes": ["M47"], "icon": "ri-chat-smile-2-line", "label": "Ассистент"},
             {"url_name": "platform-ai-search", "codes": ["M48"], "icon": "ri-search-eye-line", "label": "Семантический поиск"},
             {"url_name": "platform-ai-tools", "codes": ["M47"], "icon": "ri-magic-line", "label": "Инструменты ИИ"},
+            {"url_name": "platform-odysseus", "codes": ["M87"], "icon": "ri-terminal-box-line", "label": "Odysseus"},
             {"url_name": "platform-knowledge", "codes": ["M61"], "icon": "ri-book-open-line", "label": "База знаний"},
             {"url_name": "platform-ai-policies", "codes": ["M66"], "icon": "ri-shield-check-line", "label": "Политики ИИ"},
         ],

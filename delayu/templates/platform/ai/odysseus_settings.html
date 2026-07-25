@@ -1,0 +1,27 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+{% include "platform/ai/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'platform-odysseus' %}">К shell</a>
+</div>
+<div class="card">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="col-md-6">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <div class="col-12 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <button type="submit" name="action" value="health" class="btn btn-outline-secondary">Проверить health</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
