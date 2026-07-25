@@ -140,6 +140,28 @@ def test_mapping_form_parses_stage_pairs(invest_roles_ctx):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    "stage_rows",
+    [
+        "NEW=attraction",
+        "NEW=/lead",
+        "NEW=attraction/",
+        "=attraction/lead",
+    ],
+)
+def test_mapping_form_rejects_malformed_stage_rows(invest_roles_ctx, stage_rows):
+    form = InvestAutomationMappingForm(
+        data={
+            "field_rows": "TITLE=name",
+            "stage_rows": stage_rows,
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "stage_rows" in form.errors
+
+
+@pytest.mark.django_db
 def test_connection_get_ok_for_admin(client, invest_roles_ctx):
     user, _ = _member(invest_roles_ctx, "adm2", "invest_admin")
     ensure_automation_config(invest_roles_ctx["sub"])
@@ -254,6 +276,31 @@ def test_mapping_post_saves(client, invest_roles_ctx):
     cfg.refresh_from_db()
     assert cfg.field_mapping["UF_X"] == "investor_name"
     assert cfg.stage_mapping["NEW"] == ["attraction", "lead"]
+
+
+@pytest.mark.django_db
+def test_mapping_post_rejects_malformed_stage_rows_without_overwriting(client, invest_roles_ctx):
+    user, _ = _member(invest_roles_ctx, "adm5b", "invest_admin")
+    cfg = ensure_automation_config(invest_roles_ctx["sub"])
+    cfg.field_mapping = {"TITLE": "name"}
+    cfg.stage_mapping = {"OLD": ["support", "accepted"]}
+    cfg.save(update_fields=["field_mapping", "stage_mapping"])
+    client.force_login(user)
+
+    resp = client.post(
+        reverse("invest-automation-mapping"),
+        {
+            "action": "save",
+            "field_rows": "TITLE=name\nUF_X=investor_name",
+            "stage_rows": "NEW=attraction/lead\nBROKEN=support",
+        },
+    )
+
+    assert resp.status_code == 200
+    assert "stage_rows" in resp.context["form"].errors
+    cfg.refresh_from_db()
+    assert cfg.field_mapping == {"TITLE": "name"}
+    assert cfg.stage_mapping == {"OLD": ["support", "accepted"]}
 
 
 @pytest.mark.django_db

@@ -164,7 +164,7 @@
   <div class="card-body">
     <form class="d-flex flex-wrap gap-2" method="post">
       {% csrf_token %}
-      <button class="btn btn-primary" type="submit" name="action" value="run">Запустить прогон</button>
+      <button class="btn btn-primary" type="submit" name="action" value="run">Прогнать автоматизацию</button>
       <button class="btn btn-outline-warning" type="submit" name="action" value="requeue_dead">Вернуть dead-letter в очередь</button>
     </form>
     <div class="text-muted small mt-3">

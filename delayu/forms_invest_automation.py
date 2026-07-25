@@ -98,6 +98,31 @@ class InvestAutomationMappingForm(forms.Form):
                 result[key] = val
         return result
 
+    def clean_stage_rows(self):
+        rows = self.cleaned_data.get("stage_rows") or ""
+        errors = []
+        for line_no, line in enumerate(rows.splitlines(), start=1):
+            line = line.strip()
+            if not line:
+                continue
+            if "=" not in line:
+                errors.append(f"Строка {line_no}: укажите STAGE_ID=funnel/stage.")
+                continue
+            key, val = line.split("=", 1)
+            key, val = key.strip(), val.strip()
+            if not key:
+                errors.append(f"Строка {line_no}: укажите идентификатор стадии Bitrix.")
+                continue
+            if "/" not in val:
+                errors.append(f"Строка {line_no}: укажите значение в формате funnel/stage.")
+                continue
+            funnel, stage = val.split("/", 1)
+            if not funnel.strip() or not stage.strip():
+                errors.append(f"Строка {line_no}: funnel и stage не должны быть пустыми.")
+        if errors:
+            raise ValidationError(errors)
+        return rows
+
     def cleaned_stage_mapping(self) -> dict:
         result = {}
         for line in (self.cleaned_data.get("stage_rows") or "").splitlines():
