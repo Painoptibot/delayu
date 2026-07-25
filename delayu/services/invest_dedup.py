@@ -49,6 +49,68 @@ def find_duplicate_project(*, subsystem, name: str = "", investor_inn: str = "",
     return None, ""
 
 
+def dedupe_pair_key(left: InvestProject, right: InvestProject) -> str:
+    first, second = sorted([left.pk, right.pk])
+    return f"{first}:{second}"
+
+
+def ignored_dedupe_keys(project: InvestProject) -> set[str]:
+    return set((project.external_ids or {}).get("dedupe_ignored", []))
+
+
+def is_dedupe_ignored(left: InvestProject, right: InvestProject) -> bool:
+    key = dedupe_pair_key(left, right)
+    return key in ignored_dedupe_keys(left) or key in ignored_dedupe_keys(right)
+
+
+def ignore_duplicate_pair(left: InvestProject, right: InvestProject) -> str:
+    key = dedupe_pair_key(left, right)
+    for project in (left, right):
+        external_ids = dict(project.external_ids or {})
+        ignored = list(dict.fromkeys([*external_ids.get("dedupe_ignored", []), key]))
+        external_ids["dedupe_ignored"] = ignored
+        project.external_ids = external_ids
+        project.save(update_fields=["external_ids", "updated_at"])
+    return key
+
+
+def suspected_duplicate_pairs(subsystem) -> list[dict]:
+    projects = list(
+        InvestProject.objects.filter(subsystem=subsystem)
+        .select_related("organization", "investor_entity")
+        .order_by("id")
+    )
+    pairs = []
+    seen = set()
+    for project in projects:
+        match, reason = find_duplicate_project(
+            subsystem=subsystem,
+            name=project.name,
+            investor_inn=(project.investor_entity.inn if project.investor_entity else project.external_ids.get("investor_inn", "")),
+            bitrix_id=project.external_ids.get("bitrix_id", ""),
+        )
+        if not match or match.pk == project.pk:
+            for candidate in projects:
+                if candidate.pk == project.pk:
+                    continue
+                if normalize_name(candidate.name) == normalize_name(project.name):
+                    match, reason = candidate, "name"
+                    break
+        if not match or match.pk == project.pk:
+            continue
+        key = dedupe_pair_key(project, match)
+        if key in seen or is_dedupe_ignored(project, match):
+            continue
+        seen.add(key)
+        reason_label = {
+            "bitrix_id": "Совпадает Bitrix ID",
+            "investor_inn": "Совпадает ИНН инвестора",
+            "name": "Совпадает наименование",
+        }.get(reason, reason or "Возможный дубль")
+        pairs.append({"key": key, "left": project, "right": match, "reason": reason, "reason_label": reason_label})
+    return pairs
+
+
 def validate_project_requisites(payload: dict) -> list[str]:
     errors = []
     inn = str(payload.get("investor_inn") or payload.get("UF_INN") or "")

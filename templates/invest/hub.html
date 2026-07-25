@@ -10,7 +10,9 @@
   </div>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-investors' %}">Инвесторы</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">Площадки</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-dedupe' %}">Дубли</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-handoffs' %}">Передачи</a>
     {% if odysseus_cta_url %}
     <a class="btn btn-outline-primary" href="{{ odysseus_cta_url }}">Открыть в Odysseus</a>

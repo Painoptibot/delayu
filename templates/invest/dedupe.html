@@ -1,0 +1,70 @@
+{% extends layout_path %}
+
+{% block title %}Дедупликация проектов{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Дедупликация проектов</h4>
+    <p class="text-muted mb-0">Подозрительные пары по активному инвестконтуру.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-hub' %}">Обзор</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
+  </div>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Проект A</th>
+          <th>Проект B</th>
+          <th>Причина</th>
+          <th class="text-end">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pair in pairs %}
+        <tr>
+          <td>
+            <a href="{% url 'invest-project-detail' pair.left.pk %}">{{ pair.left.code }}</a><br>
+            <span class="text-muted">{{ pair.left.name }}</span>
+          </td>
+          <td>
+            <a href="{% url 'invest-project-detail' pair.right.pk %}">{{ pair.right.code }}</a><br>
+            <span class="text-muted">{{ pair.right.name }}</span>
+          </td>
+          <td>{{ pair.reason_label }}</td>
+          <td class="text-end">
+            {% if can_change_dedupe %}
+            <form method="post" action="{% url 'invest-dedupe-ignore' %}">
+              {% csrf_token %}
+              <input type="hidden" name="left_id" value="{{ pair.left.pk }}">
+              <input type="hidden" name="right_id" value="{{ pair.right.pk }}">
+              <button class="btn btn-sm btn-outline-secondary" type="submit">Игнорировать</button>
+            </form>
+            {% else %}
+            <span class="text-muted">Только просмотр</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="text-muted">Подозрительных дублей нет.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

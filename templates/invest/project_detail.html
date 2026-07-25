@@ -40,7 +40,12 @@
       <div class="card-body">
         <dl class="row mb-0">
           <dt class="col-sm-4">Инвестор</dt>
-          <dd class="col-sm-8">{{ project.investor_name|default:"—" }}</dd>
+          <dd class="col-sm-8">
+            {{ project.investor_name|default:"—" }}
+            {% if project.investor_entity %}
+            <br><a href="{% url 'invest-investor-detail' project.investor_entity.pk %}">{{ project.investor_entity.name }}</a>
+            {% endif %}
+          </dd>
           <dt class="col-sm-4">Отрасль</dt>
           <dd class="col-sm-8">{{ project.industry|default:"—" }}</dd>
           <dt class="col-sm-4">Описание</dt>
@@ -114,6 +119,25 @@
   <div class="col-lg-5">
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Полнота карточки</h5>
+        <span class="badge bg-label-primary">{{ completeness_pct }}%</span>
+      </div>
+      <div class="card-body">
+        <div class="progress mb-3" style="height: 8px;">
+          <div class="progress-bar" role="progressbar" style="width: {{ completeness_pct }}%;" aria-valuenow="{{ completeness_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <ul class="mb-0">
+          {% for action in completeness_actions %}
+          <li>{{ action }}</li>
+          {% empty %}
+          <li class="text-muted">Критичных пропусков нет.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Пакет документов</h5>
         <span class="badge bg-label-primary">{{ package_ready }}</span>
       </div>
@@ -161,6 +185,28 @@
             </tr>
             {% empty %}
             <tr><td colspan="3" class="text-muted">Появится после принятия в сопровождение.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header"><h5 class="mb-0">Журнал изменений</h5></div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr><th>Дата</th><th>Действие</th><th>Пользователь</th></tr>
+          </thead>
+          <tbody>
+            {% for entry in audit_logs %}
+            <tr>
+              <td>{{ entry.created_at|date:"d.m.Y H:i" }}</td>
+              <td>{{ entry.action }}</td>
+              <td>{{ entry.user|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-muted">Записей аудита пока нет.</td></tr>
             {% endfor %}
           </tbody>
         </table>

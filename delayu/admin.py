@@ -7,9 +7,11 @@ from .models import (
     InvestHandoff,
     InvestImportBatch,
     InvestImportRow,
+    InvestInvestor,
     InvestIntegrationEvent,
     InvestPackage,
     InvestPackageItem,
+    InvestPackageSnapshot,
     InvestProject,
     InvestProjectSite,
     InvestRoadmapItem,
@@ -73,9 +75,16 @@ class SubsystemMembershipAdmin(admin.ModelAdmin):
 
 @admin.register(InvestProject)
 class InvestProjectAdmin(admin.ModelAdmin):
-    list_display = ("code", "name", "subsystem", "organization", "stage", "owner")
+    list_display = ("code", "name", "subsystem", "organization", "investor_entity", "stage", "owner")
     list_filter = ("subsystem", "organization", "stage", "funnel")
     search_fields = ("code", "name", "investor_name")
+
+
+@admin.register(InvestInvestor)
+class InvestInvestorAdmin(admin.ModelAdmin):
+    list_display = ("name", "inn", "subsystem", "updated_at")
+    list_filter = ("subsystem",)
+    search_fields = ("name", "inn")
 
 
 @admin.register(InvestSite)
@@ -108,6 +117,12 @@ class InvestPackageItemAdmin(admin.ModelAdmin):
     list_display = ("package", "code", "title", "status", "required", "due_at")
     list_filter = ("status", "required")
     search_fields = ("code", "title")
+
+
+@admin.register(InvestPackageSnapshot)
+class InvestPackageSnapshotAdmin(admin.ModelAdmin):
+    list_display = ("project", "decision", "created_at")
+    list_filter = ("decision",)
 
 
 @admin.register(InvestRoadmapItem)
