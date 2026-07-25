@@ -88,6 +88,12 @@
           <label class="form-label" for="{{ form.zone_info.id_for_label }}">{{ form.zone_info.label }}</label>
           {{ form.zone_info }}
         </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.restriction_zones.id_for_label }}">{{ form.restriction_zones.label }}</label>
+          {{ form.restriction_zones }}
+          {% if form.restriction_zones.help_text %}<div class="form-text">{{ form.restriction_zones.help_text }}</div>{% endif %}
+          {% for error in form.restriction_zones.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
       </div>
 
       <div class="d-flex justify-content-end gap-2">

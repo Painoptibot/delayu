@@ -1,0 +1,52 @@
+{% extends layout_path %}
+
+{% block title %}Сравнение площадок{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Сравнение площадок</h4>
+    <p class="text-muted mb-0">До трёх кандидатов рядом: кадастр, площадь, ВРИ, статус и МО.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">К площадкам</a>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-bordered mb-0">
+      <thead>
+        <tr>
+          <th style="width: 180px;">Поле</th>
+          {% for site in sites %}
+          <th><a href="{% url 'invest-site-detail' site.pk %}">{{ site.name }}</a></th>
+          {% empty %}
+          <th class="text-muted">Выберите площадки через параметр ids=1,2,3</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Кадастровый номер</th>
+          {% for site in sites %}<td>{{ site.cadastral_number }}</td>{% empty %}<td>—</td>{% endfor %}
+        </tr>
+        <tr>
+          <th>Площадь, га</th>
+          {% for site in sites %}<td>{{ site.area_ha|default:"—" }}</td>{% empty %}<td>—</td>{% endfor %}
+        </tr>
+        <tr>
+          <th>ВРИ</th>
+          {% for site in sites %}<td>{{ site.vri|default:"—" }}</td>{% empty %}<td>—</td>{% endfor %}
+        </tr>
+        <tr>
+          <th>Статус</th>
+          {% for site in sites %}<td>{{ site.get_status_display }}</td>{% empty %}<td>—</td>{% endfor %}
+        </tr>
+        <tr>
+          <th>МО</th>
+          {% for site in sites %}<td>{{ site.organization }}</td>{% empty %}<td>—</td>{% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

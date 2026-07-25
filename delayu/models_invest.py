@@ -93,6 +93,7 @@ class InvestSite(models.Model):
     right_type = models.CharField("Вид права", max_length=128, blank=True)
     encumbrances = models.TextField("Обременения / ограничения", blank=True)
     zone_info = models.TextField("Зоны / пересечения (черновик)", blank=True)
+    restriction_zones = models.JSONField("Ограничительные зоны", default=list, blank=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
     completeness_pct = models.PositiveSmallIntegerField("Полнота карточки, %", default=0)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
@@ -121,6 +122,7 @@ class InvestProjectSite(models.Model):
     project = models.ForeignKey(InvestProject, on_delete=models.CASCADE, related_name="site_links")
     site = models.ForeignKey(InvestSite, on_delete=models.CASCADE, related_name="project_links")
     role = models.CharField(max_length=16, choices=Role.choices, default=Role.CANDIDATE)
+    booked_until = models.DateTimeField("Бронь до", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -23,13 +23,14 @@ from delayu.models_invest import (
     InvestInvestor,
     InvestPackageItem,
     InvestProject,
+    InvestProjectSite,
     InvestRoadmapItem,
     InvestSite,
     InvestSmevRequest,
 )
 from delayu.services.access import get_membership_or_403, user_can
 from delayu.services import audit
-from delayu.services.invest_booking import InvestBookingError, book_site, select_site
+from delayu.services.invest_booking import InvestBookingError, book_site, expire_overdue_bookings, select_site
 from delayu.services.invest_dashboard import build_dashboard
 from delayu.services.invest_dedup import ignore_duplicate_pair, suspected_duplicate_pairs
 from delayu.services.invest_escalation import refresh_invest_sla
@@ -159,6 +160,34 @@ def _completeness_actions(project, blockers):
     if project.investment_amount is None:
         actions.append("Укажите объём инвестиций")
     return list(dict.fromkeys(actions))
+
+
+def _coordinates_for_site(site):
+    if site.latitude is not None and site.longitude is not None:
+        return str(site.latitude), str(site.longitude)
+    external = site.external_ids or {}
+    coordinates = external.get("coordinates") or external.get("coords")
+    if isinstance(coordinates, dict):
+        lat = coordinates.get("lat") or coordinates.get("latitude")
+        lon = coordinates.get("lon") or coordinates.get("lng") or coordinates.get("longitude")
+        if lat and lon:
+            return str(lat), str(lon)
+    if isinstance(coordinates, (list, tuple)) and len(coordinates) >= 2:
+        return str(coordinates[0]), str(coordinates[1])
+    if isinstance(coordinates, str) and "," in coordinates:
+        lat, lon = coordinates.split(",", 1)
+        return lat.strip(), lon.strip()
+    return None, None
+
+
+def _smev_payload_summary(payload):
+    if not payload:
+        return "—"
+    keys = ("source", "area_ha", "vri", "land_category", "right_type", "received_at")
+    parts = [f"{key}: {payload[key]}" for key in keys if payload.get(key)]
+    if parts:
+        return "; ".join(parts)
+    return "; ".join(f"{key}: {value}" for key, value in list(payload.items())[:4])
 
 
 class InvestHubView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
@@ -678,6 +707,73 @@ class InvestSiteListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
         return ctx
 
 
+class InvestSiteMapView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/sites_map.html"
+    page_title = "Карта инвестплощадок"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        sites = sites_for_membership(self.get_membership()).select_related("organization")
+        mapped_sites = []
+        for site in sites:
+            lat, lon = _coordinates_for_site(site)
+            mapped_sites.append({"site": site, "latitude": lat, "longitude": lon, "has_coordinates": bool(lat and lon)})
+        ctx["mapped_sites"] = mapped_sites
+        ctx["has_coordinates"] = any(entry["has_coordinates"] for entry in mapped_sites)
+        return ctx
+
+
+class InvestSiteCompareView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/sites_compare.html"
+    page_title = "Сравнение площадок"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        raw_ids = (self.request.GET.get("ids") or "").replace(";", ",").split(",")
+        ids = []
+        for raw_id in raw_ids:
+            if raw_id.strip().isdigit():
+                ids.append(int(raw_id.strip()))
+            if len(ids) == 3:
+                break
+        sites = list(
+            sites_for_membership(self.get_membership())
+            .filter(pk__in=ids)
+            .select_related("organization")
+        )
+        site_by_id = {site.pk: site for site in sites}
+        ctx["sites"] = [site_by_id[site_id] for site_id in ids if site_id in site_by_id]
+        ctx["requested_ids"] = ",".join(str(site_id) for site_id in ids)
+        return ctx
+
+
+class InvestBookingsView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, ListView):
+    model = InvestProjectSite
+    template_name = "invest/bookings.html"
+    context_object_name = "bookings"
+    page_title = "Брони площадок"
+    required_action = "change"
+    http_method_names = ["get", "post", "head", "options"]
+
+    def get_queryset(self):
+        membership = self.get_membership()
+        return (
+            InvestProjectSite.objects.filter(
+                project__in=projects_for_membership(membership),
+                site__in=sites_for_membership(membership),
+                role__in=(InvestProjectSite.Role.BOOKED, InvestProjectSite.Role.SELECTED),
+            )
+            .select_related("project", "project__organization", "site", "site__organization")
+            .order_by("booked_until", "project__code", "site__cadastral_number")
+        )
+
+    def post(self, request, *args, **kwargs):
+        if request.POST.get("action") == "expire":
+            expired = expire_overdue_bookings(subsystem=self.get_subsystem())
+            messages.success(request, f"Просроченные брони сняты: {expired}.")
+        return redirect(reverse("invest-bookings"))
+
+
 class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailView):
     model = InvestSite
     template_name = "invest/site_detail.html"
@@ -694,6 +790,14 @@ class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailVi
         ctx["project_links"] = self.object.project_links.select_related("project", "project__organization")
         ctx["projects"] = projects_for_membership(membership).select_related("organization").order_by("code")
         ctx["smev_requests"] = self.object.smev_requests.all()[:10]
+        egrn_requests = self.object.smev_requests.filter(service=InvestSmevRequest.Service.EGRN)[:10]
+        ctx["egrn_history"] = [
+            {
+                "request": request,
+                "payload_summary": _smev_payload_summary(request.response_payload),
+            }
+            for request in egrn_requests
+        ]
         ctx["smev_services"] = InvestSmevRequest.Service.choices
         return _with_odysseus_cta(self.request, ctx, membership=membership, site=self.object)
 

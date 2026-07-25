@@ -1,4 +1,5 @@
 """Forms for invest subsystem screens."""
+import json
 
 from django import forms
 from django.contrib.auth import get_user_model
@@ -174,6 +175,13 @@ class InvestProjectForm(BootstrapFormMixin, forms.ModelForm):
 class InvestSiteForm(BootstrapFormMixin, forms.ModelForm):
     """Site form scoped to the active invest subsystem."""
 
+    restriction_zones = forms.CharField(
+        label="Ограничительные зоны",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+        help_text="JSON-массив или по одной зоне на строку.",
+    )
+
     class Meta:
         model = InvestSite
         fields = [
@@ -187,6 +195,7 @@ class InvestSiteForm(BootstrapFormMixin, forms.ModelForm):
             "right_type",
             "encumbrances",
             "zone_info",
+            "restriction_zones",
             "status",
             "completeness_pct",
             "latitude",
@@ -205,6 +214,8 @@ class InvestSiteForm(BootstrapFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.membership = membership
         subsystem = membership.subsystem if membership else getattr(self.instance, "subsystem", None)
+        if self.instance and self.instance.pk:
+            self.fields["restriction_zones"].initial = "\n".join(self.instance.restriction_zones or [])
         if subsystem:
             self.fields["organization"].queryset = subsystem.organizations.filter(is_active=True)
         if self._is_mo_membership():
@@ -220,6 +231,7 @@ class InvestSiteForm(BootstrapFormMixin, forms.ModelForm):
             "right_type",
             "encumbrances",
             "zone_info",
+            "restriction_zones",
         ):
             self.fields[field_name].required = False
         _apply_bootstrap(self.fields)
@@ -234,3 +246,17 @@ class InvestSiteForm(BootstrapFormMixin, forms.ModelForm):
         if self._is_mo_membership() and organization != self.membership.organization:
             raise forms.ValidationError("Организация должна совпадать с вашим МО.")
         return organization
+
+    def clean_restriction_zones(self):
+        raw = (self.cleaned_data.get("restriction_zones") or "").strip()
+        if not raw:
+            return []
+        if raw.startswith("["):
+            try:
+                value = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise forms.ValidationError("Укажите корректный JSON-массив зон.") from exc
+            if not isinstance(value, list):
+                raise forms.ValidationError("Ограничительные зоны должны быть списком.")
+            return [str(item).strip() for item in value if str(item).strip()]
+        return [line.strip() for line in raw.replace(",", "\n").splitlines() if line.strip()]

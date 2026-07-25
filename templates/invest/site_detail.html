@@ -52,6 +52,14 @@
           <dd class="col-sm-7">{{ site.encumbrances|default:"—" }}</dd>
           <dt class="col-sm-5">Зоны / пересечения</dt>
           <dd class="col-sm-7">{{ site.zone_info|default:"—" }}</dd>
+          <dt class="col-sm-5">Ограничительные зоны</dt>
+          <dd class="col-sm-7">
+            {% for zone in site.restriction_zones %}
+            <span class="badge bg-label-warning me-1 mb-1">{{ zone }}</span>
+            {% empty %}
+            —
+            {% endfor %}
+          </dd>
           <dt class="col-sm-5">Координаты</dt>
           <dd class="col-sm-7">{{ site.latitude|default:"—" }}, {{ site.longitude|default:"—" }}</dd>
           <dt class="col-sm-5">ЕГРН обновлён</dt>
@@ -116,6 +124,38 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5 class="mb-0">История ЕГРН</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Сервис</th>
+              <th>Статус</th>
+              <th>Создан</th>
+              <th>Завершён</th>
+              <th>Сводка ответа</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in egrn_history %}
+            <tr>
+              <td>{{ entry.request.get_service_display }}</td>
+              <td>{{ entry.request.get_status_display }}</td>
+              <td>{{ entry.request.created_at|date:"d.m.Y H:i" }}</td>
+              <td>{% if entry.request.finished_at %}{{ entry.request.finished_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+              <td>{{ entry.payload_summary }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-muted">Запросов ЕГРН пока нет.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

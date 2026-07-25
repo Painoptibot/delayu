@@ -1,0 +1,90 @@
+{% extends layout_path %}
+
+{% block title %}Карта инвестплощадок{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Карта инвестплощадок</h4>
+    <p class="text-muted mb-0">Площадки с координатами показаны на карте, остальные доступны в таблице.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">К списку</a>
+  </div>
+</div>
+
+{% if has_coordinates %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<div class="card mb-4">
+  <div class="card-body p-0">
+    <div id="invest-sites-map" style="height: 420px;"></div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const points = [
+      {% for entry in mapped_sites %}
+      {% if entry.has_coordinates %}
+      {
+        lat: {{ entry.latitude }},
+        lon: {{ entry.longitude }},
+        name: "{{ entry.site.name|escapejs }}",
+        cadastral: "{{ entry.site.cadastral_number|escapejs }}",
+        url: "{% url 'invest-site-detail' entry.site.pk %}"
+      },
+      {% endif %}
+      {% endfor %}
+    ];
+    const map = L.map("invest-sites-map");
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+    const bounds = [];
+    points.forEach(function (point) {
+      const marker = L.marker([point.lat, point.lon]).addTo(map);
+      marker.bindPopup(`<a href="${point.url}">${point.cadastral}</a><br>${point.name}`);
+      bounds.push([point.lat, point.lon]);
+    });
+    if (bounds.length) {
+      map.fitBounds(bounds, {padding: [24, 24]});
+    }
+  });
+</script>
+{% endif %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Кадастровый номер</th>
+          <th>Наименование</th>
+          <th>МО</th>
+          <th>Координаты</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in mapped_sites %}
+        <tr>
+          <td><a href="{% url 'invest-site-detail' entry.site.pk %}">{{ entry.site.cadastral_number }}</a></td>
+          <td>{{ entry.site.name }}</td>
+          <td>{{ entry.site.organization }}</td>
+          <td>
+            {% if entry.has_coordinates %}
+            {{ entry.latitude }}, {{ entry.longitude }}
+            <a class="ms-2" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat={{ entry.latitude }}&mlon={{ entry.longitude }}#map=15/{{ entry.latitude }}/{{ entry.longitude }}">OSM</a>
+            {% else %}
+            <span class="text-muted">Нет координат</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-muted">Площадок пока нет.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

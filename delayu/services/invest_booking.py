@@ -1,4 +1,6 @@
 from django.db import transaction
+from django.utils import timezone
+
 from delayu.models_invest import InvestProjectSite, InvestSite
 
 ACTIVE_ROLES = (InvestProjectSite.Role.BOOKED, InvestProjectSite.Role.SELECTED)
@@ -43,3 +45,18 @@ def select_site(*, project, site, user) -> InvestProjectSite:
     link.role = InvestProjectSite.Role.SELECTED
     link.save(update_fields=["role", "updated_at"])
     return link
+
+
+@transaction.atomic
+def expire_overdue_bookings(*, subsystem=None, now=None) -> int:
+    now = now or timezone.now()
+    qs = InvestProjectSite.objects.select_for_update().filter(
+        role=InvestProjectSite.Role.BOOKED,
+        booked_until__isnull=False,
+        booked_until__lte=now,
+    )
+    if subsystem is not None:
+        qs = qs.filter(project__subsystem=subsystem)
+    count = qs.count()
+    qs.update(role=InvestProjectSite.Role.CANDIDATE, booked_until=None, updated_at=now)
+    return count
