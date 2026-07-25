@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 from django.views.generic import TemplateView
 
-from delayu.forms_invest_automation import InvestAutomationConnectionForm
+from delayu.forms_invest_automation import InvestAutomationConnectionForm, InvestAutomationFlagsForm
 from delayu.mixins import ModulePermissionMixin
 from delayu.models import Subsystem
 from delayu.services.access import get_membership_or_403
@@ -90,6 +90,23 @@ class InvestAutomationConnectionView(InvestAutomationAdminMixin, TemplateView):
 class InvestAutomationFlagsView(InvestAutomationAdminMixin, TemplateView):
     template_name = "invest/automation/flags.html"
     automation_tab = "flags"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["form"] = InvestAutomationFlagsForm(initial_flags=ctx["flags"])
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        cfg = self.get_config()
+        form = InvestAutomationFlagsForm(request.POST, initial_flags=cfg.get_flags())
+        if form.is_valid():
+            cfg.flags = form.cleaned_flags()
+            cfg.save(update_fields=["flags", "updated_at"])
+            messages.success(request, "Компоненты сохранены.")
+            return redirect("invest-automation-flags")
+        ctx = self.get_context_data()
+        ctx["form"] = form
+        return self.render_to_response(ctx)
 
 
 class InvestAutomationMappingView(InvestAutomationAdminMixin, TemplateView):

@@ -182,6 +182,23 @@ def test_connection_post_saves_token(client, invest_roles_ctx):
 
 
 @pytest.mark.django_db
+def test_flags_post_persists(client, invest_roles_ctx):
+    user, _ = _member(invest_roles_ctx, "adm4", "invest_admin")
+    cfg = ensure_automation_config(invest_roles_ctx["sub"])
+    client.force_login(user)
+    resp = client.post(
+        reverse("invest-automation-flags"),
+        {"bitrix_inbound": "on", "sandbox": "on", "auto_package": "on"},
+    )
+    assert resp.status_code == 302
+    cfg.refresh_from_db()
+    flags = cfg.get_flags()
+    assert flags["bitrix_inbound"] is True
+    assert flags["sandbox"] is True
+    assert flags["auto_smev"] is False
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "url_name",
     [

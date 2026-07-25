@@ -6,13 +6,131 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
   <div>
     <h4 class="mb-1">{{ page_title }}</h4>
-    <p class="text-body-secondary mb-0">Компоненты автоматизации будут настроены в следующей задаче.</p>
+    <p class="text-body-secondary mb-0">Включение и отключение компонентов автоматизации инвестконтура.</p>
   </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-hub' %}">К инвестконтуру</a>
 </div>
 
 {% include "invest/automation/_nav.html" %}
 
 <div class="card">
-  <div class="card-body text-muted">Раздел компонентов автоматизации будет заполнен позже.</div>
+  <div class="card-header">
+    <h5 class="mb-0">Компоненты</h5>
+  </div>
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <h6 class="text-muted text-uppercase small mb-3">Bitrix</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.bitrix_inbound }}
+            <label class="form-check-label" for="{{ form.bitrix_inbound.id_for_label }}">{{ form.bitrix_inbound.label }}</label>
+            {% for error in form.bitrix_inbound.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.bitrix_outbound }}
+            <label class="form-check-label" for="{{ form.bitrix_outbound.id_for_label }}">{{ form.bitrix_outbound.label }}</label>
+            {% for error in form.bitrix_outbound.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.bitrix_full_duplex }}
+            <label class="form-check-label" for="{{ form.bitrix_full_duplex.id_for_label }}">{{ form.bitrix_full_duplex.label }}</label>
+            {% for error in form.bitrix_full_duplex.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.sandbox }}
+            <label class="form-check-label" for="{{ form.sandbox.id_for_label }}">{{ form.sandbox.label }}</label>
+            {% for error in form.sandbox.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <h6 class="text-muted text-uppercase small mb-3">СМЭВ</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.smev_mock }}
+            <label class="form-check-label" for="{{ form.smev_mock.id_for_label }}">{{ form.smev_mock.label }}</label>
+            {% for error in form.smev_mock.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.smev_live }}
+            <label class="form-check-label" for="{{ form.smev_live.id_for_label }}">{{ form.smev_live.label }}</label>
+            {% for error in form.smev_live.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.auto_smev }}
+            <label class="form-check-label" for="{{ form.auto_smev.id_for_label }}">{{ form.auto_smev.label }}</label>
+            {% for error in form.auto_smev.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <h6 class="text-muted text-uppercase small mb-3">Пайплайн</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.auto_package }}
+            <label class="form-check-label" for="{{ form.auto_package.id_for_label }}">{{ form.auto_package.label }}</label>
+            {% for error in form.auto_package.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.auto_site_match }}
+            <label class="form-check-label" for="{{ form.auto_site_match.id_for_label }}">{{ form.auto_site_match.label }}</label>
+            {% for error in form.auto_site_match.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.auto_mo_tasks }}
+            <label class="form-check-label" for="{{ form.auto_mo_tasks.id_for_label }}">{{ form.auto_mo_tasks.label }}</label>
+            {% for error in form.auto_mo_tasks.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.auto_tp_tasks }}
+            <label class="form-check-label" for="{{ form.auto_tp_tasks.id_for_label }}">{{ form.auto_tp_tasks.label }}</label>
+            {% for error in form.auto_tp_tasks.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.auto_escalations }}
+            <label class="form-check-label" for="{{ form.auto_escalations.id_for_label }}">{{ form.auto_escalations.label }}</label>
+            {% for error in form.auto_escalations.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-check">
+            {{ form.gate_before_outbound }}
+            <label class="form-check-label" for="{{ form.gate_before_outbound.id_for_label }}">{{ form.gate_before_outbound.label }}</label>
+            {% for error in form.gate_before_outbound.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end">
+        <button class="btn btn-primary" type="submit">Сохранить</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
