@@ -8,12 +8,20 @@ from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 from django.views.generic import TemplateView
 
-from delayu.forms_invest_automation import InvestAutomationConnectionForm, InvestAutomationFlagsForm
+from delayu.forms_invest_automation import (
+    InvestAutomationConnectionForm,
+    InvestAutomationFlagsForm,
+    InvestAutomationMappingForm,
+)
 from delayu.mixins import ModulePermissionMixin
 from delayu.models import Subsystem
 from delayu.services.access import get_membership_or_403
 from delayu.services.invest_automation_access import user_can_manage_invest_automation
-from delayu.services.invest_flags import ensure_automation_config
+from delayu.services.invest_flags import (
+    DEFAULT_FIELD_MAPPING_V1,
+    DEFAULT_STAGE_MAPPING_V1,
+    ensure_automation_config,
+)
 from delayu.views_invest import InvestSubsystemMixin
 
 
@@ -112,6 +120,37 @@ class InvestAutomationFlagsView(InvestAutomationAdminMixin, TemplateView):
 class InvestAutomationMappingView(InvestAutomationAdminMixin, TemplateView):
     template_name = "invest/automation/mapping.html"
     automation_tab = "mapping"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["form"] = InvestAutomationMappingForm.from_config(ctx["config"])
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        cfg = self.get_config()
+        if request.POST.get("action") == "reset":
+            cfg.field_mapping = dict(DEFAULT_FIELD_MAPPING_V1)
+            cfg.stage_mapping = {k: list(v) for k, v in DEFAULT_STAGE_MAPPING_V1.items()}
+            cfg.save(update_fields=["field_mapping", "stage_mapping", "updated_at"])
+            messages.success(request, "Mapping сброшен к v1.")
+            return redirect("invest-automation-mapping")
+        form = InvestAutomationMappingForm(request.POST)
+        if form.is_valid():
+            fields = form.cleaned_field_mapping()
+            stages = form.cleaned_stage_mapping()
+            if not fields and not stages:
+                messages.warning(request, "Пустой mapping не сохранён — используйте сброс к defaults.")
+                return redirect("invest-automation-mapping")
+            if fields:
+                cfg.field_mapping = fields
+            if stages:
+                cfg.stage_mapping = stages
+            cfg.save(update_fields=["field_mapping", "stage_mapping", "updated_at"])
+            messages.success(request, "Mapping сохранён.")
+            return redirect("invest-automation-mapping")
+        ctx = self.get_context_data()
+        ctx["form"] = form
+        return self.render_to_response(ctx)
 
 
 class InvestAutomationStatusView(InvestAutomationAdminMixin, TemplateView):

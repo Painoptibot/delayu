@@ -6,13 +6,48 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
   <div>
     <h4 class="mb-1">{{ page_title }}</h4>
-    <p class="text-body-secondary mb-0">Mapping полей Bitrix24 будет настроен в следующей задаче.</p>
+    <p class="text-body-secondary mb-0">Соответствие полей и стадий Bitrix24 атрибутам и этапам Delayu.</p>
   </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-hub' %}">К инвестконтуру</a>
 </div>
 
 {% include "invest/automation/_nav.html" %}
 
 <div class="card">
-  <div class="card-body text-muted">Раздел mapping будет заполнен позже.</div>
+  <div class="card-header">
+    <h5 class="mb-0">Mapping</h5>
+  </div>
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="row g-4">
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.field_rows.id_for_label }}">Поля Bitrix → Delayu</label>
+          {{ form.field_rows }}
+          {% if form.field_rows.help_text %}
+          <div class="form-text">{{ form.field_rows.help_text }}</div>
+          {% endif %}
+          {% for error in form.field_rows.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.stage_rows.id_for_label }}">Стадии Bitrix → воронка/этап</label>
+          {{ form.stage_rows }}
+          {% if form.stage_rows.help_text %}
+          <div class="form-text">{{ form.stage_rows.help_text }}</div>
+          {% endif %}
+          {% for error in form.stage_rows.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+        <button class="btn btn-outline-secondary" type="submit" name="action" value="reset">Сбросить к v1</button>
+        <button class="btn btn-primary" type="submit" name="action" value="save">Сохранить</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

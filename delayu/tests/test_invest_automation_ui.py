@@ -199,6 +199,40 @@ def test_flags_post_persists(client, invest_roles_ctx):
 
 
 @pytest.mark.django_db
+def test_mapping_post_saves(client, invest_roles_ctx):
+    user, _ = _member(invest_roles_ctx, "adm5", "invest_admin")
+    cfg = ensure_automation_config(invest_roles_ctx["sub"])
+    client.force_login(user)
+    resp = client.post(
+        reverse("invest-automation-mapping"),
+        {
+            "action": "save",
+            "field_rows": "TITLE=name\nUF_X=investor_name",
+            "stage_rows": "NEW=attraction/lead",
+        },
+    )
+    assert resp.status_code == 302
+    cfg.refresh_from_db()
+    assert cfg.field_mapping["UF_X"] == "investor_name"
+    assert cfg.stage_mapping["NEW"] == ["attraction", "lead"]
+
+
+@pytest.mark.django_db
+def test_mapping_reset_defaults(client, invest_roles_ctx):
+    from delayu.services.invest_flags import DEFAULT_FIELD_MAPPING_V1
+
+    user, _ = _member(invest_roles_ctx, "adm6", "invest_admin")
+    cfg = ensure_automation_config(invest_roles_ctx["sub"])
+    cfg.field_mapping = {"X": "y"}
+    cfg.save(update_fields=["field_mapping"])
+    client.force_login(user)
+    resp = client.post(reverse("invest-automation-mapping"), {"action": "reset"})
+    assert resp.status_code == 302
+    cfg.refresh_from_db()
+    assert cfg.field_mapping == DEFAULT_FIELD_MAPPING_V1
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "url_name",
     [
