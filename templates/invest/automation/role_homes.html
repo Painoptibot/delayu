@@ -1,0 +1,74 @@
+{% extends layout_path %}
+
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-body-secondary mb-0">Blurb overrides are stored in automation config options.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-hub' %}">К инвестконтуру</a>
+</div>
+
+{% include "invest/automation/_nav.html" %}
+
+{% if messages %}
+<div class="mb-4">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0">Override role home</h5></div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" for="role-code">Роль</label>
+            <select class="form-select" id="role-code" name="role_code">
+              {% for code, label in role_choices %}
+              <option value="{{ code }}">{{ label }} ({{ code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="role-title">Заголовок</label>
+            <input class="form-control" id="role-title" name="title" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="role-blurb">Blurb</label>
+            <textarea class="form-control" id="role-blurb" name="blurb" rows="4"></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit">Сохранить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0">Current overrides</h5></div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Role</th><th>Title</th><th>Blurb</th></tr></thead>
+          <tbody>
+            {% for code, home in role_homes.items %}
+            <tr>
+              <td>{{ code }}</td>
+              <td>{{ home.title }}</td>
+              <td>{{ home.blurb }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-muted">Overrides are not configured yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

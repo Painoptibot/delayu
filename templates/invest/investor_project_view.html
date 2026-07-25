@@ -1,0 +1,27 @@
+{% extends layout_path %}
+
+{% block title %}Investor view{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">Investor view</h4>
+    <p class="text-body-secondary mb-0">Read-only project summary with limited fields.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-hub' %}">К инвестконтуру</a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">{{ project.name }}</h5>
+  </div>
+  <div class="card-body">
+    <dl class="row mb-0">
+      {% for label, value in limited_fields %}
+      <dt class="col-sm-4">{{ label }}</dt>
+      <dd class="col-sm-8">{{ value }}</dd>
+      {% endfor %}
+    </dl>
+  </div>
+</div>
+{% endblock %}

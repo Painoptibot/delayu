@@ -555,3 +555,18 @@ class InvestQuarterTarget(models.Model):
 
     def __str__(self):
         return f"{self.subsystem_id} Q{self.quarter}/{self.year}: {self.attraction_goal}"
+
+
+class InvestProjectComment(models.Model):
+    project = models.ForeignKey(InvestProject, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+")
+    body = models.TextField("Комментарий")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        verbose_name = "Комментарий инвестпроекта"
+        verbose_name_plural = "Комментарии инвестпроектов"
+
+    def __str__(self):
+        return f"{self.project.code}: {self.body[:40]}"

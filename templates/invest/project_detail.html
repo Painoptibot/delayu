@@ -415,6 +415,33 @@
         </table>
       </div>
     </div>
+
+    <div class="card mt-4">
+      <div class="card-header"><h5 class="mb-0">Комментарии</h5></div>
+      <div class="list-group list-group-flush">
+        {% for comment in project_comments %}
+        <div class="list-group-item">
+          <div class="d-flex justify-content-between gap-3">
+            <div class="fw-medium">{{ comment.author|default:"—" }}</div>
+            <div class="small text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</div>
+          </div>
+          <div class="mt-1">{{ comment.body|linebreaksbr }}</div>
+        </div>
+        {% empty %}
+        <div class="list-group-item text-muted">Комментариев пока нет.</div>
+        {% endfor %}
+      </div>
+      {% if can_comment_project %}
+      <div class="card-footer">
+        <form method="post" action="{% url 'invest-project-comment-add' project.pk %}">
+          {% csrf_token %}
+          <label class="form-label" for="project-comment-body">Новый комментарий</label>
+          <textarea class="form-control mb-3" id="project-comment-body" name="body" rows="3" required></textarea>
+          <button class="btn btn-primary" type="submit">Добавить комментарий</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
   </div>
 </div>
 {% endblock %}

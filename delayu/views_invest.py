@@ -32,7 +32,7 @@ from delayu.forms_invest import (
     OKVED_INDUSTRIES,
 )
 from delayu.mixins import ModulePermissionMixin
-from delayu.models import AuditLog, DocumentFile, Subsystem
+from delayu.models import AuditLog, DocumentFile, Subsystem, UserProfile
 from delayu.models_invest import (
     InvestExternalTask,
     InvestHandoff,
@@ -41,6 +41,7 @@ from delayu.models_invest import (
     InvestInvestor,
     InvestPackageItem,
     InvestProject,
+    InvestProjectComment,
     InvestProjectSite,
     InvestRoadmapItem,
     InvestSite,
@@ -118,8 +119,36 @@ ROLE_HOMES = {
 def _role_home_for_membership(membership):
     role_code = membership.role.code
     home = dict(ROLE_HOMES.get(role_code) or ROLE_HOMES["invest_agency"])
+    role_homes = (ensure_automation_config(membership.subsystem).options or {}).get("role_homes") or {}
+    override = role_homes.get(role_code) or {}
+    for key in ("title", "blurb"):
+        value = (override.get(key) or "").strip()
+        if value:
+            home[key] = value
     home["role_code"] = role_code
     return home
+
+
+INVEST_ONBOARDING_STEPS = [
+    {"id": "hub", "title": "Откройте обзор инвестконтура", "url_name": "invest-hub"},
+    {"id": "inbox", "title": "Проверьте inbox Сегодня", "url_name": "invest-inbox"},
+    {"id": "project_list", "title": "Откройте реестр проектов", "url_name": "invest-projects"},
+    {"id": "project_detail", "title": "Изучите карточку проекта", "url_name": "invest-projects"},
+    {"id": "dashboard", "title": "Посмотрите дашборд", "url_name": "invest-dashboard"},
+    {"id": "kanban", "title": "Проверьте канбан", "url_name": "invest-kanban"},
+    {"id": "sites", "title": "Откройте каталог площадок", "url_name": "invest-sites"},
+    {"id": "handoffs", "title": "Проверьте передачи", "url_name": "invest-handoffs"},
+    {"id": "automation", "title": "Проверьте автоматизацию", "url_name": "invest-automation"},
+    {"id": "comments", "title": "Оставьте рабочий комментарий", "url_name": "invest-projects"},
+]
+
+
+def _invest_onboarding_state(user):
+    profile, _ = UserProfile.objects.get_or_create(user=user, defaults={"is_platform_admin": False})
+    state = dict(profile.onboarding_state or {})
+    invest = dict(state.get("invest") or {})
+    invest.setdefault("completed", [])
+    return profile, state, invest
 
 
 class InvestSubsystemMixin(AccessMixin):
@@ -397,6 +426,43 @@ class InvestHubView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
         ctx["can_create_project"] = user_can(self.request.user, self.module_code, "create")
         ctx["role_home"] = _role_home_for_membership(membership)
         return _with_odysseus_cta(self.request, ctx, membership=membership)
+
+
+class InvestOnboardingView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/onboarding.html"
+    page_title = "Онбординг инвестконтура"
+    http_method_names = ["get", "post", "head", "options"]
+
+    def post(self, request, *args, **kwargs):
+        step_id = (request.POST.get("step_id") or "").strip()
+        valid_ids = {step["id"] for step in INVEST_ONBOARDING_STEPS}
+        if step_id in valid_ids:
+            profile, state, invest = _invest_onboarding_state(request.user)
+            completed = list(invest.get("completed") or [])
+            if step_id not in completed:
+                completed.append(step_id)
+            invest["completed"] = completed
+            state["invest"] = invest
+            profile.onboarding_state = state
+            profile.save(update_fields=["onboarding_state", "updated_at"])
+            messages.success(request, "Шаг онбординга отмечен.")
+        return redirect(reverse("invest-onboarding"))
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        _, _, invest = _invest_onboarding_state(self.request.user)
+        completed = set(invest.get("completed") or [])
+        steps = []
+        for index, step in enumerate(INVEST_ONBOARDING_STEPS, start=1):
+            row = dict(step)
+            row["index"] = index
+            row["done"] = row["id"] in completed
+            row["url"] = reverse(row["url_name"])
+            steps.append(row)
+        ctx["invest_onboarding_steps"] = steps
+        ctx["invest_onboarding_completed"] = len(completed.intersection({step["id"] for step in steps}))
+        ctx["invest_onboarding_total"] = len(steps)
+        return ctx
 
 
 class InvestDashboardView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
@@ -712,7 +778,48 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
             model_name__iexact="InvestProject",
             object_id=str(project.pk),
         )[:20]
+        ctx["project_comments"] = project.comments.select_related("author")
+        ctx["can_comment_project"] = user_can(self.request.user, self.module_code, "change")
         return _with_odysseus_cta(self.request, ctx, membership=membership, project=project)
+
+
+class InvestInvestorProjectView(InvestSubsystemMixin, ModulePermissionMixin, DetailView):
+    model = InvestProject
+    template_name = "invest/investor_project_view.html"
+    context_object_name = "project"
+    page_title = "Investor view"
+
+    def get_queryset(self):
+        return projects_for_membership(self.get_membership()).select_related("organization")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["limited_fields"] = [
+            ("Код", self.object.code),
+            ("Проект", self.object.name),
+            ("Инвестор", self.object.investor_name or "—"),
+            ("Отрасль", self.object.industry or "—"),
+            ("Стадия", self.object.stage),
+            ("Воронка", self.object.get_funnel_display()),
+            ("МО / территория", self.object.organization.name),
+            ("Инвестиции, млн руб.", self.object.investment_amount or "—"),
+            ("Рабочие места", self.object.jobs_count or "—"),
+        ]
+        return ctx
+
+
+class InvestProjectCommentAddView(InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(projects_for_membership(self.get_membership()), pk=kwargs["pk"])
+        body = (request.POST.get("body") or "").strip()
+        if body:
+            InvestProjectComment.objects.create(project=project, author=request.user, body=body)
+            messages.success(request, "Комментарий добавлен.")
+        else:
+            messages.warning(request, "Введите текст комментария.")
+        return redirect(reverse("invest-project-detail", args=[project.pk]))
 
 
 class InvestProjectInnCheckView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):

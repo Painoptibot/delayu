@@ -269,6 +269,45 @@ class InvestEscalationRulesView(InvestAutomationAdminMixin, TemplateView):
         return self.render_to_response(ctx)
 
 
+class InvestRoleHomesView(InvestAutomationAdminMixin, TemplateView):
+    template_name = "invest/automation/role_homes.html"
+    automation_tab = "role_homes"
+    page_title = "Домашние экраны ролей"
+
+    role_choices = [
+        ("invest_agency", "Агентство"),
+        ("invest_dept", "Департамент"),
+        ("invest_mo", "МО"),
+        ("invest_admin", "Администратор"),
+        ("invest_viewer", "Наблюдатель"),
+    ]
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["role_choices"] = self.role_choices
+        ctx["role_homes"] = (ctx["config"].options or {}).get("role_homes") or {}
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        cfg = self.get_config()
+        role_code = (request.POST.get("role_code") or "").strip()
+        title = (request.POST.get("title") or "").strip()
+        blurb = (request.POST.get("blurb") or "").strip()
+        valid_codes = {code for code, _label in self.role_choices}
+        if role_code not in valid_codes or not title:
+            messages.error(request, "Выберите роль и укажите заголовок.")
+            return redirect("invest-role-homes")
+
+        options = dict(cfg.options or {})
+        role_homes = dict(options.get("role_homes") or {})
+        role_homes[role_code] = {"title": title, "blurb": blurb}
+        options["role_homes"] = role_homes
+        cfg.options = options
+        cfg.save(update_fields=["options", "updated_at"])
+        messages.success(request, "Домашний экран роли сохранён.")
+        return redirect("invest-role-homes")
+
+
 class InvestAutomationSimulateView(InvestAutomationAdminMixin, TemplateView):
     automation_tab = "status"
 
