@@ -335,6 +335,7 @@ class InvestAutomationConfig(models.Model):
     allowed_ips = models.JSONField(default=list, blank=True)
     field_mapping = models.JSONField(default=dict, blank=True)
     stage_mapping = models.JSONField(default=dict, blank=True)
+    options = models.JSONField(default=dict, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def get_flags(self) -> dict:

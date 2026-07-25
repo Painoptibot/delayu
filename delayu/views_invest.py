@@ -5,9 +5,10 @@ from django.contrib.auth.mixins import AccessMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.utils.dateparse import parse_date
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
@@ -214,9 +215,91 @@ class InvestDashboardView(InvestSubsystemMixin, ModulePermissionMixin, TemplateV
     template_name = "invest/dashboard.html"
     page_title = "Дашборд руководителя"
 
+    def get_dashboard_kwargs(self):
+        return {
+            "period": self.request.GET.get("period") or "",
+            "date_from": parse_date(self.request.GET.get("from") or ""),
+            "date_to": parse_date(self.request.GET.get("to") or ""),
+        }
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["dashboard"] = build_dashboard(self.get_subsystem())
+        ctx["dashboard"] = build_dashboard(self.get_subsystem(), **self.get_dashboard_kwargs())
+        ctx["period"] = self.request.GET.get("period") or "week"
+        ctx["date_from"] = self.request.GET.get("from") or ""
+        ctx["date_to"] = self.request.GET.get("to") or ""
+        return ctx
+
+
+class InvestDashboardExportView(InvestDashboardView):
+    def get(self, request, *args, **kwargs):
+        from openpyxl import Workbook
+        from openpyxl.styles import Font
+
+        dashboard = build_dashboard(self.get_subsystem(), **self.get_dashboard_kwargs())
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Funnel"
+        ws.append(["Воронка", "Стадия", "Проектов"])
+        for funnel_name, counts in (
+            ("Привлечение", dashboard["attraction_counts"]),
+            ("Сопровождение", dashboard["support_counts"]),
+        ):
+            for stage, total in counts.items():
+                ws.append([funnel_name, stage, total])
+
+        overdue_ws = wb.create_sheet("Overdue")
+        overdue_ws.append(["Показатель", "Значение"])
+        overdue_ws.append(["Просрочено шагов", dashboard["overdue_count"]])
+        overdue_ws.append(["Готовность пакетов, %", dashboard["packages_ready_pct"]])
+        overdue_ws.append(["Активные брони", dashboard["active_bookings"]])
+
+        bottlenecks_ws = wb.create_sheet("Bottlenecks")
+        bottlenecks_ws.append(["МО", "Просрочено"])
+        for row in dashboard["bottlenecks_by_org"]:
+            bottlenecks_ws.append([row["organization_name"], row["overdue_count"]])
+
+        industry_ws = wb.create_sheet("Industry")
+        industry_ws.append(["Отрасль", "Проектов", "Инвестиции, млн руб.", "Рабочие места"])
+        for row in dashboard["industry_metrics"]:
+            industry_ws.append([row["industry"], row["projects"], row["investment_amount"], row["jobs"]])
+
+        for sheet in wb.worksheets:
+            for cell in sheet[1]:
+                cell.font = Font(bold=True)
+            for column in sheet.columns:
+                letter = column[0].column_letter
+                sheet.column_dimensions[letter].width = max(len(str(cell.value or "")) for cell in column) + 2
+
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = 'attachment; filename="invest-dashboard.xlsx"'
+        wb.save(response)
+        return response
+
+
+class InvestKanbanView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/kanban.html"
+    page_title = "Канбан инвестпроектов"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        projects = projects_for_membership(self.get_membership()).select_related("organization", "owner")
+        kanban = {}
+        for funnel, _label in InvestProject.Funnel.choices:
+            kanban[funnel] = {}
+            for project in projects.filter(funnel=funnel).order_by("stage", "code"):
+                column = kanban[funnel].setdefault(
+                    project.stage,
+                    {
+                        "stage": project.stage,
+                        "label": InvestProjectForm.STAGE_LABELS.get(project.stage, project.stage),
+                        "projects": [],
+                    },
+                )
+                column["projects"].append(project)
+        ctx["kanban"] = kanban
         return ctx
 
 

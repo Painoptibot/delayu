@@ -1,0 +1,44 @@
+{% extends layout_path %}
+
+{% block title %}Канбан инвестпроектов{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Канбан инвестпроектов</h4>
+    <p class="text-muted mb-0">Проекты сгруппированы по стадиям привлечения и сопровождения.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-dashboard' %}">Дашборд</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Список</a>
+  </div>
+</div>
+
+{% for funnel, columns in kanban.items %}
+<div class="mb-6">
+  <h5 class="mb-3">{% if funnel == 'attraction' %}Привлечение{% else %}Сопровождение{% endif %}</h5>
+  <div class="d-flex gap-3 overflow-auto pb-2">
+    {% for stage, column in columns.items %}
+    <div class="card flex-shrink-0" style="width: 20rem;">
+      <div class="card-header">
+        <h6 class="mb-0">{{ column.label }}</h6>
+        <div class="text-muted small">{{ column.projects|length }} проектов</div>
+      </div>
+      <div class="card-body d-grid gap-3">
+        {% for project in column.projects %}
+        <a class="border rounded p-3 text-body d-block" href="{% url 'invest-project-detail' project.pk %}">
+          <div class="fw-medium">{{ project.code }} · {{ project.name }}</div>
+          <div class="text-muted small">{{ project.organization }}{% if project.investor_name %} · {{ project.investor_name }}{% endif %}</div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="card">
+      <div class="card-body text-muted">Проектов пока нет.</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -8,12 +8,24 @@ from django.utils import timezone
 from delayu.models import ActivityEvent
 from delayu.models_invest import InvestExternalTask, InvestIntegrationEvent, InvestRoadmapItem
 from delayu.services import audit
-from delayu.services.invest_flags import flag_enabled
+from delayu.services.invest_flags import ensure_automation_config, flag_enabled
 from delayu.services.invest_journal import log_event
 from delayu.services.invest_roadmap import mark_overdue
 
 
 ESCALATION_LADDER_HOURS = (24, 72, 120)  # D+1 / D+3 / D+5
+
+
+def _escalation_ladder_hours(subsystem) -> tuple[int, ...]:
+    rules = (ensure_automation_config(subsystem).options or {}).get("escalation_rules") or {}
+    try:
+        due_days = max(1, int(rules.get("due_days") or 1))
+    except (TypeError, ValueError):
+        due_days = 1
+    levels = rules.get("levels") or []
+    if not isinstance(levels, list) or not levels:
+        return ESCALATION_LADDER_HOURS
+    return tuple(due_days * 24 * idx for idx, _level in enumerate(levels, start=1))
 
 
 def escalate_overdue_roadmap(*, subsystem) -> int:
@@ -50,6 +62,7 @@ def escalate_external_tasks(*, subsystem) -> int:
     if not flag_enabled(subsystem, "auto_escalations"):
         return 0
     now = timezone.now()
+    ladder_hours = _escalation_ladder_hours(subsystem)
     count = 0
     qs = InvestExternalTask.objects.filter(
         subsystem=subsystem,
@@ -63,7 +76,7 @@ def escalate_external_tasks(*, subsystem) -> int:
             continue
         overdue_hours = (now - task.due_at).total_seconds() / 3600
         target_level = 0
-        for idx, hours in enumerate(ESCALATION_LADDER_HOURS, start=1):
+        for idx, hours in enumerate(ladder_hours, start=1):
             if overdue_hours >= hours:
                 target_level = idx
         if target_level <= task.escalated_level:

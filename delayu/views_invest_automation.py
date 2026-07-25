@@ -12,6 +12,7 @@ from delayu.forms_invest_automation import (
     InvestAutomationConnectionForm,
     InvestAutomationFlagsForm,
     InvestAutomationMappingForm,
+    InvestEscalationRulesForm,
 )
 from delayu.mixins import ModulePermissionMixin
 from delayu.models import Subsystem
@@ -204,6 +205,31 @@ class InvestAutomationStatusView(InvestAutomationAdminMixin, TemplateView):
         else:
             messages.warning(request, "Неизвестное действие.")
         return redirect("invest-automation-status")
+
+
+class InvestEscalationRulesView(InvestAutomationAdminMixin, TemplateView):
+    template_name = "invest/automation/escalation_rules.html"
+    automation_tab = "escalation"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["form"] = InvestEscalationRulesForm.from_config(ctx["config"])
+        ctx["escalation_rules"] = (ctx["config"].options or {}).get("escalation_rules") or {}
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        cfg = self.get_config()
+        form = InvestEscalationRulesForm(request.POST)
+        if form.is_valid():
+            options = dict(cfg.options or {})
+            options["escalation_rules"] = form.cleaned_rules()
+            cfg.options = options
+            cfg.save(update_fields=["options", "updated_at"])
+            messages.success(request, "Правила эскалации сохранены.")
+            return redirect("invest-escalation-rules")
+        ctx = self.get_context_data()
+        ctx["form"] = form
+        return self.render_to_response(ctx)
 
 
 class InvestAutomationSimulateView(InvestAutomationAdminMixin, TemplateView):

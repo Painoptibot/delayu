@@ -1,0 +1,48 @@
+{% extends layout_path %}
+
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-body-secondary mb-0">Настройка SLA-эскалаций для задач МО / ТП.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-hub' %}">К инвестконтуру</a>
+</div>
+
+{% include "invest/automation/_nav.html" %}
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Правила эскалации</h5>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-info" role="status">
+      Правила сохраняются в конфигурации автоматизации и могут использоваться SLA-процессом для расчёта уровней напоминаний.
+    </div>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="row g-4">
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.due_days.id_for_label }}">{{ form.due_days.label }}</label>
+          {{ form.due_days }}
+          {% for error in form.due_days.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-8">
+          <label class="form-label" for="{{ form.levels.id_for_label }}">{{ form.levels.label }}</label>
+          {{ form.levels }}
+          {% if form.levels.help_text %}<div class="form-text">{{ form.levels.help_text }}</div>{% endif %}
+          {% for error in form.levels.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+      </div>
+      <div class="d-flex justify-content-end mt-4">
+        <button class="btn btn-primary" type="submit">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

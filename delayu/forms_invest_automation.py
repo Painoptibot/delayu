@@ -162,3 +162,41 @@ class InvestAutomationMappingForm(forms.Form):
                 ),
             }
         )
+
+
+class InvestEscalationRulesForm(forms.Form):
+    due_days = forms.IntegerField(
+        min_value=1,
+        max_value=365,
+        label="Первое напоминание через, дней",
+        widget=forms.NumberInput(attrs={"class": BOOTSTRAP}),
+    )
+    levels = forms.CharField(
+        label="Уровни эскалации",
+        help_text="По одному уровню в строке: МО, департамент, руководство.",
+        widget=forms.Textarea(attrs={"class": BOOTSTRAP, "rows": 5}),
+    )
+
+    @classmethod
+    def from_config(cls, cfg: InvestAutomationConfig):
+        rules = (cfg.options or {}).get("escalation_rules") or {}
+        levels = rules.get("levels") or ["МО", "Департамент", "Руководство"]
+        return cls(
+            initial={
+                "due_days": rules.get("due_days") or 1,
+                "levels": "\n".join(str(level) for level in levels),
+            }
+        )
+
+    def clean_levels(self):
+        levels = [line.strip() for line in (self.cleaned_data.get("levels") or "").splitlines()]
+        levels = [line for line in levels if line]
+        if not levels:
+            raise ValidationError("Укажите хотя бы один уровень эскалации.")
+        return levels
+
+    def cleaned_rules(self) -> dict:
+        return {
+            "due_days": self.cleaned_data["due_days"],
+            "levels": self.cleaned_data["levels"],
+        }

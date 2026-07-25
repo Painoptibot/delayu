@@ -20,5 +20,10 @@
         <i class="icon-base ri ri-pulse-line icon-sm me-2"></i>Статусы
       </a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link{% if automation_tab == 'escalation' %} active{% endif %}" href="{% url 'invest-escalation-rules' %}">
+        <i class="icon-base ri ri-alarm-warning-line icon-sm me-2"></i>Эскалации
+      </a>
+    </li>
   </ul>
 </div>
