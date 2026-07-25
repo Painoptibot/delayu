@@ -1,5 +1,7 @@
 """Views for the invest subsystem."""
+from io import BytesIO
 import json
+import os
 
 from django.contrib import messages
 from django.contrib.auth.mixins import AccessMixin
@@ -14,6 +16,10 @@ from django.utils.dateparse import parse_date
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 
 from delayu.forms_invest import (
     InvestProjectForm,
@@ -21,6 +27,7 @@ from delayu.forms_invest import (
     InvestProjectWizardStep2Form,
     InvestProjectWizardStep3Form,
     InvestSiteForm,
+    InvestSupportTrackItemForm,
 )
 from delayu.mixins import ModulePermissionMixin
 from delayu.models import AuditLog, DocumentFile, Subsystem
@@ -36,6 +43,7 @@ from delayu.models_invest import (
     InvestRoadmapItem,
     InvestSite,
     InvestSmevRequest,
+    InvestStopFactor,
 )
 from delayu.services.access import get_membership_or_403, user_can
 from delayu.services import audit
@@ -210,6 +218,7 @@ def _completeness_actions(project, blockers):
         "industry": "Добавьте отрасль",
         "package_incomplete": "Заполните обязательные пункты пакета",
         "mo_pending": "Закройте открытые задачи МО",
+        "stop_factor": "Устраните открытые стоп-факторы",
     }
     actions = [labels.get(blocker, blocker) for blocker in blockers]
     if not project.contact_person:
@@ -221,6 +230,31 @@ def _completeness_actions(project, blockers):
     if project.investment_amount is None:
         actions.append("Укажите объём инвестиций")
     return list(dict.fromkeys(actions))
+
+
+def _open_stop_factors(project):
+    return project.stop_factors.filter(
+        status__in=(InvestStopFactor.Status.OPEN, InvestStopFactor.Status.BLOCKING),
+    )
+
+
+def _passport_pdf_fonts():
+    regular_name = "Helvetica"
+    bold_name = "Helvetica-Bold"
+    candidates = [
+        (r"C:\Windows\Fonts\arial.ttf", r"C:\Windows\Fonts\arialbd.ttf"),
+        ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+    ]
+    for regular_path, bold_path in candidates:
+        if os.path.exists(regular_path) and os.path.exists(bold_path):
+            if "DelayuPassport" not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont("DelayuPassport", regular_path))
+            if "DelayuPassportBold" not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont("DelayuPassportBold", bold_path))
+            regular_name = "DelayuPassport"
+            bold_name = "DelayuPassportBold"
+            break
+    return regular_name, bold_name
 
 
 def _coordinates_for_site(site):
@@ -547,6 +581,12 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
         ctx["can_change_project"] = user_can(self.request.user, self.module_code, "change")
         ctx["site_links"] = project.site_links.select_related("site", "site__organization").order_by("role", "id")
         ctx["roadmap_items"] = project.roadmap_items.select_related("owner").order_by("due_at", "code")
+        ctx["support_track_items"] = project.support_track_items.order_by("due_at", "created_at")
+        ctx["support_track_form"] = InvestSupportTrackItemForm()
+        ctx["protocols"] = project.protocols.select_related("document").order_by("-signed_at", "-created_at")
+        ctx["oiv_approvals"] = project.oiv_approvals.order_by("due_at", "agency_name")
+        ctx["stop_factors"] = project.stop_factors.order_by("status", "created_at")
+        ctx["open_stop_factors"] = _open_stop_factors(project)
         ctx["package"] = package
         ctx["package_items"] = items
         ctx["package_ready"] = f"{ready}/{len(required)}" if required else "—"
@@ -557,12 +597,89 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
         ctx["bitrix_stage_conflict"] = (project.external_ids or {}).get("bitrix_stage_conflict")
         ctx["completeness_pct"] = compute_completeness(project)
         ctx["completeness_actions"] = _completeness_actions(project, blockers)
+        ctx["handoff_stop_factor_blocked"] = _open_stop_factors(project).exists()
         ctx["audit_logs"] = AuditLog.objects.filter(
             subsystem=project.subsystem,
             model_name__iexact="InvestProject",
             object_id=str(project.pk),
         )[:20]
         return _with_odysseus_cta(self.request, ctx, membership=membership, project=project)
+
+
+class InvestProjectPassportView(InvestSubsystemMixin, ModulePermissionMixin, View):
+    def get(self, request, *args, **kwargs):
+        project = get_object_or_404(
+            projects_for_membership(self.get_membership()).select_related("organization", "owner"),
+            pk=kwargs["pk"],
+        )
+        buffer = BytesIO()
+        pdf = canvas.Canvas(buffer, pagesize=A4)
+        width, height = A4
+        regular_font, bold_font = _passport_pdf_fonts()
+        y = height - 48
+        pdf.setFont(bold_font, 16)
+        pdf.drawString(48, y, "Invest project passport")
+        y -= 32
+        pdf.setFont(regular_font, 10)
+
+        rows = [
+            ("Code", project.code),
+            ("Name", project.name),
+            ("Investor", project.investor_name or "-"),
+            ("Stage", project.stage),
+            ("Organization", project.organization.name if project.organization_id else "-"),
+            (
+                "Investments",
+                str(project.investment_amount) if project.investment_amount is not None else "-",
+            ),
+            ("Jobs", str(project.jobs_count) if project.jobs_count is not None else "-"),
+        ]
+        for label, value in rows:
+            pdf.setFont(bold_font, 10)
+            pdf.drawString(48, y, f"{label}:")
+            pdf.setFont(regular_font, 10)
+            pdf.drawString(150, y, str(value))
+            y -= 18
+
+        y -= 8
+        pdf.setFont(bold_font, 12)
+        pdf.drawString(48, y, "Sites")
+        y -= 18
+        pdf.setFont(regular_font, 10)
+        site_links = project.site_links.select_related("site").order_by("role", "id")
+        if not site_links.exists():
+            pdf.drawString(48, y, "-")
+        for link in site_links:
+            site = link.site
+            summary = f"{site.cadastral_number} | {site.name} | {site.address or '-'} | {link.role}"
+            pdf.drawString(48, y, summary[:110])
+            y -= 16
+            if y < 64:
+                pdf.showPage()
+                pdf.setFont(regular_font, 10)
+                y = height - 48
+
+        pdf.showPage()
+        pdf.save()
+        response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{project.code}-passport.pdf"'
+        return response
+
+
+class InvestProjectSupportAddView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(projects_for_membership(self.get_membership()), pk=kwargs["pk"])
+        form = InvestSupportTrackItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.project = project
+            item.save()
+            messages.success(request, "Мера поддержки добавлена.")
+        else:
+            messages.error(request, "Проверьте поля меры поддержки.")
+        return redirect(reverse("invest-project-detail", args=[project.pk]))
 
 
 class InvestProjectBitrixPushView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):

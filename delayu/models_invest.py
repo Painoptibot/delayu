@@ -214,6 +214,83 @@ class InvestRoadmapItem(models.Model):
         return f"{self.project.code} — {self.title}"
 
 
+class InvestSupportTrackItem(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", "Открыта"
+        IN_PROGRESS = "in_progress", "В работе"
+        DONE = "done", "Завершена"
+
+    project = models.ForeignKey(InvestProject, on_delete=models.CASCADE, related_name="support_track_items")
+    title = models.CharField("Мера поддержки", max_length=255)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.OPEN)
+    due_at = models.DateField("Срок", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["due_at", "created_at"]
+
+    def __str__(self):
+        return self.title
+
+
+class InvestProtocol(models.Model):
+    project = models.ForeignKey(InvestProject, on_delete=models.CASCADE, related_name="protocols")
+    title = models.CharField("Протокол намерений", max_length=255)
+    signed_at = models.DateField("Дата подписания", null=True, blank=True)
+    document = models.ForeignKey(
+        "DocumentFile",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="invest_protocols",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-signed_at", "-created_at"]
+
+    def __str__(self):
+        return self.title
+
+
+class InvestOivApproval(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Ожидает"
+        APPROVED = "approved", "Согласовано"
+        REJECTED = "rejected", "Отказ"
+
+    project = models.ForeignKey(InvestProject, on_delete=models.CASCADE, related_name="oiv_approvals")
+    agency_name = models.CharField("ОИВ", max_length=255)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    due_at = models.DateField("Срок", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["due_at", "agency_name"]
+
+    def __str__(self):
+        return self.agency_name
+
+
+class InvestStopFactor(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", "Открыт"
+        BLOCKING = "blocking", "Блокирует"
+        RESOLVED = "resolved", "Снят"
+
+    project = models.ForeignKey(InvestProject, on_delete=models.CASCADE, related_name="stop_factors")
+    title = models.CharField("Стоп-фактор", max_length=255)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.OPEN)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["status", "created_at"]
+
+    def __str__(self):
+        return self.title
+
+
 class InvestImportBatch(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Ожидает"

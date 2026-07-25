@@ -12,6 +12,7 @@
     <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">К списку</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">Площадки</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-package-detail' project.pk %}">Пакет</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-project-passport' project.pk %}">Паспорт PDF</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-handoffs' %}">Передачи</a>
     {% if odysseus_cta_url %}
     <a class="btn btn-outline-primary" href="{{ odysseus_cta_url }}">Открыть в Odysseus</a>
@@ -92,9 +93,12 @@
         {% if can_change_project and project.funnel == "attraction" %}
         <form class="mt-4" method="post" action="{% url 'invest-handoff-request' project.pk %}">
           {% csrf_token %}
+          {% if handoff_stop_factor_blocked %}
+          <div class="alert alert-warning py-2" role="alert">Передача заблокирована: устраните открытые стоп-факторы.</div>
+          {% endif %}
           <label class="form-label" for="handoff-comment">Комментарий к передаче</label>
-          <textarea class="form-control mb-3" id="handoff-comment" name="comment" rows="2"></textarea>
-          <button class="btn btn-primary" type="submit">Запросить передачу</button>
+          <textarea class="form-control mb-3" id="handoff-comment" name="comment" rows="2" {% if handoff_stop_factor_blocked %}disabled{% endif %}></textarea>
+          <button class="btn btn-primary" type="submit" {% if handoff_stop_factor_blocked %}disabled{% endif %}>Запросить передачу</button>
         </form>
         {% endif %}
       </div>
@@ -129,6 +133,50 @@
           </tbody>
         </table>
       </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header"><h5 class="mb-0">Трек мер поддержки</h5></div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr><th>Мера</th><th>Срок</th><th>Статус</th></tr>
+          </thead>
+          <tbody>
+            {% for item in support_track_items %}
+            <tr>
+              <td>{{ item.title }}</td>
+              <td>{% if item.due_at %}{{ item.due_at|date:"d.m.Y" }}{% else %}—{% endif %}</td>
+              <td>{{ item.get_status_display }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-muted">Меры поддержки ещё не добавлены.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if can_change_project %}
+      <div class="card-footer">
+        <form class="row g-2 align-items-end" method="post" action="{% url 'invest-project-support-add' project.pk %}">
+          {% csrf_token %}
+          <div class="col-md-5">
+            <label class="form-label" for="{{ support_track_form.title.id_for_label }}">Мера</label>
+            {{ support_track_form.title }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="{{ support_track_form.status.id_for_label }}">Статус</label>
+            {{ support_track_form.status }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="{{ support_track_form.due_at.id_for_label }}">Срок</label>
+            {{ support_track_form.due_at }}
+          </div>
+          <div class="col-md-1">
+            <button class="btn btn-primary w-100" type="submit">+</button>
+          </div>
+        </form>
+      </div>
+      {% endif %}
     </div>
   </div>
 
@@ -173,9 +221,84 @@
         {% if can_change_project %}
         <form method="post" action="{% url 'invest-project-bitrix-push' project.pk %}">
           {% csrf_token %}
-          <button class="btn btn-primary" type="submit">Отправить в Bitrix</button>
+          <button class="btn btn-primary" type="submit" {% if not bitrix_can_push %}disabled{% endif %}>Отправить в Bitrix</button>
         </form>
         {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5 class="mb-0">Протоколы намерений</h5></div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr><th>Документ</th><th>Дата</th></tr>
+          </thead>
+          <tbody>
+            {% for protocol in protocols %}
+            <tr>
+              <td>
+                {{ protocol.title }}
+                {% if protocol.document %}<br><span class="small text-body-secondary">{{ protocol.document.title }}</span>{% endif %}
+              </td>
+              <td>{% if protocol.signed_at %}{{ protocol.signed_at|date:"d.m.Y" }}{% else %}—{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2" class="text-muted">Протоколы пока не зарегистрированы.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5 class="mb-0">Матрица согласований ОИВ</h5></div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr><th>ОИВ</th><th>Срок</th><th>Статус</th></tr>
+          </thead>
+          <tbody>
+            {% for approval in oiv_approvals %}
+            <tr>
+              <td>{{ approval.agency_name }}</td>
+              <td>{% if approval.due_at %}{{ approval.due_at|date:"d.m.Y" }}{% else %}—{% endif %}</td>
+              <td>{{ approval.get_status_display }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-muted">Согласования ОИВ не заведены.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5 class="mb-0">Стоп-факторы</h5></div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr><th>Фактор</th><th>Статус</th></tr>
+          </thead>
+          <tbody>
+            {% for factor in stop_factors %}
+            <tr>
+              <td>{{ factor.title }}</td>
+              <td>
+                {% if factor.status == "blocking" %}
+                <span class="badge bg-label-danger">{{ factor.get_status_display }}</span>
+                {% elif factor.status == "open" %}
+                <span class="badge bg-label-warning">{{ factor.get_status_display }}</span>
+                {% else %}
+                {{ factor.get_status_display }}
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2" class="text-muted">Открытых стоп-факторов нет.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
 

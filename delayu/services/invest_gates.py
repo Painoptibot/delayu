@@ -1,7 +1,7 @@
 """Gate-правила готовности к обратной выгрузке в Битрикс (п.9, 20)."""
 from __future__ import annotations
 
-from delayu.models_invest import InvestExternalTask, InvestPackageItem, InvestProject
+from delayu.models_invest import InvestExternalTask, InvestPackageItem, InvestProject, InvestStopFactor
 from delayu.services.invest_package import ensure_package, package_is_ready
 
 
@@ -49,7 +49,15 @@ def gate_blockers(project: InvestProject) -> list[str]:
     ).exists()
     if open_mo:
         blockers.append("mo_pending")
+    if has_open_stop_factors(project):
+        blockers.append("stop_factor")
     return blockers
+
+
+def has_open_stop_factors(project: InvestProject) -> bool:
+    return project.stop_factors.filter(
+        status__in=(InvestStopFactor.Status.OPEN, InvestStopFactor.Status.BLOCKING),
+    ).exists()
 
 
 def can_push_to_bitrix(project: InvestProject) -> tuple[bool, list[str]]:

@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from delayu.menu import get_active_membership
 from delayu.models_invest import InvestHandoff, InvestProject
+from delayu.services.invest_gates import has_open_stop_factors
 from delayu.services.invest_package import package_is_ready, snapshot_package
 from delayu.services.invest_roadmap import seed_support_roadmap
 
@@ -57,6 +58,8 @@ def request_handoff(*, project, user, comment=""):
     )
     if project.funnel != InvestProject.Funnel.ATTRACTION:
         raise InvestHandoffError("Передача только из воронки привлечения")
+    if has_open_stop_factors(project):
+        raise InvestHandoffError("Передача заблокирована: есть открытые стоп-факторы")
     return InvestHandoff.objects.create(
         project=project,
         requested_by=user,
