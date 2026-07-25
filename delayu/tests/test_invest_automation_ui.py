@@ -9,6 +9,7 @@ from delayu.forms_invest_automation import (
     InvestAutomationFlagsForm,
     InvestAutomationMappingForm,
 )
+from delayu.models_invest import InvestAutomationRun, InvestIntegrationEvent
 from delayu.services.invest_automation_access import user_can_manage_invest_automation
 from delayu.services.invest_flags import ensure_automation_config
 from delayu.services.invest_roles import perm_for_role
@@ -230,6 +231,53 @@ def test_mapping_reset_defaults(client, invest_roles_ctx):
     assert resp.status_code == 302
     cfg.refresh_from_db()
     assert cfg.field_mapping == DEFAULT_FIELD_MAPPING_V1
+
+
+@pytest.mark.django_db
+def test_status_get_ok(client, invest_roles_ctx):
+    user, _ = _member(invest_roles_ctx, "adm7", "invest_admin")
+    ensure_automation_config(invest_roles_ctx["sub"])
+    client.force_login(user)
+
+    assert client.get(reverse("invest-automation-status")).status_code == 200
+
+
+@pytest.mark.django_db
+def test_status_run_creates_automation_run(client, invest_roles_ctx):
+    user, _ = _member(invest_roles_ctx, "adm8", "invest_admin")
+    ensure_automation_config(invest_roles_ctx["sub"])
+    client.force_login(user)
+    before = InvestAutomationRun.objects.filter(subsystem=invest_roles_ctx["sub"]).count()
+
+    resp = client.post(reverse("invest-automation-status"), {"action": "run"})
+
+    assert resp.status_code == 302
+    after = InvestAutomationRun.objects.filter(subsystem=invest_roles_ctx["sub"]).count()
+    assert after == before + 1
+
+
+@pytest.mark.django_db
+def test_status_requeue_dead(client, invest_roles_ctx):
+    user, _ = _member(invest_roles_ctx, "adm9", "invest_admin")
+    ensure_automation_config(invest_roles_ctx["sub"])
+    InvestIntegrationEvent.objects.create(
+        subsystem=invest_roles_ctx["sub"],
+        direction=InvestIntegrationEvent.Direction.IN,
+        channel=InvestIntegrationEvent.Channel.BITRIX,
+        status=InvestIntegrationEvent.Status.DEAD,
+        correlation_id="c1",
+        event_type="deal.upsert",
+        retries=3,
+        max_retries=3,
+    )
+    client.force_login(user)
+
+    resp = client.post(reverse("invest-automation-status"), {"action": "requeue_dead"})
+
+    assert resp.status_code == 302
+    ev = InvestIntegrationEvent.objects.get(correlation_id="c1")
+    assert ev.status == InvestIntegrationEvent.Status.QUEUED
+    assert ev.retries == 0
 
 
 @pytest.mark.django_db

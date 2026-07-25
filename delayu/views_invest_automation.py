@@ -15,6 +15,7 @@ from delayu.forms_invest_automation import (
 )
 from delayu.mixins import ModulePermissionMixin
 from delayu.models import Subsystem
+from delayu.models_invest import InvestExternalTask, InvestIntegrationEvent
 from delayu.services.access import get_membership_or_403
 from delayu.services.invest_automation_access import user_can_manage_invest_automation
 from delayu.services.invest_flags import (
@@ -22,6 +23,9 @@ from delayu.services.invest_flags import (
     DEFAULT_STAGE_MAPPING_V1,
     ensure_automation_config,
 )
+from delayu.services.invest_journal import requeue_dead_letters
+from delayu.services.invest_metrics import collect_metrics
+from delayu.services.invest_pipeline import run_scheduled_automation
 from delayu.views_invest import InvestSubsystemMixin
 
 
@@ -156,3 +160,46 @@ class InvestAutomationMappingView(InvestAutomationAdminMixin, TemplateView):
 class InvestAutomationStatusView(InvestAutomationAdminMixin, TemplateView):
     template_name = "invest/automation/status.html"
     automation_tab = "status"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        sub = self.get_subsystem()
+        channel = self.request.GET.get("channel") or ""
+        status = self.request.GET.get("status") or ""
+
+        events = InvestIntegrationEvent.objects.filter(subsystem=sub)
+        if channel:
+            events = events.filter(channel=channel)
+        if status:
+            events = events.filter(status=status)
+
+        ctx["metrics"] = collect_metrics(subsystem=sub)
+        ctx["events"] = events.select_related("project")[:50]
+        ctx["tasks"] = (
+            InvestExternalTask.objects.filter(subsystem=sub)
+            .exclude(
+                status__in=[
+                    InvestExternalTask.Status.CANCELLED,
+                    InvestExternalTask.Status.AGREED,
+                ]
+            )
+            .select_related("project", "organization")[:50]
+        )
+        ctx["filter_channel"] = channel
+        ctx["filter_status"] = status
+        ctx["channel_choices"] = InvestIntegrationEvent.Channel.choices
+        ctx["status_choices"] = InvestIntegrationEvent.Status.choices
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        sub = self.get_subsystem()
+        action = request.POST.get("action")
+        if action == "run":
+            result = run_scheduled_automation(subsystem=sub)
+            messages.success(request, f"Прогон выполнен (run #{result.get('metrics_run_id')}).")
+        elif action == "requeue_dead":
+            count = requeue_dead_letters(subsystem=sub)
+            messages.success(request, f"Dead-letter перепоставлено: {count}.")
+        else:
+            messages.warning(request, "Неизвестное действие.")
+        return redirect("invest-automation-status")

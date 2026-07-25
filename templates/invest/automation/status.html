@@ -6,13 +6,171 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
   <div>
     <h4 class="mb-1">{{ page_title }}</h4>
-    <p class="text-body-secondary mb-0">Статусы интеграции будут настроены в следующей задаче.</p>
+    <p class="text-body-secondary mb-0">Метрики, журнал интеграций и активные внешние задачи инвестконтура.</p>
   </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-hub' %}">К инвестконтуру</a>
 </div>
 
 {% include "invest/automation/_nav.html" %}
 
+<div class="row g-4 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="text-muted mb-1">Проектов</div>
+        <h4 class="mb-0">{{ metrics.projects_total }}</h4>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="text-muted mb-1">Автозаполнение</div>
+        <h4 class="mb-0">{{ metrics.autofilled_share_pct }}%</h4>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="text-muted mb-1">СМЭВ применено</div>
+        <h4 class="mb-0">{{ metrics.smev_applied }}</h4>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="text-muted mb-1">Готово к Bitrix</div>
+        <h4 class="mb-0">{{ metrics.ready_for_bitrix }}</h4>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header d-flex flex-column flex-md-row justify-content-between gap-3">
+        <div>
+          <h5 class="mb-1">Журнал интеграций</h5>
+          <div class="text-muted small">Последние 50 событий по выбранным фильтрам</div>
+        </div>
+        <form class="d-flex flex-wrap align-items-end gap-2" method="get">
+          <div>
+            <label class="form-label small mb-1" for="status-channel">Канал</label>
+            <select class="form-select form-select-sm" id="status-channel" name="channel">
+              <option value="">Все</option>
+              {% for value, label in channel_choices %}
+              <option value="{{ value }}"{% if filter_channel == value %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label small mb-1" for="status-status">Статус</label>
+            <select class="form-select form-select-sm" id="status-status" name="status">
+              <option value="">Все</option>
+              {% for value, label in status_choices %}
+              <option value="{{ value }}"{% if filter_status == value %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn btn-sm btn-outline-primary" type="submit">Фильтр</button>
+        </form>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Время</th>
+              <th>Канал</th>
+              <th>Событие</th>
+              <th>Статус</th>
+              <th>Проект</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for event in events %}
+            <tr>
+              <td class="text-nowrap">{{ event.created_at|date:"d.m.Y H:i" }}</td>
+              <td>{{ event.get_channel_display }}</td>
+              <td>
+                <div>{{ event.event_type|default:"—" }}</div>
+                <div class="text-muted small">{{ event.correlation_id }}</div>
+              </td>
+              <td>
+                <span class="badge {% if event.status == 'done' %}bg-label-success{% elif event.status == 'dead' or event.status == 'error' %}bg-label-danger{% else %}bg-label-secondary{% endif %}">
+                  {{ event.get_status_display }}
+                </span>
+              </td>
+              <td>{% if event.project %}{{ event.project }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td class="text-center text-muted py-4" colspan="5">Событий пока нет.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-1">Активные задачи МО / ТП</h5>
+        <div class="text-muted small">Открытые, просроченные и ожидающие ответа задачи</div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Задача</th>
+              <th>Статус</th>
+              <th>Срок</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for task in tasks %}
+            <tr>
+              <td>
+                <div>{{ task.title }}</div>
+                <div class="text-muted small">{{ task.get_kind_display }}{% if task.project %} · {{ task.project }}{% endif %}</div>
+              </td>
+              <td>
+                <span class="badge {% if task.status == 'overdue' %}bg-label-danger{% elif task.status == 'answered' %}bg-label-info{% else %}bg-label-secondary{% endif %}">
+                  {{ task.get_status_display }}
+                </span>
+              </td>
+              <td class="text-nowrap">{% if task.due_at %}{{ task.due_at|date:"d.m.Y" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td class="text-center text-muted py-4" colspan="3">Активных задач нет.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="card">
-  <div class="card-body text-muted">Раздел статусов будет заполнен позже.</div>
+  <div class="card-header">
+    <h5 class="mb-0">Действия</h5>
+  </div>
+  <div class="card-body">
+    <form class="d-flex flex-wrap gap-2" method="post">
+      {% csrf_token %}
+      <button class="btn btn-primary" type="submit" name="action" value="run">Запустить прогон</button>
+      <button class="btn btn-outline-warning" type="submit" name="action" value="requeue_dead">Вернуть dead-letter в очередь</button>
+    </form>
+    <div class="text-muted small mt-3">
+      Bitrix входящие: {{ metrics.bitrix_inbound_done }}, исходящие: {{ metrics.bitrix_outbound_done }}.
+      Просрочено МО: {{ metrics.mo_overdue }}, ТП: {{ metrics.tp_overdue }}.
+    </div>
+  </div>
 </div>
 {% endblock %}
