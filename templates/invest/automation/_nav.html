@@ -1,0 +1,24 @@
+<div class="nav-align-top mb-4">
+  <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 gap-2">
+    <li class="nav-item">
+      <a class="nav-link{% if automation_tab == 'connection' %} active{% endif %}" href="{% url 'invest-automation' %}">
+        <i class="icon-base ri ri-plug-line icon-sm me-2"></i>Подключение
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link{% if automation_tab == 'flags' %} active{% endif %}" href="{% url 'invest-automation-flags' %}">
+        <i class="icon-base ri ri-toggle-line icon-sm me-2"></i>Компоненты
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link{% if automation_tab == 'mapping' %} active{% endif %}" href="{% url 'invest-automation-mapping' %}">
+        <i class="icon-base ri ri-arrow-left-right-line icon-sm me-2"></i>Mapping
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link{% if automation_tab == 'status' %} active{% endif %}" href="{% url 'invest-automation-status' %}">
+        <i class="icon-base ri ri-pulse-line icon-sm me-2"></i>Статусы
+      </a>
+    </li>
+  </ul>
+</div>

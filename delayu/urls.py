@@ -12,6 +12,7 @@ from . import (
     views_public_registry,
     views_qr,
     views_invest,
+    views_invest_automation,
     views_uzhv_wizard,
     views_welcome,
 )
@@ -996,6 +997,10 @@ urlpatterns = [
     # Инвестконтур
     path("invest/", views_invest.InvestHubView.as_view(), name="invest-hub"),
     path("invest/dashboard/", views_invest.InvestDashboardView.as_view(), name="invest-dashboard"),
+    path("invest/automation/", views_invest_automation.InvestAutomationConnectionView.as_view(), name="invest-automation"),
+    path("invest/automation/flags/", views_invest_automation.InvestAutomationFlagsView.as_view(), name="invest-automation-flags"),
+    path("invest/automation/mapping/", views_invest_automation.InvestAutomationMappingView.as_view(), name="invest-automation-mapping"),
+    path("invest/automation/status/", views_invest_automation.InvestAutomationStatusView.as_view(), name="invest-automation-status"),
     path("invest/projects/", views_invest.InvestProjectListView.as_view(), name="invest-projects"),
     path("invest/projects/new/", views_invest.InvestProjectCreateView.as_view(), name="invest-project-create"),
     path("invest/projects/<int:pk>/", views_invest.InvestProjectDetailView.as_view(), name="invest-project-detail"),

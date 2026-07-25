@@ -1,6 +1,7 @@
 # delayu/tests/test_invest_automation_ui.py
 import pytest
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 from delayu.models import ModuleCatalog, Organization, Role, RoleModulePermission, Subsystem, SubsystemMembership, SubsystemModule
 from delayu.forms_invest_automation import (
@@ -120,3 +121,64 @@ def test_mapping_form_parses_stage_pairs(invest_roles_ctx):
     assert form.is_valid()
     assert form.cleaned_field_mapping()["TITLE"] == "name"
     assert form.cleaned_stage_mapping()["NEW"] == ["attraction", "lead"]
+
+
+@pytest.mark.django_db
+def test_connection_get_ok_for_admin(client, invest_roles_ctx):
+    user, _ = _member(invest_roles_ctx, "adm2", "invest_admin")
+    ensure_automation_config(invest_roles_ctx["sub"])
+    client.force_login(user)
+
+    resp = client.get(reverse("invest-automation"))
+
+    assert resp.status_code == 200
+    assert b"bitrix" in resp.content.lower() or "Bitrix".encode() in resp.content
+
+
+@pytest.mark.django_db
+def test_connection_denied_for_agency(client, invest_roles_ctx):
+    user, _ = _member(invest_roles_ctx, "ag2", "invest_agency")
+    client.force_login(user)
+
+    resp = client.get(reverse("invest-automation"))
+
+    assert resp.status_code in (302, 403)
+
+
+@pytest.mark.django_db
+def test_connection_post_saves_token(client, invest_roles_ctx):
+    user, _ = _member(invest_roles_ctx, "adm3", "invest_admin")
+    cfg = ensure_automation_config(invest_roles_ctx["sub"])
+    client.force_login(user)
+
+    resp = client.post(
+        reverse("invest-automation"),
+        {
+            "bitrix_api_base": "https://crm.example/rest/",
+            "bitrix_webhook_token": "tok-demo-1",
+            "contract_version": "v1",
+        },
+    )
+
+    assert resp.status_code == 302
+    cfg.refresh_from_db()
+    assert cfg.bitrix_webhook_token == "tok-demo-1"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "url_name",
+    [
+        "invest-automation-flags",
+        "invest-automation-mapping",
+        "invest-automation-status",
+    ],
+)
+def test_placeholder_automation_tabs_get_ok_for_admin(client, invest_roles_ctx, url_name):
+    user, _ = _member(invest_roles_ctx, f"{url_name}-adm", "invest_admin")
+    ensure_automation_config(invest_roles_ctx["sub"])
+    client.force_login(user)
+
+    resp = client.get(reverse(url_name))
+
+    assert resp.status_code == 200
