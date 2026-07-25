@@ -10,6 +10,7 @@ from delayu.forms_invest_automation import (
     InvestAutomationMappingForm,
 )
 from delayu.models_invest import InvestAutomationRun, InvestIntegrationEvent
+from delayu.menu import build_menu_for_membership
 from delayu.services.invest_automation_access import user_can_manage_invest_automation
 from delayu.services.invest_flags import ensure_automation_config
 from delayu.services.invest_roles import perm_for_role
@@ -51,6 +52,20 @@ def _member(ctx, username, role_code, *, platform_admin=False):
         is_default=True,
     )
     return user, membership
+
+
+@pytest.mark.django_db
+def test_menu_shows_automation_for_admin(invest_roles_ctx):
+    user, membership = _member(invest_roles_ctx, "adm10", "invest_admin")
+    urls = [i.get("url") for i in build_menu_for_membership(membership) if "url" in i]
+    assert "invest-automation" in urls
+
+
+@pytest.mark.django_db
+def test_menu_hides_automation_for_agency(invest_roles_ctx):
+    user, membership = _member(invest_roles_ctx, "ag10", "invest_agency")
+    urls = [i.get("url") for i in build_menu_for_membership(membership) if "url" in i]
+    assert "invest-automation" not in urls
 
 
 @pytest.mark.django_db

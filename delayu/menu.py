@@ -175,6 +175,13 @@ MENU_SECTIONS = [
             {"url_name": "invest-handoffs", "codes": ["M22"], "icon": "ri-exchange-box-line", "label": "Передачи"},
             {"url_name": "invest-imports", "codes": ["M22"], "icon": "ri-upload-cloud-2-line", "label": "Импорт"},
             {"url_name": "invest-dashboard", "codes": ["M15"], "icon": "ri-dashboard-3-line", "label": "Дашборд"},
+            {
+                "url_name": "invest-automation",
+                "codes": ["M22"],
+                "icon": "ri-robot-2-line",
+                "label": "Автоматизация",
+                "role_codes": ["invest_admin"],
+            },
         ],
     },
     {
@@ -265,6 +272,23 @@ def build_menu_for_membership(membership: SubsystemMembership) -> list[dict]:
                 c in enabled and (c in allowed or is_admin) for c in codes
             ):
                 continue
+            role_codes = item.get("role_codes")
+            if role_codes:
+                from delayu.services.invest_automation_access import (
+                    user_can_manage_invest_automation,
+                )
+                from delayu.services.scope import is_platform_admin
+
+                if item["url_name"] == "invest-automation":
+                    if not user_can_manage_invest_automation(
+                        membership.user, membership
+                    ):
+                        continue
+                elif membership.role.code not in role_codes and not (
+                    membership.user.is_superuser
+                    or is_platform_admin(membership.user)
+                ):
+                    continue
             from django.urls import reverse
 
             href = reverse(item["url_name"])
@@ -302,6 +326,8 @@ def _section_item_class(header_class: str) -> str:
 
 
 def _lookup_membership(user, subsystem_id=None) -> SubsystemMembership | None:
+    if not getattr(user, "is_authenticated", False):
+        return None
     qs = SubsystemMembership.objects.filter(user=user).select_related(
         "subsystem", "organization", "role"
     )
@@ -363,8 +389,10 @@ def ensure_superuser_membership(user) -> SubsystemMembership | None:
 
 
 def get_active_membership(user, subsystem_id=None) -> SubsystemMembership | None:
+    if not getattr(user, "is_authenticated", False):
+        return None
     membership = _lookup_membership(user, subsystem_id=subsystem_id)
-    if membership or subsystem_id or not getattr(user, "is_authenticated", False):
+    if membership or subsystem_id:
         return membership
     if user.is_superuser:
         return ensure_superuser_membership(user)
