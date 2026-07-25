@@ -1423,6 +1423,35 @@ class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailVi
         return _with_odysseus_cta(self.request, ctx, membership=membership, site=self.object)
 
 
+class InvestSiteSmevBatchView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    """Создаёт mock-запросы СМЭВ для списка кадастровых номеров."""
+
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        raw_numbers = request.POST.get("cadastral_numbers") or request.POST.get("cadastral_numbers[]") or ""
+        requested = [item.strip() for item in re.split(r"[\s,;]+", raw_numbers) if item.strip()]
+        if not requested:
+            messages.warning(request, "СМЭВ batch: укажите хотя бы один кадастровый номер.")
+            return redirect(reverse("invest-sites"))
+
+        sites = list(
+            sites_for_membership(membership)
+            .filter(cadastral_number__in=requested)
+            .select_related("organization")
+        )
+        for site in sites:
+            request_smev_fill(site=site, user=request.user, service=InvestSmevRequest.Service.EGRN)
+
+        missing_count = max(0, len(set(requested)) - len({site.cadastral_number for site in sites}))
+        messages.success(
+            request,
+            f"СМЭВ batch: создано mock-запросов: {len(sites)}; пропущено: {missing_count}.",
+        )
+        return redirect(reverse("invest-sites"))
+
+
 class InvestSiteCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, CreateView):
     model = InvestSite
     form_class = InvestSiteForm

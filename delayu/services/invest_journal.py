@@ -62,6 +62,15 @@ def retry_or_dead(event: InvestIntegrationEvent, *, error: str) -> InvestIntegra
     return event
 
 
+def requeue_integration_event(event: InvestIntegrationEvent) -> InvestIntegrationEvent:
+    event.status = InvestIntegrationEvent.Status.QUEUED
+    event.retries = 0
+    event.error_message = ""
+    event.finished_at = None
+    event.save(update_fields=["status", "retries", "error_message", "finished_at"])
+    return event
+
+
 def requeue_dead_letters(*, subsystem, limit: int = 50) -> int:
     qs = InvestIntegrationEvent.objects.filter(
         subsystem=subsystem,
@@ -69,10 +78,6 @@ def requeue_dead_letters(*, subsystem, limit: int = 50) -> int:
     ).order_by("id")[:limit]
     count = 0
     for event in qs:
-        event.status = InvestIntegrationEvent.Status.QUEUED
-        event.retries = 0
-        event.error_message = ""
-        event.finished_at = None
-        event.save(update_fields=["status", "retries", "error_message", "finished_at"])
+        requeue_integration_event(event)
         count += 1
     return count

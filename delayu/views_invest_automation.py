@@ -3,7 +3,7 @@ from __future__ import annotations
 import secrets
 
 from django.contrib import messages
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 from django.views.generic import TemplateView
@@ -25,7 +25,7 @@ from delayu.services.invest_flags import (
     DEFAULT_STAGE_MAPPING_V1,
     ensure_automation_config,
 )
-from delayu.services.invest_journal import requeue_dead_letters
+from delayu.services.invest_journal import requeue_dead_letters, requeue_integration_event
 from delayu.services.invest_metrics import collect_metrics
 from delayu.services.invest_pipeline import run_scheduled_automation
 from delayu.views_invest import InvestSubsystemMixin
@@ -191,6 +191,10 @@ class InvestAutomationStatusView(InvestAutomationAdminMixin, TemplateView):
         ctx["filter_status"] = status
         ctx["channel_choices"] = InvestIntegrationEvent.Channel.choices
         ctx["status_choices"] = InvestIntegrationEvent.Status.choices
+        ctx["connector_stubs"] = [
+            {"code": "rgis_connector", "name": "РГИС", "enabled": bool(ctx["flags"].get("rgis_connector"))},
+            {"code": "isogd_connector", "name": "ИСОГД", "enabled": bool(ctx["flags"].get("isogd_connector"))},
+        ]
         return ctx
 
     def post(self, request, *args, **kwargs):
@@ -205,6 +209,39 @@ class InvestAutomationStatusView(InvestAutomationAdminMixin, TemplateView):
         else:
             messages.warning(request, "Неизвестное действие.")
         return redirect("invest-automation-status")
+
+
+class InvestIntegrationInboxView(InvestAutomationAdminMixin, TemplateView):
+    template_name = "invest/integrations/inbox.html"
+    automation_tab = "inbox"
+    page_title = "Интеграционный inbox"
+
+    retryable_statuses = (
+        InvestIntegrationEvent.Status.ERROR,
+        InvestIntegrationEvent.Status.DEAD,
+        InvestIntegrationEvent.Status.QUEUED,
+    )
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["events"] = (
+            InvestIntegrationEvent.objects.filter(
+                subsystem=self.get_subsystem(),
+                status__in=self.retryable_statuses,
+            )
+            .select_related("project", "site")
+            .order_by("-created_at")[:100]
+        )
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        event = get_object_or_404(
+            InvestIntegrationEvent.objects.filter(subsystem=self.get_subsystem()),
+            pk=request.POST.get("event_id"),
+        )
+        requeue_integration_event(event)
+        messages.success(request, f"Событие {event.correlation_id} возвращено в очередь.")
+        return redirect("invest-integrations-inbox")
 
 
 class InvestEscalationRulesView(InvestAutomationAdminMixin, TemplateView):

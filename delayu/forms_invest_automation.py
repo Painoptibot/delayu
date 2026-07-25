@@ -21,6 +21,8 @@ FLAG_LABELS = {
     "auto_tp_tasks": "Авто-задачи ТП",
     "auto_escalations": "Эскалации SLA",
     "gate_before_outbound": "Gate перед outbound",
+    "rgis_connector": "РГИС connector stub",
+    "isogd_connector": "ИСОГД connector stub",
     "sandbox": "Sandbox",
 }
 

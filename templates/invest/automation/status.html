@@ -157,6 +157,32 @@
   </div>
 </div>
 
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-1">Внешние connector stubs</h5>
+    <div class="text-muted small">Флаги готовности адаптеров из InvestAutomationConfig.</div>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      {% for connector in connector_stubs %}
+      <div class="col-md-6">
+        <div class="border rounded p-3 h-100">
+          <div class="d-flex justify-content-between align-items-center gap-3">
+            <div>
+              <div class="fw-medium">{{ connector.name }}</div>
+              <code class="small">{{ connector.code }}</code>
+            </div>
+            <span class="badge {% if connector.enabled %}bg-label-success{% else %}bg-label-secondary{% endif %}">
+              {% if connector.enabled %}enabled{% else %}disabled{% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
 <div class="card">
   <div class="card-header">
     <h5 class="mb-0">Действия</h5>

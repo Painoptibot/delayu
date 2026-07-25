@@ -21,6 +21,11 @@
       </a>
     </li>
     <li class="nav-item">
+      <a class="nav-link{% if automation_tab == 'inbox' %} active{% endif %}" href="{% url 'invest-integrations-inbox' %}">
+        <i class="icon-base ri ri-inbox-line icon-sm me-2"></i>Inbox
+      </a>
+    </li>
+    <li class="nav-item">
       <a class="nav-link{% if automation_tab == 'escalation' %} active{% endif %}" href="{% url 'invest-escalation-rules' %}">
         <i class="icon-base ri ri-alarm-warning-line icon-sm me-2"></i>Эскалации
       </a>

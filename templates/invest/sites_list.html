@@ -18,6 +18,28 @@
   </div>
 </div>
 
+{% if can_change_site %}
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-1">СМЭВ batch</h5>
+    <div class="text-muted small">Введите кадастровые номера построчно, чтобы создать mock-запросы для найденных площадок.</div>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{% url 'invest-sites-smev-batch' %}" class="row g-3">
+      {% csrf_token %}
+      <div class="col-md-9">
+        <label class="form-label" for="smev-batch-cadastral">Кадастровые номера</label>
+        <textarea class="form-control" id="smev-batch-cadastral" name="cadastral_numbers" rows="3" placeholder="23:04:0000000:16"></textarea>
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button class="btn btn-outline-primary w-100" type="submit">Создать запросы</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endif %}
+
 <div class="card">
   <div class="table-responsive">
     <table class="table">

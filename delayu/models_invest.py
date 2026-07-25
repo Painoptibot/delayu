@@ -399,6 +399,8 @@ class InvestAutomationConfig(models.Model):
         "auto_tp_tasks": True,
         "auto_escalations": True,
         "gate_before_outbound": True,
+        "rgis_connector": False,
+        "isogd_connector": False,
         "sandbox": True,
     }
 

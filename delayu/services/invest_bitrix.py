@@ -100,8 +100,25 @@ def resolve_bitrix_stage_conflict(*, project: InvestProject, resolution: str) ->
     elif resolution != "delayu":
         raise InvestBitrixError("unknown stage conflict resolution")
     ext.pop("bitrix_stage_conflict", None)
-    ext["bitrix_stage_conflict_resolved_at"] = timezone.now().isoformat()
+    resolved_at = timezone.now().isoformat()
+    ext["bitrix_stage_conflict_resolved_at"] = resolved_at
     ext["bitrix_stage_conflict_resolution"] = resolution
+    history = ext.get("bitrix_stage_conflict_log") or []
+    if not isinstance(history, list):
+        history = []
+    history.append(
+        {
+            "resolution": resolution,
+            "resolved_at": resolved_at,
+            "bitrix_stage_id": conflict.get("bitrix_stage_id"),
+            "bitrix_funnel": conflict.get("bitrix_funnel"),
+            "bitrix_stage": conflict.get("bitrix_stage"),
+            "delayu_funnel": conflict.get("delayu_funnel"),
+            "delayu_stage": conflict.get("delayu_stage"),
+            "detected_at": conflict.get("detected_at"),
+        }
+    )
+    ext["bitrix_stage_conflict_log"] = history
     project.external_ids = ext
     project.save(update_fields=["funnel", "stage", "external_ids", "updated_at"])
     return {"resolved": True, "resolution": resolution, "stage": project.stage}

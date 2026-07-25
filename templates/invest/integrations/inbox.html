@@ -1,0 +1,67 @@
+{% extends layout_path %}
+
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-body-secondary mb-0">Очередь операторской обработки: ERROR, DEAD и QUEUED события инвестинтеграций.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-automation-status' %}">К статусам</a>
+</div>
+
+{% include "invest/automation/_nav.html" %}
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">События для повтора</h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Время</th>
+          <th>Канал</th>
+          <th>Событие</th>
+          <th>Статус</th>
+          <th>Контекст</th>
+          <th class="text-end">Действие</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td class="text-nowrap">{{ event.created_at|date:"d.m.Y H:i" }}</td>
+          <td>{{ event.get_channel_display }}</td>
+          <td>
+            <div>{{ event.event_type|default:"—" }}</div>
+            <div class="text-muted small">{{ event.correlation_id }}</div>
+            {% if event.error_message %}<div class="text-danger small">{{ event.error_message }}</div>{% endif %}
+          </td>
+          <td>
+            <span class="badge {% if event.status == 'queued' %}bg-label-info{% else %}bg-label-danger{% endif %}">
+              {{ event.get_status_display }}
+            </span>
+          </td>
+          <td>
+            {% if event.project %}{{ event.project }}{% elif event.site %}{{ event.site }}{% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-end">
+            <form method="post" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="event_id" value="{{ event.pk }}">
+              <button class="btn btn-sm btn-outline-warning" type="submit">Повторить</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td class="text-center text-muted py-4" colspan="6">Нет событий, требующих операторского повтора.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
