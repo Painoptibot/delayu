@@ -1,0 +1,284 @@
+/* Invest executive surfaces — modern skin (item 31)
+   Direction: deep slate + teal atmosphere, amber accent.
+   Scoped to .invest-dash to avoid global Vuexy regressions. */
+
+.invest-dash {
+  --invest-dash-ink: #13243a;
+  --invest-dash-muted: #5b6b7c;
+  --invest-dash-accent: #c47b2d;
+  --invest-dash-accent-soft: rgba(196, 123, 45, 0.14);
+  --invest-dash-teal: #1f6f78;
+  --invest-dash-surface: rgba(255, 255, 255, 0.86);
+  --invest-dash-surface-strong: #ffffff;
+  --invest-dash-border: rgba(19, 36, 58, 0.08);
+  --invest-dash-shadow: 0 18px 40px rgba(19, 36, 58, 0.08);
+  --invest-dash-radius: 1.1rem;
+  position: relative;
+  color: var(--invest-dash-ink);
+}
+
+.invest-dash::before {
+  content: "";
+  position: absolute;
+  inset: -1.25rem -0.75rem auto;
+  height: 14rem;
+  border-radius: 1.5rem;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 90% at 8% 20%, rgba(31, 111, 120, 0.18), transparent 58%),
+    radial-gradient(ellipse 55% 80% at 92% 0%, rgba(196, 123, 45, 0.14), transparent 55%),
+    linear-gradient(180deg, rgba(236, 242, 245, 0.9), rgba(236, 242, 245, 0));
+}
+
+.invest-dash > * {
+  position: relative;
+  z-index: 1;
+}
+
+.invest-dash__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  animation: invest-dash-rise 0.55s ease both;
+}
+
+@media (min-width: 768px) {
+  .invest-dash__hero {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.invest-dash__hero h4 {
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.invest-dash__hero p {
+  color: var(--invest-dash-muted) !important;
+  max-width: 42rem;
+}
+
+.invest-dash__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.invest-dash__actions .btn {
+  border-radius: 999px;
+  padding-inline: 1rem;
+}
+
+.invest-dash__kpi-grid {
+  margin-bottom: 1.5rem;
+}
+
+.invest-dash__kpi {
+  height: 100%;
+  border: 1px solid var(--invest-dash-border);
+  border-radius: var(--invest-dash-radius);
+  background:
+    linear-gradient(180deg, var(--invest-dash-surface-strong), var(--invest-dash-surface));
+  box-shadow: var(--invest-dash-shadow);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: invest-dash-rise 0.55s ease both;
+}
+
+.invest-dash__kpi::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0.28rem;
+  background: linear-gradient(180deg, var(--invest-dash-teal), var(--invest-dash-accent));
+}
+
+.invest-dash__kpi:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 44px rgba(19, 36, 58, 0.12);
+}
+
+.invest-dash__kpi .card-body {
+  padding: 1.15rem 1.15rem 1.15rem 1.35rem;
+}
+
+.invest-dash__kpi-label {
+  color: var(--invest-dash-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.45rem;
+}
+
+.invest-dash__kpi-value {
+  font-size: clamp(1.6rem, 2.4vw, 2.15rem);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--invest-dash-ink);
+}
+
+.invest-dash__kpi-hint {
+  margin-top: 0.35rem;
+  color: var(--invest-dash-muted);
+  font-size: 0.8rem;
+}
+
+.invest-dash__panel {
+  border: 1px solid var(--invest-dash-border);
+  border-radius: var(--invest-dash-radius);
+  background: var(--invest-dash-surface-strong);
+  box-shadow: var(--invest-dash-shadow);
+  overflow: hidden;
+  animation: invest-dash-rise 0.65s ease both;
+}
+
+.invest-dash__panel .card-header {
+  background: linear-gradient(180deg, rgba(31, 111, 120, 0.06), transparent);
+  border-bottom-color: var(--invest-dash-border);
+}
+
+.invest-dash__panel .card-header h5,
+.invest-dash__panel .card-header h6 {
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.invest-dash__panel .table {
+  --bs-table-bg: transparent;
+}
+
+.invest-dash__panel .table thead th {
+  color: var(--invest-dash-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom-width: 1px;
+}
+
+.invest-dash__panel .progress {
+  height: 0.65rem;
+  border-radius: 999px;
+  background: rgba(19, 36, 58, 0.06);
+}
+
+.invest-dash__panel .progress-bar {
+  background: linear-gradient(90deg, var(--invest-dash-teal), var(--invest-dash-accent));
+  border-radius: 999px;
+}
+
+.invest-dash__badge-high {
+  background: rgba(176, 42, 55, 0.12) !important;
+  color: #8f2430 !important;
+}
+
+.invest-dash__badge-medium {
+  background: var(--invest-dash-accent-soft) !important;
+  color: #8a5414 !important;
+}
+
+.invest-dash__filters {
+  border: 1px solid var(--invest-dash-border);
+  border-radius: var(--invest-dash-radius);
+  background: var(--invest-dash-surface);
+  box-shadow: var(--invest-dash-shadow);
+  margin-bottom: 1.5rem;
+  animation: invest-dash-rise 0.5s ease both;
+}
+
+.invest-dash__kanban-col {
+  width: min(20rem, 86vw);
+  border: 1px solid var(--invest-dash-border);
+  border-radius: var(--invest-dash-radius);
+  background: linear-gradient(180deg, #f7fafb, #ffffff);
+  box-shadow: var(--invest-dash-shadow);
+  flex-shrink: 0;
+}
+
+.invest-dash__kanban-card {
+  display: block;
+  border: 1px solid var(--invest-dash-border);
+  border-radius: 0.85rem;
+  padding: 0.9rem 1rem;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.invest-dash__kanban-card:hover {
+  border-color: rgba(31, 111, 120, 0.35);
+  transform: translateY(-2px);
+  color: inherit;
+}
+
+.invest-dash__inbox-card {
+  border-radius: 0.85rem !important;
+  margin: 0.35rem 0.5rem;
+  border: 1px solid transparent !important;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.invest-dash__inbox-card:hover {
+  background: rgba(31, 111, 120, 0.06) !important;
+  border-color: var(--invest-dash-border) !important;
+}
+
+.invest-dash .list-group-item {
+  border-color: rgba(19, 36, 58, 0.06);
+}
+
+.invest-dash__kpi:nth-child(1),
+.invest-dash__kpi-grid > [class*="col-"]:nth-child(1) .invest-dash__kpi { animation-delay: 0.04s; }
+.invest-dash__kpi-grid > [class*="col-"]:nth-child(2) .invest-dash__kpi { animation-delay: 0.08s; }
+.invest-dash__kpi-grid > [class*="col-"]:nth-child(3) .invest-dash__kpi { animation-delay: 0.12s; }
+.invest-dash__kpi-grid > [class*="col-"]:nth-child(4) .invest-dash__kpi { animation-delay: 0.16s; }
+.invest-dash__kpi-grid > [class*="col-"]:nth-child(5) .invest-dash__kpi { animation-delay: 0.2s; }
+.invest-dash__kpi-grid > [class*="col-"]:nth-child(6) .invest-dash__kpi { animation-delay: 0.24s; }
+
+@keyframes invest-dash-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .invest-dash::before {
+    inset: -0.75rem -0.35rem auto;
+    height: 11rem;
+  }
+
+  .invest-dash__kpi-value {
+    font-size: 1.55rem;
+  }
+
+  .invest-dash__inbox-card .invest-inbox-meta {
+    display: block;
+    margin-top: 0.25rem;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invest-dash__hero,
+  .invest-dash__kpi,
+  .invest-dash__panel,
+  .invest-dash__filters,
+  .invest-dash__kanban-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}

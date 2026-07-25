@@ -1,122 +1,130 @@
 {% extends layout_path %}
+{% load static %}
 
 {% block title %}Executive cockpit{% endblock %}
 
+{% block page_css %}
+{{ block.super }}
+{% include "invest/_dashboard_skin_css.html" %}
+{% endblock %}
+
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
-  <div>
-    <h4 class="mb-1">Executive cockpit</h4>
-    <p class="text-muted mb-0">KPI summary, SLA risk, MO heat and quarterly attraction progress.</p>
+<div class="invest-dash">
+  <div class="invest-dash__hero">
+    <div>
+      <h4 class="mb-1">Executive cockpit</h4>
+      <p class="mb-0">KPI summary, SLA risk, MO heat and quarterly attraction progress.</p>
+    </div>
+    <div class="invest-dash__actions">
+      <a class="btn btn-outline-secondary" href="{% url 'invest-dashboard' %}">Дашборд</a>
+      <a class="btn btn-outline-secondary" href="{% url 'invest-dashboard-brief' %}?{{ request.GET.urlencode }}">Meeting pack PDF</a>
+    </div>
   </div>
-  <div class="d-flex gap-2">
-    <a class="btn btn-outline-secondary" href="{% url 'invest-dashboard' %}">Дашборд</a>
-    <a class="btn btn-outline-secondary" href="{% url 'invest-dashboard-brief' %}?{{ request.GET.urlencode }}">Meeting pack PDF</a>
-  </div>
-</div>
 
-<div class="row g-4 mb-6">
-  <div class="col-md-2">
-    <div class="card h-100"><div class="card-body">
-      <div class="text-muted mb-1">Проекты</div>
-      <div class="display-6">{{ cockpit.kpis.projects_total }}</div>
-    </div></div>
+  <div class="row g-4 invest-dash__kpi-grid">
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Проекты</div>
+        <div class="invest-dash__kpi-value">{{ cockpit.kpis.projects_total }}</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Привлечение</div>
+        <div class="invest-dash__kpi-value">{{ cockpit.kpis.attraction }}</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Сопровождение</div>
+        <div class="invest-dash__kpi-value">{{ cockpit.kpis.support }}</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Просрочено</div>
+        <div class="invest-dash__kpi-value">{{ cockpit.kpis.overdue }}</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Пакеты готовы</div>
+        <div class="invest-dash__kpi-value">{{ cockpit.kpis.packages_ready_pct }}%</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Активные брони</div>
+        <div class="invest-dash__kpi-value">{{ cockpit.kpis.active_bookings }}</div>
+      </div></div>
+    </div>
   </div>
-  <div class="col-md-2">
-    <div class="card h-100"><div class="card-body">
-      <div class="text-muted mb-1">Привлечение</div>
-      <div class="display-6">{{ cockpit.kpis.attraction }}</div>
-    </div></div>
-  </div>
-  <div class="col-md-2">
-    <div class="card h-100"><div class="card-body">
-      <div class="text-muted mb-1">Сопровождение</div>
-      <div class="display-6">{{ cockpit.kpis.support }}</div>
-    </div></div>
-  </div>
-  <div class="col-md-2">
-    <div class="card h-100"><div class="card-body">
-      <div class="text-muted mb-1">Просрочено</div>
-      <div class="display-6">{{ cockpit.kpis.overdue }}</div>
-    </div></div>
-  </div>
-  <div class="col-md-2">
-    <div class="card h-100"><div class="card-body">
-      <div class="text-muted mb-1">Пакеты готовы</div>
-      <div class="display-6">{{ cockpit.kpis.packages_ready_pct }}%</div>
-    </div></div>
-  </div>
-  <div class="col-md-2">
-    <div class="card h-100"><div class="card-body">
-      <div class="text-muted mb-1">Активные брони</div>
-      <div class="display-6">{{ cockpit.kpis.active_bookings }}</div>
-    </div></div>
-  </div>
-</div>
 
-<div class="row g-4 mb-6">
-  <div class="col-lg-6">
-    <div class="card h-100">
-      <div class="card-header"><h5 class="mb-0">SLA risk</h5></div>
-      <div class="card-body">
-        <div class="d-flex gap-3 mb-3">
-          <span class="badge bg-label-danger">High: {{ cockpit.sla_risk.high_count }}</span>
-          <span class="badge bg-label-warning">Medium: {{ cockpit.sla_risk.medium_count }}</span>
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card h-100 invest-dash__panel">
+        <div class="card-header"><h5>SLA risk</h5></div>
+        <div class="card-body">
+          <div class="d-flex gap-3 mb-3 flex-wrap">
+            <span class="badge invest-dash__badge-high">High: {{ cockpit.sla_risk.high_count }}</span>
+            <span class="badge invest-dash__badge-medium">Medium: {{ cockpit.sla_risk.medium_count }}</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table mb-0">
+              <thead><tr><th>Проект</th><th>МО</th><th>Risk</th><th class="text-end">Шаги</th></tr></thead>
+              <tbody>
+                {% for row in cockpit.sla_risk.projects %}
+                <tr>
+                  <td>{{ row.project_code }} · {{ row.project_name }}</td>
+                  <td>{{ row.organization_name }}</td>
+                  <td>{{ row.risk }}</td>
+                  <td class="text-end">{{ row.items_count }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-muted">SLA risk не выявлен.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="table-responsive">
-          <table class="table mb-0">
-            <thead><tr><th>Проект</th><th>МО</th><th>Risk</th><th class="text-end">Шаги</th></tr></thead>
-            <tbody>
-              {% for row in cockpit.sla_risk.projects %}
-              <tr>
-                <td>{{ row.project_code }} · {{ row.project_name }}</td>
-                <td>{{ row.organization_name }}</td>
-                <td>{{ row.risk }}</td>
-                <td class="text-end">{{ row.items_count }}</td>
-              </tr>
-              {% empty %}
-              <tr><td colspan="4" class="text-muted">SLA risk не выявлен.</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card h-100 invest-dash__panel">
+        <div class="card-header"><h5>Quarterly targets</h5></div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <span>Q{{ cockpit.quarter_target.quarter }} {{ cockpit.quarter_target.year }}</span>
+            <strong>{{ cockpit.quarter_target.actual }} / {{ cockpit.quarter_target.goal }}</strong>
+          </div>
+          <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width: {{ cockpit.quarter_target.progress_pct }}%;" aria-valuenow="{{ cockpit.quarter_target.progress_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-  <div class="col-lg-6">
-    <div class="card h-100">
-      <div class="card-header"><h5 class="mb-0">Quarterly targets</h5></div>
-      <div class="card-body">
-        <div class="d-flex justify-content-between mb-2">
-          <span>Q{{ cockpit.quarter_target.quarter }} {{ cockpit.quarter_target.year }}</span>
-          <strong>{{ cockpit.quarter_target.actual }} / {{ cockpit.quarter_target.goal }}</strong>
-        </div>
-        <div class="progress" style="height: 10px;">
-          <div class="progress-bar" role="progressbar" style="width: {{ cockpit.quarter_target.progress_pct }}%;" aria-valuenow="{{ cockpit.quarter_target.progress_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
-<div class="card">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">Heat by MO</h5>
-    <span class="text-muted small">{{ cockpit.heat_note }}</span>
-  </div>
-  <div class="table-responsive">
-    <table class="table mb-0">
-      <thead><tr><th>МО</th><th class="text-end">Просрочено</th></tr></thead>
-      <tbody>
-        {% for row in cockpit.heat_by_mo %}
-        <tr>
-          <td>{{ row.organization_name }}</td>
-          <td class="text-end">{{ row.overdue_count }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="2" class="text-muted">Просроченных шагов нет.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="card invest-dash__panel">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h5>Heat by MO</h5>
+      <span class="text-muted small">{{ cockpit.heat_note }}</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead><tr><th>МО</th><th class="text-end">Просрочено</th></tr></thead>
+        <tbody>
+          {% for row in cockpit.heat_by_mo %}
+          <tr>
+            <td>{{ row.organization_name }}</td>
+            <td class="text-end">{{ row.overdue_count }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="text-muted">Просроченных шагов нет.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endblock %}

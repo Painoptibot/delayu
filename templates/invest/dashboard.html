@@ -1,199 +1,191 @@
 {% extends layout_path %}
+{% load static %}
 
 {% block title %}Дашборд руководителя{% endblock %}
 
+{% block page_css %}
+{{ block.super }}
+{% include "invest/_dashboard_skin_css.html" %}
+{% endblock %}
+
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
-  <div>
-    <h4 class="mb-1">Дашборд руководителя</h4>
-    <p class="text-muted mb-0">Сводка по привлечению, сопровождению и узким местам инвестконтура.</p>
+<div class="invest-dash">
+  <div class="invest-dash__hero">
+    <div>
+      <h4 class="mb-1">Дашборд руководителя</h4>
+      <p class="mb-0">Сводка по привлечению, сопровождению и узким местам инвестконтура.</p>
+    </div>
+    <div class="invest-dash__actions">
+      <a class="btn btn-outline-secondary" href="{% url 'invest-hub' %}">Обзор</a>
+      <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
+      <a class="btn btn-outline-secondary" href="{% url 'invest-kanban' %}">Канбан</a>
+      <a class="btn btn-outline-secondary" href="{% url 'invest-handoffs' %}">Передачи</a>
+      <a class="btn btn-primary" href="{% url 'invest-dashboard-export' %}?{{ request.GET.urlencode }}">Excel</a>
+    </div>
   </div>
-  <div class="d-flex gap-2">
-    <a class="btn btn-outline-secondary" href="{% url 'invest-hub' %}">Обзор</a>
-    <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
-    <a class="btn btn-outline-secondary" href="{% url 'invest-kanban' %}">Канбан</a>
-    <a class="btn btn-outline-secondary" href="{% url 'invest-handoffs' %}">Передачи</a>
-    <a class="btn btn-primary" href="{% url 'invest-dashboard-export' %}?{{ request.GET.urlencode }}">Excel</a>
-  </div>
-</div>
 
-<div class="card mb-4">
-  <div class="card-body">
-    <form class="row g-3 align-items-end" method="get">
-      <div class="col-md-2">
-        <label class="form-label" for="period">Период</label>
-        <select class="form-select" id="period" name="period">
-          <option value="week"{% if period == 'week' %} selected{% endif %}>Неделя</option>
-          <option value="month"{% if period == 'month' %} selected{% endif %}>Месяц</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label" for="from">С</label>
-        <input class="form-control" id="from" name="from" type="date" value="{{ date_from }}">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label" for="to">По</label>
-        <input class="form-control" id="to" name="to" type="date" value="{{ date_to }}">
-      </div>
-      <div class="col-md-4 d-flex gap-2">
-        <button class="btn btn-outline-primary" type="submit">Сравнить</button>
-        <a class="btn btn-outline-secondary" href="{% url 'invest-dashboard' %}?period=week">Неделя</a>
-        <a class="btn btn-outline-secondary" href="{% url 'invest-dashboard' %}?period=month">Месяц</a>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="row g-4 mb-6">
-  <div class="col-md-3">
-    <div class="card h-100">
-      <div class="card-body">
-        <div class="text-muted mb-1">Просрочено шагов</div>
-        <div class="display-6">{{ dashboard.overdue_count }}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card h-100">
-      <div class="card-body">
-        <div class="text-muted mb-1">Готовность пакетов</div>
-        <div class="display-6">{{ dashboard.packages_ready_pct }}%</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card h-100">
-      <div class="card-body">
-        <div class="text-muted mb-1">Активные брони</div>
-        <div class="display-6">{{ dashboard.active_bookings }}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card h-100">
-      <div class="card-body">
-        <div class="text-muted mb-1">Создано за период</div>
-        <div class="display-6">{{ dashboard.period_compare.current_count }}</div>
-        <div class="text-muted small">Предыдущий период: {{ dashboard.period_compare.previous_count }}</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row g-4 mb-6">
-  <div class="col-md-6">
-    <div class="card h-100">
-      <div class="card-body">
-        <div class="text-muted mb-1">Инвестиции, млн руб.</div>
-        <div class="display-6">{{ dashboard.investment_total|floatformat:2 }}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card h-100">
-      <div class="card-body">
-        <div class="text-muted mb-1">Рабочие места</div>
-        <div class="display-6">{{ dashboard.jobs_total }}</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row g-4 mb-6">
-  <div class="col-lg-6">
-    <div class="card h-100">
-      <div class="card-header"><h5 class="mb-0">Привлечение по стадиям</h5></div>
-      <div class="card-body">
-        {% for stage, total in dashboard.attraction_counts.items %}
-        <div class="d-flex justify-content-between border-bottom py-2">
-          <span>{{ stage }}</span>
-          <strong>{{ total }}</strong>
+  <div class="card invest-dash__filters">
+    <div class="card-body">
+      <form class="row g-3 align-items-end" method="get">
+        <div class="col-md-2">
+          <label class="form-label" for="period">Период</label>
+          <select class="form-select" id="period" name="period">
+            <option value="week"{% if period == 'week' %} selected{% endif %}>Неделя</option>
+            <option value="month"{% if period == 'month' %} selected{% endif %}>Месяц</option>
+          </select>
         </div>
-        {% empty %}
-        <p class="text-muted mb-0">Нет проектов в привлечении.</p>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-6">
-    <div class="card h-100">
-      <div class="card-header"><h5 class="mb-0">Сопровождение по стадиям</h5></div>
-      <div class="card-body">
-        {% for stage, total in dashboard.support_counts.items %}
-        <div class="d-flex justify-content-between border-bottom py-2">
-          <span>{{ stage }}</span>
-          <strong>{{ total }}</strong>
+        <div class="col-md-3">
+          <label class="form-label" for="from">С</label>
+          <input class="form-control" id="from" name="from" type="date" value="{{ date_from }}">
         </div>
-        {% empty %}
-        <p class="text-muted mb-0">Нет проектов в сопровождении.</p>
-        {% endfor %}
+        <div class="col-md-3">
+          <label class="form-label" for="to">По</label>
+          <input class="form-control" id="to" name="to" type="date" value="{{ date_to }}">
+        </div>
+        <div class="col-md-4 d-flex gap-2 flex-wrap">
+          <button class="btn btn-outline-primary" type="submit">Сравнить</button>
+          <a class="btn btn-outline-secondary" href="{% url 'invest-dashboard' %}?period=week">Неделя</a>
+          <a class="btn btn-outline-secondary" href="{% url 'invest-dashboard' %}?period=month">Месяц</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-4 invest-dash__kpi-grid">
+    <div class="col-6 col-md-3">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Просрочено шагов</div>
+        <div class="invest-dash__kpi-value">{{ dashboard.overdue_count }}</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Готовность пакетов</div>
+        <div class="invest-dash__kpi-value">{{ dashboard.packages_ready_pct }}%</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Активные брони</div>
+        <div class="invest-dash__kpi-value">{{ dashboard.active_bookings }}</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Создано за период</div>
+        <div class="invest-dash__kpi-value">{{ dashboard.period_compare.current_count }}</div>
+        <div class="invest-dash__kpi-hint">Предыдущий период: {{ dashboard.period_compare.previous_count }}</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row g-4 invest-dash__kpi-grid">
+    <div class="col-md-6">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Инвестиции, млн руб.</div>
+        <div class="invest-dash__kpi-value">{{ dashboard.investment_total|floatformat:2 }}</div>
+      </div></div>
+    </div>
+    <div class="col-md-6">
+      <div class="card invest-dash__kpi"><div class="card-body">
+        <div class="invest-dash__kpi-label">Рабочие места</div>
+        <div class="invest-dash__kpi-value">{{ dashboard.jobs_total }}</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card h-100 invest-dash__panel">
+        <div class="card-header"><h5>Привлечение по стадиям</h5></div>
+        <div class="card-body">
+          {% for stage, total in dashboard.attraction_counts.items %}
+          <div class="d-flex justify-content-between border-bottom py-2">
+            <span>{{ stage }}</span>
+            <strong>{{ total }}</strong>
+          </div>
+          {% empty %}
+          <p class="text-muted mb-0">Нет проектов в привлечении.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card h-100 invest-dash__panel">
+        <div class="card-header"><h5>Сопровождение по стадиям</h5></div>
+        <div class="card-body">
+          {% for stage, total in dashboard.support_counts.items %}
+          <div class="d-flex justify-content-between border-bottom py-2">
+            <span>{{ stage }}</span>
+            <strong>{{ total }}</strong>
+          </div>
+          {% empty %}
+          <p class="text-muted mb-0">Нет проектов в сопровождении.</p>
+          {% endfor %}
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="row g-4">
-<div class="col-lg-6">
-<div class="card h-100">
-  <div class="card-header">
-    <h5 class="mb-0">Узкие места по МО</h5>
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card h-100 invest-dash__panel">
+        <div class="card-header"><h5>Узкие места по МО</h5></div>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead>
+              <tr>
+                <th>МО</th>
+                <th class="text-end">Просрочено</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in dashboard.bottlenecks_by_org %}
+              <tr>
+                <td>{{ row.organization_name }}</td>
+                <td class="text-end">{{ row.overdue_count }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="2" class="text-muted">Просроченных шагов нет.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card h-100 invest-dash__panel">
+        <div class="card-header"><h5>Отрасли и эффект</h5></div>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead>
+              <tr>
+                <th>Отрасль</th>
+                <th class="text-end">Проекты</th>
+                <th class="text-end">Инвестиции</th>
+                <th class="text-end">Раб. места</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in dashboard.industry_metrics %}
+              <tr>
+                <td>{{ row.industry }}</td>
+                <td class="text-end">{{ row.projects }}</td>
+                <td class="text-end">{{ row.investment_amount|floatformat:2 }}</td>
+                <td class="text-end">{{ row.jobs }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-muted">Проектов пока нет.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="table-responsive">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>МО</th>
-          <th class="text-end">Просрочено</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in dashboard.bottlenecks_by_org %}
-        <tr>
-          <td>{{ row.organization_name }}</td>
-          <td class="text-end">{{ row.overdue_count }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="2" class="text-muted">Просроченных шагов нет.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-</div>
-<div class="col-lg-6">
-<div class="card h-100">
-  <div class="card-header">
-    <h5 class="mb-0">Отрасли и эффект</h5>
-  </div>
-  <div class="table-responsive">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Отрасль</th>
-          <th class="text-end">Проекты</th>
-          <th class="text-end">Инвестиции</th>
-          <th class="text-end">Раб. места</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in dashboard.industry_metrics %}
-        <tr>
-          <td>{{ row.industry }}</td>
-          <td class="text-end">{{ row.projects }}</td>
-          <td class="text-end">{{ row.investment_amount|floatformat:2 }}</td>
-          <td class="text-end">{{ row.jobs }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="4" class="text-muted">Проектов пока нет.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-</div>
 </div>
 {% endblock %}
