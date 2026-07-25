@@ -1,6 +1,7 @@
 """Views for the invest subsystem."""
 
 from django.contrib import messages
+from django.contrib.auth.mixins import AccessMixin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
@@ -18,6 +19,7 @@ from delayu.models_invest import (
     InvestPackageItem,
     InvestProject,
     InvestSite,
+    InvestSmevRequest,
 )
 from delayu.services.access import get_membership_or_403, user_can
 from delayu.services.invest_booking import InvestBookingError, book_site, select_site
@@ -31,9 +33,10 @@ from delayu.services.invest_handoff import (
 from delayu.services.invest_import import apply_row, parse_mo_file, skip_row
 from delayu.services.invest_package import ensure_package, set_item_status
 from delayu.services.invest_scope import projects_for_membership, sites_for_membership
+from delayu.services.invest_smev import InvestSmevError, apply_smev_response, request_smev_fill
 
 
-class InvestSubsystemMixin:
+class InvestSubsystemMixin(AccessMixin):
     module_code = "M22"
     page_title = "Инвестконтур"
 
@@ -46,12 +49,16 @@ class InvestSubsystemMixin:
         return self.get_membership().subsystem
 
     def dispatch(self, request, *args, **kwargs):
+        # До ModulePermissionMixin: иначе AnonymousUser уходит в filter(user=…).
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         membership = get_membership_or_403(request)
         if (
             membership.subsystem.industry_template != "invest"
             or membership.subsystem.status != Subsystem.Status.ACTIVE
         ):
-            raise PermissionDenied("Раздел доступен только в активном инвестконтуре")
+            messages.error(request, "Раздел доступен только в активном инвестконтуре. Переключите контур.")
+            return redirect("platform-home")
         self._invest_membership = membership
         return super().dispatch(request, *args, **kwargs)
 
@@ -145,7 +152,17 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        project = self.object
+        package = ensure_package(project)
+        items = list(package.items.order_by("id"))
+        required = [i for i in items if i.required]
+        ready = sum(1 for i in required if i.status == InvestPackageItem.Status.ATTACHED)
         ctx["can_change_project"] = user_can(self.request.user, self.module_code, "change")
+        ctx["site_links"] = project.site_links.select_related("site", "site__organization").order_by("role", "id")
+        ctx["roadmap_items"] = project.roadmap_items.select_related("owner").order_by("due_at", "code")
+        ctx["package"] = package
+        ctx["package_items"] = items
+        ctx["package_ready"] = f"{ready}/{len(required)}" if required else "—"
         return ctx
 
 
@@ -392,6 +409,7 @@ class InvestSiteListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["can_create_site"] = user_can(self.request.user, self.module_code, "create")
+        ctx["can_change_site"] = user_can(self.request.user, self.module_code, "change")
         return ctx
 
 
@@ -410,6 +428,8 @@ class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailVi
         ctx["can_change_site"] = user_can(self.request.user, self.module_code, "change")
         ctx["project_links"] = self.object.project_links.select_related("project", "project__organization")
         ctx["projects"] = projects_for_membership(membership).select_related("organization").order_by("code")
+        ctx["smev_requests"] = self.object.smev_requests.all()[:10]
+        ctx["smev_services"] = InvestSmevRequest.Service.choices
         return ctx
 
 
@@ -433,6 +453,63 @@ class InvestSiteCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, M
             form.instance.organization = membership.organization
         messages.success(self.request, "Инвестплощадка создана.")
         return super().form_valid(form)
+
+
+class InvestSiteUpdateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, UpdateView):
+    model = InvestSite
+    form_class = InvestSiteForm
+    template_name = "invest/site_form.html"
+    page_title = "Редактирование площадки"
+    required_action = "change"
+
+    def get_queryset(self):
+        return sites_for_membership(self.get_membership())
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["membership"] = self.get_membership()
+        return kwargs
+
+    def get_success_url(self):
+        return reverse("invest-site-detail", args=[self.object.pk])
+
+    def form_valid(self, form):
+        membership = self.get_membership()
+        if membership.role.code == "invest_mo":
+            form.instance.organization = membership.organization
+        messages.success(self.request, "Площадка сохранена.")
+        return super().form_valid(form)
+
+
+class InvestSiteSmevRequestView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    """Тестовый запрос СМЭВ по площадке."""
+
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        site = get_object_or_404(sites_for_membership(self.get_membership()), pk=kwargs["pk"])
+        service = request.POST.get("service") or InvestSmevRequest.Service.EGRN
+        req = request_smev_fill(site=site, user=request.user, service=service)
+        messages.success(
+            request,
+            f"Тестовый СМЭВ ({req.get_service_display()}): ответ получен. Можно применить к карточке.",
+        )
+        return redirect(reverse("invest-site-detail", args=[site.pk]))
+
+
+class InvestSiteSmevApplyView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        site = get_object_or_404(sites_for_membership(self.get_membership()), pk=kwargs["pk"])
+        smev_req = get_object_or_404(InvestSmevRequest, pk=kwargs["request_pk"], site=site)
+        try:
+            apply_smev_response(request=smev_req, user=request.user)
+        except InvestSmevError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, "Данные тестового СМЭВ применены к карточке площадки.")
+        return redirect(reverse("invest-site-detail", args=[site.pk]))
 
 
 class InvestSiteActionView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):

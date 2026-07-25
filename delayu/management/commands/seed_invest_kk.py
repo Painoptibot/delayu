@@ -1,4 +1,5 @@
 """Демо-данные инвестконтура Краснодарского края."""
+from datetime import date
 from decimal import Decimal
 
 from django.apps import apps
@@ -21,6 +22,7 @@ from delayu.models_invest import (
     InvestProject,
     InvestProjectSite,
     InvestSite,
+    InvestSmevRequest,
 )
 from delayu.services.invest_booking import book_site
 from delayu.services.invest_handoff import request_handoff
@@ -57,6 +59,9 @@ class Command(BaseCommand):
         roles = self._seed_roles(subsystem)
         users = self._seed_users(subsystem, orgs, roles)
         self._seed_demo(subsystem, orgs, users)
+        from delayu.services.invest_flags import ensure_automation_config
+
+        ensure_automation_config(subsystem)
 
         self.stdout.write(self.style.SUCCESS("Инвестконтур Кубани развёрнут (code=invest-kk)"))
         self.stdout.write("  invest_admin / invest_admin — администратор")
@@ -185,6 +190,7 @@ class Command(BaseCommand):
         return users
 
     def _seed_demo(self, subsystem, orgs, users):
+        InvestSmevRequest.objects.filter(subsystem=subsystem).delete()
         InvestHandoff.objects.filter(project__subsystem=subsystem).delete()
         InvestProjectSite.objects.filter(project__subsystem=subsystem).delete()
         InvestProject.objects.filter(subsystem=subsystem).delete()
@@ -198,6 +204,11 @@ class Command(BaseCommand):
             project=projects["P-INV-002"],
             site=sites["23:49:0402002:88"],
             defaults={"role": InvestProjectSite.Role.PROPOSED},
+        )
+        InvestProjectSite.objects.update_or_create(
+            project=projects["P-INV-001"],
+            site=sites["23:43:0101001:77"],
+            defaults={"role": InvestProjectSite.Role.CANDIDATE},
         )
 
         for project in (projects["P-INV-001"], projects["P-INV-002"]):
@@ -222,11 +233,18 @@ class Command(BaseCommand):
                 "organization": orgs["mo-krasnodar"],
                 "investor_name": "ООО «Кубань Агро Инвест»",
                 "industry": "АПК",
+                "description": "Строительство тепличного комплекса пятого поколения с логистическим хабом.",
                 "funnel": InvestProject.Funnel.ATTRACTION,
                 "stage": "site_pick",
                 "owner": users["invest_agency"],
-                "investment_amount": Decimal("1250000000.00"),
+                "contact_person": "Иванова М.А.",
+                "contact_phone": "+7 (861) 200-11-22",
+                "contact_email": "ivanova@kuban-agro.example",
+                "investment_amount": Decimal("1250.00"),
                 "jobs_count": 180,
+                "support_measures": "Льготный земельный участок, сопровождение по инфраструктуре.",
+                "planned_start": date(2026, 9, 1),
+                "planned_end": date(2028, 6, 30),
             },
             {
                 "code": "P-INV-002",
@@ -234,11 +252,18 @@ class Command(BaseCommand):
                 "organization": orgs["mo-sochi"],
                 "investor_name": "ООО «Юг Девелопмент»",
                 "industry": "Туризм",
+                "description": "Гостиничный комплекс 4* с конференц-залом и SPA.",
                 "funnel": InvestProject.Funnel.ATTRACTION,
                 "stage": "package_ready",
                 "owner": users["invest_agency"],
-                "investment_amount": Decimal("3400000000.00"),
+                "contact_person": "Петров С.В.",
+                "contact_phone": "+7 (862) 555-01-01",
+                "contact_email": "petrov@yug-dev.example",
+                "investment_amount": Decimal("3400.00"),
                 "jobs_count": 260,
+                "support_measures": "Сопровождение по подключению сетей, консультации по ВРИ.",
+                "planned_start": date(2027, 3, 1),
+                "planned_end": date(2029, 12, 31),
             },
             {
                 "code": "P-SUP-001",
@@ -246,11 +271,19 @@ class Command(BaseCommand):
                 "organization": orgs["mo-krasnodar"],
                 "investor_name": "АО «Индустрия Кубани»",
                 "industry": "Промышленность",
+                "description": "Индустриальный парк с готовой инфраструктурой для резидентов.",
                 "funnel": InvestProject.Funnel.SUPPORT,
                 "stage": "accepted",
                 "owner": users["invest_dept"],
-                "investment_amount": Decimal("5800000000.00"),
+                "contact_person": "Сидорова Е.Н.",
+                "contact_phone": "+7 (861) 300-44-55",
+                "contact_email": "sidorova@industry-kk.example",
+                "investment_amount": Decimal("5800.00"),
                 "jobs_count": 520,
+                "support_measures": "Дорожная карта сопровождения, SLA по разрешениям.",
+                "planned_start": date(2026, 4, 1),
+                "planned_end": date(2030, 12, 31),
+                "municipality_notes": "МО готово ускорить согласование ЗУ при подтверждении ВРИ.",
             },
         )
         projects = {}
@@ -265,9 +298,13 @@ class Command(BaseCommand):
                 "cadastral_number": "23:43:0107001:101",
                 "name": "Площадка «Краснодар Восток»",
                 "organization": orgs["mo-krasnodar"],
+                "address": "г. Краснодар, восточная промзона",
                 "area_ha": Decimal("18.5000"),
                 "land_category": "Земли промышленности",
                 "vri": "Производственная деятельность",
+                "right_type": "аренда",
+                "encumbrances": "",
+                "zone_info": "Без критичных пересечений ООПТ",
                 "status": InvestSite.Status.ACTUAL,
                 "completeness_pct": 92,
                 "latitude": Decimal("45.035470"),
@@ -277,9 +314,11 @@ class Command(BaseCommand):
                 "cadastral_number": "23:49:0402002:88",
                 "name": "Площадка «Сочи Логистика»",
                 "organization": orgs["mo-sochi"],
+                "address": "г. Сочи, Адлерский район",
                 "area_ha": Decimal("6.2500"),
                 "land_category": "Земли населённых пунктов",
                 "vri": "Гостиничное обслуживание",
+                "right_type": "собственность субъекта РФ",
                 "status": InvestSite.Status.ACTUAL,
                 "completeness_pct": 86,
                 "latitude": Decimal("43.602810"),
@@ -289,9 +328,11 @@ class Command(BaseCommand):
                 "cadastral_number": "23:43:0112005:44",
                 "name": "Площадка «Агро Юг»",
                 "organization": orgs["mo-krasnodar"],
+                "address": "МО г. Краснодар, южный сектор",
                 "area_ha": Decimal("42.0000"),
                 "land_category": "Земли сельхозназначения",
                 "vri": "Сельскохозяйственное производство",
+                "right_type": "аренда",
                 "status": InvestSite.Status.IN_REVIEW,
                 "completeness_pct": 74,
                 "latitude": Decimal("45.091210"),
@@ -301,13 +342,23 @@ class Command(BaseCommand):
                 "cadastral_number": "23:49:0301007:12",
                 "name": "Площадка «Горный кластер»",
                 "organization": orgs["mo-sochi"],
+                "address": "г. Сочи, Красная Поляна",
                 "area_ha": Decimal("11.8000"),
                 "land_category": "Земли особо охраняемых территорий",
                 "vri": "Туристическое обслуживание",
+                "right_type": "постоянное пользование",
                 "status": InvestSite.Status.ACTUAL,
                 "completeness_pct": 80,
                 "latitude": Decimal("43.679920"),
                 "longitude": Decimal("40.205880"),
+            },
+            {
+                # Черновик для демо СМЭВ: только кадастр → «Запросить ЕГРН» → «Применить»
+                "cadastral_number": "23:43:0101001:77",
+                "name": "ЗУ под автозаполнение СМЭВ (демо)",
+                "organization": orgs["mo-krasnodar"],
+                "status": InvestSite.Status.DRAFT,
+                "completeness_pct": 15,
             },
         )
         sites = {}

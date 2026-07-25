@@ -1,16 +1,18 @@
 {% extends layout_path %}
 
-{% block title %}{{ site.cadastral_number }}{% endblock %}
+{% block title %}{{ site.cadastral_number }} — ДелаЮ{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
   <div>
     <h4 class="mb-1">{{ site.name }}</h4>
-    <p class="text-muted mb-0">{{ site.cadastral_number }} · {{ site.organization }}</p>
+    <p class="text-body-secondary mb-0">{{ site.cadastral_number }} · {{ site.organization }}</p>
   </div>
-  <div class="d-flex gap-2">
+  <div class="d-flex gap-2 flex-wrap">
     <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">К площадкам</a>
-    <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
+    {% if can_change_site %}
+    <a class="btn btn-outline-primary" href="{% url 'invest-site-edit' site.pk %}">Редактировать</a>
+    {% endif %}
   </div>
 </div>
 
@@ -24,42 +26,104 @@
 
 <div class="row g-4">
   <div class="col-lg-5">
-    <div class="card h-100">
-      <div class="card-header">
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Карточка площадки</h5>
+        <span class="badge bg-label-primary">{{ site.completeness_pct }}%</span>
       </div>
       <div class="card-body">
         <dl class="row mb-0">
           <dt class="col-sm-5">Статус</dt>
           <dd class="col-sm-7">{{ site.get_status_display }}</dd>
+          <dt class="col-sm-5">Адрес</dt>
+          <dd class="col-sm-7">{{ site.address|default:"—" }}</dd>
           <dt class="col-sm-5">Площадь, га</dt>
           <dd class="col-sm-7">{{ site.area_ha|default:"—" }}</dd>
-          <dt class="col-sm-5">Категория земли</dt>
+          <dt class="col-sm-5">Категория земель</dt>
           <dd class="col-sm-7">{{ site.land_category|default:"—" }}</dd>
           <dt class="col-sm-5">ВРИ</dt>
           <dd class="col-sm-7">{{ site.vri|default:"—" }}</dd>
-          <dt class="col-sm-5">Готовность</dt>
-          <dd class="col-sm-7">{{ site.completeness_pct }}%</dd>
+          <dt class="col-sm-5">Вид права</dt>
+          <dd class="col-sm-7">{{ site.right_type|default:"—" }}</dd>
+          <dt class="col-sm-5">Обременения</dt>
+          <dd class="col-sm-7">{{ site.encumbrances|default:"—" }}</dd>
+          <dt class="col-sm-5">Зоны / пересечения</dt>
+          <dd class="col-sm-7">{{ site.zone_info|default:"—" }}</dd>
           <dt class="col-sm-5">Координаты</dt>
           <dd class="col-sm-7">{{ site.latitude|default:"—" }}, {{ site.longitude|default:"—" }}</dd>
+          <dt class="col-sm-5">ЕГРН обновлён</dt>
+          <dd class="col-sm-7">{% if site.egrn_updated_at %}{{ site.egrn_updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</dd>
         </dl>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">СМЭВ <span class="badge bg-label-warning ms-1">тестовый контур</span></h5>
+      </div>
+      <div class="card-body">
+        <p class="small text-body-secondary mb-3">
+          Демо без промышленного шлюза: запрос формирует mock-ответ (ЕГРН) и позволяет автозаполнить карточку.
+        </p>
+        {% if can_change_site %}
+        <form method="post" action="{% url 'invest-site-smev-request' site.pk %}" class="row g-2 align-items-end mb-4">
+          {% csrf_token %}
+          <div class="col-md-8">
+            <label class="form-label" for="smev-service">Сервис</label>
+            <select class="form-select" id="smev-service" name="service">
+              {% for value, label in smev_services %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-primary w-100" type="submit">Запросить</button>
+          </div>
+        </form>
+        {% endif %}
+
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Сервис</th>
+                <th>Статус</th>
+                <th>Когда</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for req in smev_requests %}
+              <tr>
+                <td>{{ req.get_service_display }}{% if req.is_mock %} <span class="badge bg-label-secondary">mock</span>{% endif %}</td>
+                <td>{{ req.get_status_display }}</td>
+                <td>{{ req.created_at|date:"d.m.Y H:i" }}</td>
+                <td class="text-end">
+                  {% if can_change_site and req.service == "egrn" and req.status == "done" %}
+                  <form method="post" action="{% url 'invest-site-smev-apply' site.pk req.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-success" type="submit">Применить</button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-muted">Запросов пока нет.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="col-lg-7">
     <div class="card mb-4">
-      <div class="card-header">
-        <h5 class="mb-0">Связанные проекты</h5>
-      </div>
+      <div class="card-header"><h5 class="mb-0">Связанные проекты</h5></div>
       <div class="table-responsive">
         <table class="table">
           <thead>
-            <tr>
-              <th>Код</th>
-              <th>Проект</th>
-              <th>Роль</th>
-            </tr>
+            <tr><th>Код</th><th>Проект</th><th>Роль</th></tr>
           </thead>
           <tbody>
             {% for link in project_links %}
@@ -69,9 +133,7 @@
               <td>{{ link.get_role_display }}</td>
             </tr>
             {% empty %}
-            <tr>
-              <td colspan="3" class="text-muted">Площадка пока не связана с проектами.</td>
-            </tr>
+            <tr><td colspan="3" class="text-muted">Площадка пока не связана с проектами.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -79,17 +141,11 @@
     </div>
 
     <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Действия по проектам</h5>
-      </div>
+      <div class="card-header"><h5 class="mb-0">Действия по проектам</h5></div>
       <div class="table-responsive">
         <table class="table">
           <thead>
-            <tr>
-              <th>Код</th>
-              <th>Проект</th>
-              <th class="text-end">Действия</th>
-            </tr>
+            <tr><th>Код</th><th>Проект</th><th class="text-end">Действия</th></tr>
           </thead>
           <tbody>
             {% for project in projects %}
@@ -112,9 +168,7 @@
               </td>
             </tr>
             {% empty %}
-            <tr>
-              <td colspan="3" class="text-muted">Проектов пока нет.</td>
-            </tr>
+            <tr><td colspan="3" class="text-muted">Проектов пока нет.</td></tr>
             {% endfor %}
           </tbody>
         </table>

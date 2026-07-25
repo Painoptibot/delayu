@@ -1,14 +1,14 @@
 {% extends layout_path %}
 
-{% block title %}{{ project.code }}{% endblock %}
+{% block title %}{{ project.code }} — ДелаЮ{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
   <div>
     <h4 class="mb-1">{{ project.name }}</h4>
-    <p class="text-muted mb-0">{{ project.code }} · {{ project.organization }}</p>
+    <p class="text-body-secondary mb-0">{{ project.code }} · {{ project.organization }}</p>
   </div>
-  <div class="d-flex gap-2">
+  <div class="d-flex gap-2 flex-wrap">
     <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">К списку</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">Площадки</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-package-detail' project.pk %}">Пакет</a>
@@ -19,11 +19,20 @@
   </div>
 </div>
 
+{% if messages %}
+<div class="mb-4">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="row g-4">
-  <div class="col-lg-8">
-    <div class="card">
-      <div class="card-header">
+  <div class="col-lg-7">
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Карточка проекта</h5>
+        <span class="badge bg-label-secondary">{{ project.get_funnel_display }} · {{ project.stage }}</span>
       </div>
       <div class="card-body">
         <dl class="row mb-0">
@@ -31,16 +40,30 @@
           <dd class="col-sm-8">{{ project.investor_name|default:"—" }}</dd>
           <dt class="col-sm-4">Отрасль</dt>
           <dd class="col-sm-8">{{ project.industry|default:"—" }}</dd>
-          <dt class="col-sm-4">Воронка</dt>
-          <dd class="col-sm-8">{{ project.get_funnel_display }}</dd>
-          <dt class="col-sm-4">Стадия</dt>
-          <dd class="col-sm-8">{{ project.stage }}</dd>
+          <dt class="col-sm-4">Описание</dt>
+          <dd class="col-sm-8">{{ project.description|default:"—"|linebreaksbr }}</dd>
           <dt class="col-sm-4">Ответственный</dt>
           <dd class="col-sm-8">{{ project.owner|default:"—" }}</dd>
-          <dt class="col-sm-4">Инвестиции</dt>
+          <dt class="col-sm-4">Контакт</dt>
+          <dd class="col-sm-8">
+            {{ project.contact_person|default:"—" }}
+            {% if project.contact_phone %}<br>{{ project.contact_phone }}{% endif %}
+            {% if project.contact_email %}<br>{{ project.contact_email }}{% endif %}
+          </dd>
+          <dt class="col-sm-4">Инвестиции, млн руб.</dt>
           <dd class="col-sm-8">{{ project.investment_amount|default:"—" }}</dd>
           <dt class="col-sm-4">Рабочие места</dt>
           <dd class="col-sm-8">{{ project.jobs_count|default:"—" }}</dd>
+          <dt class="col-sm-4">План старта / ввода</dt>
+          <dd class="col-sm-8">
+            {% if project.planned_start %}{{ project.planned_start|date:"d.m.Y" }}{% else %}—{% endif %}
+            /
+            {% if project.planned_end %}{{ project.planned_end|date:"d.m.Y" }}{% else %}—{% endif %}
+          </dd>
+          <dt class="col-sm-4">Меры поддержки</dt>
+          <dd class="col-sm-8">{{ project.support_measures|default:"—"|linebreaksbr }}</dd>
+          <dt class="col-sm-4">Комментарий МО</dt>
+          <dd class="col-sm-8">{{ project.municipality_notes|default:"—"|linebreaksbr }}</dd>
         </dl>
         {% if can_change_project and project.funnel == "attraction" %}
         <form class="mt-4" method="post" action="{% url 'invest-handoff-request' project.pk %}">
@@ -50,6 +73,94 @@
           <button class="btn btn-primary" type="submit">Запросить передачу</button>
         </form>
         {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Площадки проекта</h5>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'invest-sites' %}">Каталог</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Кадастр</th>
+              <th>Наименование</th>
+              <th>Роль</th>
+              <th>Готовность</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for link in site_links %}
+            <tr>
+              <td><a href="{% url 'invest-site-detail' link.site.pk %}">{{ link.site.cadastral_number }}</a></td>
+              <td>{{ link.site.name }}</td>
+              <td>{{ link.get_role_display }}</td>
+              <td>{{ link.site.completeness_pct }}%</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-muted">Площадки ещё не привязаны.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Пакет документов</h5>
+        <span class="badge bg-label-primary">{{ package_ready }}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr><th>Пункт</th><th>Статус</th></tr>
+          </thead>
+          <tbody>
+            {% for item in package_items %}
+            <tr>
+              <td>{{ item.title }}{% if item.required %} <span class="text-danger">*</span>{% endif %}</td>
+              <td>{{ item.get_status_display }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2" class="text-muted">Пакет ещё не сформирован.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <a href="{% url 'invest-package-detail' project.pk %}">Открыть пакет →</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0">Дорожная карта / SLA</h5></div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr><th>Шаг</th><th>Срок</th><th>Статус</th></tr>
+          </thead>
+          <tbody>
+            {% for item in roadmap_items %}
+            <tr>
+              <td>{{ item.title }}</td>
+              <td>{% if item.due_at %}{{ item.due_at|date:"d.m.Y" }}{% else %}—{% endif %}</td>
+              <td>
+                {% if item.status == "overdue" %}
+                <span class="badge bg-label-danger">{{ item.get_status_display }}</span>
+                {% else %}
+                {{ item.get_status_display }}
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-muted">Появится после принятия в сопровождение.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

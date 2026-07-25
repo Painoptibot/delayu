@@ -236,3 +236,24 @@ def skip_row(row):
         raise ValueError("Строка уже обработана")
     row.resolution = InvestImportRow.Resolution.SKIPPED
     row.save(update_fields=["resolution"])
+
+
+def schedule_mo_csv_review(*, subsystem, organization, file_obj) -> InvestImportBatch:
+    """П.22: автозапуск сверки CSV МО (diff без auto-apply — построчное подтверждение)."""
+    from delayu.models_invest import InvestIntegrationEvent
+    from delayu.services.invest_journal import finish_event, log_event
+
+    batch = parse_mo_file(file_obj, subsystem=subsystem, organization=organization)
+    event = log_event(
+        subsystem=subsystem,
+        direction=InvestIntegrationEvent.Direction.IN,
+        channel=InvestIntegrationEvent.Channel.MO,
+        event_type="mo.csv_scheduled",
+        payload={"batch_id": batch.pk, "rows": batch.rows.count()},
+    )
+    finish_event(
+        event,
+        status=InvestIntegrationEvent.Status.DONE,
+        response={"batch_id": batch.pk, "pending_rows": batch.rows.filter(resolution="pending").count()},
+    )
+    return batch

@@ -1,39 +1,112 @@
 {% extends layout_path %}
-
-{% block title %}{{ view.page_title }}{% endblock %}
-
+{% block title %}{{ view.page_title }} — ДелаЮ{% endblock %}
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
   <div>
     <h4 class="mb-1">{{ view.page_title }}</h4>
-    <p class="text-muted mb-0">Воронка проекта отображается справочно и не редактируется на этой форме.</p>
+    <p class="text-body-secondary mb-0">Воронка отображается справочно и не редактируется на этой форме.</p>
   </div>
-  <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">К списку</a>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">← К списку</a>
 </div>
 
-<div class="card">
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Карточка проекта</h5>
+    <span class="badge bg-label-secondary">Воронка: {{ form.display_funnel }}</span>
+  </div>
   <div class="card-body">
-    <div class="alert alert-secondary" role="status">
-      <strong>Воронка:</strong> {{ form.display_funnel }}
-    </div>
     <form method="post" novalidate>
       {% csrf_token %}
       {% if form.non_field_errors %}
       <div class="alert alert-danger">{{ form.non_field_errors }}</div>
       {% endif %}
-      <div class="row g-4">
-        {% for field in form %}
+
+      <h6 class="text-uppercase text-muted mb-3">Основные сведения</h6>
+      <div class="row g-3 mb-4">
+        {% if form.organization.is_hidden %}
+        {{ form.organization }}
+        {% for error in form.organization.errors %}<div class="alert alert-danger py-2">{{ error }}</div>{% endfor %}
+        {% else %}
         <div class="col-md-6">
-          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-          {% for error in field.errors %}
-          <div class="invalid-feedback d-block">{{ error }}</div>
-          {% endfor %}
+          <label class="form-label" for="{{ form.organization.id_for_label }}">{{ form.organization.label }}</label>
+          {{ form.organization }}
+          {% for error in form.organization.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
         </div>
-        {% endfor %}
+        {% endif %}
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.code.id_for_label }}">{{ form.code.label }}</label>
+          {{ form.code }}
+          {% for error in form.code.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.stage.id_for_label }}">{{ form.stage.label }}</label>
+          {{ form.stage }}
+          {% for error in form.stage.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-8">
+          <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+          {{ form.name }}
+          {% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.owner.id_for_label }}">{{ form.owner.label }}</label>
+          {{ form.owner }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.investor_name.id_for_label }}">{{ form.investor_name.label }}</label>
+          {{ form.investor_name }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.industry.id_for_label }}">{{ form.industry.label }}</label>
+          {{ form.industry }}
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+          {{ form.description }}
+        </div>
       </div>
-      <div class="d-flex justify-content-end gap-2 mt-6">
+
+      <h6 class="text-uppercase text-muted mb-3">Контакты и показатели</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.contact_person.id_for_label }}">{{ form.contact_person.label }}</label>
+          {{ form.contact_person }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.contact_phone.id_for_label }}">{{ form.contact_phone.label }}</label>
+          {{ form.contact_phone }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.contact_email.id_for_label }}">{{ form.contact_email.label }}</label>
+          {{ form.contact_email }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.investment_amount.id_for_label }}">{{ form.investment_amount.label }}</label>
+          {{ form.investment_amount }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.jobs_count.id_for_label }}">{{ form.jobs_count.label }}</label>
+          {{ form.jobs_count }}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="{{ form.planned_start.id_for_label }}">{{ form.planned_start.label }}</label>
+          {{ form.planned_start }}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="{{ form.planned_end.id_for_label }}">{{ form.planned_end.label }}</label>
+          {{ form.planned_end }}
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="{{ form.support_measures.id_for_label }}">{{ form.support_measures.label }}</label>
+          {{ form.support_measures }}
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="{{ form.municipality_notes.id_for_label }}">{{ form.municipality_notes.label }}</label>
+          {{ form.municipality_notes }}
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
         <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Отмена</a>
         <button class="btn btn-primary" type="submit">Сохранить</button>
       </div>

@@ -1,15 +1,20 @@
 from django.contrib import admin
 
 from .models import (
+    InvestAutomationConfig,
+    InvestAutomationRun,
+    InvestExternalTask,
     InvestHandoff,
     InvestImportBatch,
     InvestImportRow,
+    InvestIntegrationEvent,
     InvestPackage,
     InvestPackageItem,
     InvestProject,
     InvestProjectSite,
     InvestRoadmapItem,
     InvestSite,
+    InvestSmevRequest,
     ModuleCatalog,
     Organization,
     Role,
@@ -122,6 +127,48 @@ class InvestImportBatchAdmin(admin.ModelAdmin):
 class InvestImportRowAdmin(admin.ModelAdmin):
     list_display = ("batch", "row_number", "action", "resolution", "target_project", "target_site")
     list_filter = ("action", "resolution")
+
+
+@admin.register(InvestSmevRequest)
+class InvestSmevRequestAdmin(admin.ModelAdmin):
+    list_display = ("site", "service", "status", "is_mock", "created_at", "finished_at")
+    list_filter = ("service", "status", "is_mock", "subsystem")
+    search_fields = ("site__cadastral_number",)
+
+
+@admin.register(InvestAutomationConfig)
+class InvestAutomationConfigAdmin(admin.ModelAdmin):
+    list_display = ("subsystem", "contract_version", "updated_at")
+    search_fields = ("subsystem__code",)
+
+
+@admin.register(InvestIntegrationEvent)
+class InvestIntegrationEventAdmin(admin.ModelAdmin):
+    list_display = (
+        "correlation_id",
+        "channel",
+        "direction",
+        "event_type",
+        "status",
+        "external_id",
+        "retries",
+        "created_at",
+    )
+    list_filter = ("channel", "direction", "status", "subsystem")
+    search_fields = ("correlation_id", "external_id", "event_type")
+
+
+@admin.register(InvestExternalTask)
+class InvestExternalTaskAdmin(admin.ModelAdmin):
+    list_display = ("title", "kind", "status", "project", "organization", "due_at", "escalated_level")
+    list_filter = ("kind", "status", "subsystem")
+    search_fields = ("title", "project__code")
+
+
+@admin.register(InvestAutomationRun)
+class InvestAutomationRunAdmin(admin.ModelAdmin):
+    list_display = ("id", "subsystem", "started_at", "finished_at")
+    list_filter = ("subsystem",)
 
 
 from delayu import admin_business  # noqa: F401, E402

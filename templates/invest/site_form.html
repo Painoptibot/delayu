@@ -1,36 +1,96 @@
 {% extends layout_path %}
-
-{% block title %}{{ view.page_title }}{% endblock %}
-
+{% block title %}{{ view.page_title }} — ДелаЮ{% endblock %}
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
   <div>
     <h4 class="mb-1">{{ view.page_title }}</h4>
-    <p class="text-muted mb-0">Создайте площадку в активном инвестконтуре.</p>
+    <p class="text-body-secondary mb-0">Карточка площадки / ЗУ. Часть полей можно заполнить тестовым СМЭВ с карточки площадки.</p>
   </div>
-  <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">К площадкам</a>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">← К площадкам</a>
 </div>
 
 <div class="card">
+  <div class="card-header"><h5 class="mb-0">Площадка</h5></div>
   <div class="card-body">
     <form method="post" novalidate>
       {% csrf_token %}
       {% if form.non_field_errors %}
       <div class="alert alert-danger">{{ form.non_field_errors }}</div>
       {% endif %}
-      <div class="row g-4">
-        {% for field in form %}
+
+      <h6 class="text-uppercase text-muted mb-3">Идентификация</h6>
+      <div class="row g-3 mb-4">
+        {% if form.organization.is_hidden %}
+        {{ form.organization }}
+        {% for error in form.organization.errors %}<div class="alert alert-danger py-2">{{ error }}</div>{% endfor %}
+        {% else %}
         <div class="col-md-6">
-          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-          {% for error in field.errors %}
-          <div class="invalid-feedback d-block">{{ error }}</div>
-          {% endfor %}
+          <label class="form-label" for="{{ form.organization.id_for_label }}">{{ form.organization.label }}</label>
+          {{ form.organization }}
+          {% for error in form.organization.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
         </div>
-        {% endfor %}
+        {% endif %}
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.cadastral_number.id_for_label }}">{{ form.cadastral_number.label }}</label>
+          {{ form.cadastral_number }}
+          {% for error in form.cadastral_number.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-8">
+          <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+          {{ form.name }}
+          {% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+          {{ form.status }}
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="{{ form.address.id_for_label }}">{{ form.address.label }}</label>
+          {{ form.address }}
+        </div>
       </div>
-      <div class="d-flex justify-content-end gap-2 mt-6">
+
+      <h6 class="text-uppercase text-muted mb-3">Земельные сведения</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.area_ha.id_for_label }}">{{ form.area_ha.label }}</label>
+          {{ form.area_ha }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.land_category.id_for_label }}">{{ form.land_category.label }}</label>
+          {{ form.land_category }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.vri.id_for_label }}">{{ form.vri.label }}</label>
+          {{ form.vri }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.right_type.id_for_label }}">{{ form.right_type.label }}</label>
+          {{ form.right_type }}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="{{ form.completeness_pct.id_for_label }}">{{ form.completeness_pct.label }}</label>
+          {{ form.completeness_pct }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.latitude.id_for_label }}">{{ form.latitude.label }}</label>
+          {{ form.latitude }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.longitude.id_for_label }}">{{ form.longitude.label }}</label>
+          {{ form.longitude }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.encumbrances.id_for_label }}">{{ form.encumbrances.label }}</label>
+          {{ form.encumbrances }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.zone_info.id_for_label }}">{{ form.zone_info.label }}</label>
+          {{ form.zone_info }}
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
         <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">Отмена</a>
         <button class="btn btn-primary" type="submit">Сохранить</button>
       </div>

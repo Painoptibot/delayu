@@ -13,6 +13,7 @@ from . import (
     views_qr,
     views_invest,
     views_invest_automation,
+    views_invest_bitrix,
     views_uzhv_wizard,
     views_welcome,
 )
@@ -1026,6 +1027,17 @@ urlpatterns = [
     path("invest/sites/", views_invest.InvestSiteListView.as_view(), name="invest-sites"),
     path("invest/sites/new/", views_invest.InvestSiteCreateView.as_view(), name="invest-site-create"),
     path("invest/sites/<int:pk>/", views_invest.InvestSiteDetailView.as_view(), name="invest-site-detail"),
+    path("invest/sites/<int:pk>/edit/", views_invest.InvestSiteUpdateView.as_view(), name="invest-site-edit"),
+    path(
+        "invest/sites/<int:pk>/smev/",
+        views_invest.InvestSiteSmevRequestView.as_view(),
+        name="invest-site-smev-request",
+    ),
+    path(
+        "invest/sites/<int:pk>/smev/<int:request_pk>/apply/",
+        views_invest.InvestSiteSmevApplyView.as_view(),
+        name="invest-site-smev-apply",
+    ),
     path(
         "invest/projects/<int:project_pk>/sites/<int:site_pk>/book/",
         views_invest.InvestSiteBookView.as_view(),
@@ -1035,6 +1047,21 @@ urlpatterns = [
         "invest/projects/<int:project_pk>/sites/<int:site_pk>/select/",
         views_invest.InvestSiteSelectView.as_view(),
         name="invest-site-select",
+    ),
+    path(
+        "api/invest/bitrix/webhook/<slug:subsystem_code>/",
+        views_invest_bitrix.InvestBitrixWebhookView.as_view(),
+        name="invest-bitrix-webhook",
+    ),
+    path(
+        "api/invest/bitrix/push/<int:project_id>/",
+        views_invest_bitrix.InvestBitrixPushView.as_view(),
+        name="invest-bitrix-push",
+    ),
+    path(
+        "api/invest/tasks/<int:task_id>/answer/",
+        views_invest_bitrix.InvestExternalTaskAnswerView.as_view(),
+        name="invest-external-task-answer",
     ),
     path("uzhv/create/", views_uzhv_wizard.UzhvCreateHubView.as_view(), name="uzhv-create-hub"),
     path(

@@ -152,6 +152,11 @@ class Role(models.Model):
     name = models.CharField("Наименование", max_length=128)
     description = models.TextField("Описание", blank=True)
     is_system = models.BooleanField("Системная", default=False)
+    is_subsystem_admin = models.BooleanField(
+        "Администратор подсистемы",
+        default=False,
+        help_text="Расширенные права внутри контура подсистемы",
+    )
     parent_role = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,

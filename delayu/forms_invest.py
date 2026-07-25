@@ -3,13 +3,29 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
-from delayu.models import SubsystemMembership
+from delayu.forms import BOOTSTRAP, SELECT, BootstrapFormMixin
 from delayu.models_invest import InvestProject, InvestSite
 
 User = get_user_model()
 
 
-class InvestProjectForm(forms.ModelForm):
+def _apply_bootstrap(fields):
+    for field in fields.values():
+        w = field.widget
+        if isinstance(w, (forms.CheckboxInput, forms.RadioSelect, forms.HiddenInput)):
+            if isinstance(w, forms.HiddenInput):
+                continue
+            w.attrs.setdefault("class", "form-check-input")
+        elif isinstance(w, forms.Select):
+            w.attrs["class"] = SELECT
+        elif isinstance(w, forms.Textarea):
+            w.attrs.setdefault("class", BOOTSTRAP)
+            w.attrs.setdefault("rows", 3)
+        else:
+            w.attrs.setdefault("class", BOOTSTRAP)
+
+
+class InvestProjectForm(BootstrapFormMixin, forms.ModelForm):
     """Project form intentionally omits funnel; the current funnel is display-only."""
 
     STAGE_LABELS = {
@@ -51,13 +67,26 @@ class InvestProjectForm(forms.ModelForm):
             "name",
             "investor_name",
             "industry",
+            "description",
             "stage",
             "owner",
+            "contact_person",
+            "contact_phone",
+            "contact_email",
             "investment_amount",
             "jobs_count",
+            "support_measures",
+            "planned_start",
+            "planned_end",
+            "municipality_notes",
         ]
         widgets = {
             "investment_amount": forms.NumberInput(attrs={"step": "0.01"}),
+            "description": forms.Textarea(attrs={"rows": 3}),
+            "support_measures": forms.Textarea(attrs={"rows": 3}),
+            "municipality_notes": forms.Textarea(attrs={"rows": 3}),
+            "planned_start": forms.DateInput(attrs={"type": "date"}),
+            "planned_end": forms.DateInput(attrs={"type": "date"}),
         }
 
     def __init__(self, *args, membership=None, **kwargs):
@@ -72,11 +101,23 @@ class InvestProjectForm(forms.ModelForm):
         if self._is_mo_membership():
             self.fields["organization"].initial = membership.organization
             self.fields["organization"].widget = forms.HiddenInput()
-        self.fields["owner"].required = False
-        self.fields["investor_name"].required = False
-        self.fields["industry"].required = False
-        self.fields["investment_amount"].required = False
-        self.fields["jobs_count"].required = False
+        optional = (
+            "owner",
+            "investor_name",
+            "industry",
+            "description",
+            "investment_amount",
+            "jobs_count",
+            "contact_person",
+            "contact_phone",
+            "contact_email",
+            "support_measures",
+            "planned_start",
+            "planned_end",
+            "municipality_notes",
+        )
+        for field_name in optional:
+            self.fields[field_name].required = False
         stage_field = self.fields["stage"]
         self.fields["stage"] = forms.ChoiceField(
             label=stage_field.label,
@@ -84,6 +125,7 @@ class InvestProjectForm(forms.ModelForm):
             required=stage_field.required,
             widget=forms.Select,
         )
+        _apply_bootstrap(self.fields)
 
     @property
     def display_funnel(self):
@@ -129,7 +171,7 @@ class InvestProjectForm(forms.ModelForm):
         return stage
 
 
-class InvestSiteForm(forms.ModelForm):
+class InvestSiteForm(BootstrapFormMixin, forms.ModelForm):
     """Site form scoped to the active invest subsystem."""
 
     class Meta:
@@ -138,9 +180,13 @@ class InvestSiteForm(forms.ModelForm):
             "organization",
             "cadastral_number",
             "name",
+            "address",
             "area_ha",
             "land_category",
             "vri",
+            "right_type",
+            "encumbrances",
+            "zone_info",
             "status",
             "completeness_pct",
             "latitude",
@@ -150,6 +196,9 @@ class InvestSiteForm(forms.ModelForm):
             "area_ha": forms.NumberInput(attrs={"step": "0.0001"}),
             "latitude": forms.NumberInput(attrs={"step": "0.000001"}),
             "longitude": forms.NumberInput(attrs={"step": "0.000001"}),
+            "encumbrances": forms.Textarea(attrs={"rows": 2}),
+            "zone_info": forms.Textarea(attrs={"rows": 2}),
+            "address": forms.Textarea(attrs={"rows": 2}),
         }
 
     def __init__(self, *args, membership=None, **kwargs):
@@ -161,8 +210,19 @@ class InvestSiteForm(forms.ModelForm):
         if self._is_mo_membership():
             self.fields["organization"].initial = membership.organization
             self.fields["organization"].widget = forms.HiddenInput()
-        for field_name in ("area_ha", "land_category", "vri", "latitude", "longitude"):
+        for field_name in (
+            "area_ha",
+            "land_category",
+            "vri",
+            "latitude",
+            "longitude",
+            "address",
+            "right_type",
+            "encumbrances",
+            "zone_info",
+        ):
             self.fields[field_name].required = False
+        _apply_bootstrap(self.fields)
 
     def _is_mo_membership(self):
         return bool(self.membership and self.membership.role.code == "invest_mo")

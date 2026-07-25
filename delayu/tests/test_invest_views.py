@@ -109,6 +109,7 @@ def invest_view_ctx(db):
         ("invest-sites", ()),
         ("invest-site-detail", ("site",)),
         ("invest-site-create", ()),
+        ("invest-site-edit", ("site",)),
         ("invest-handoffs", ()),
         ("invest-package-detail", ("project",)),
     ],
@@ -120,6 +121,24 @@ def test_invest_views_get_200(client, invest_view_ctx, url_name, args):
     response = client.get(reverse(url_name, args=resolved_args))
 
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_invest_project_edit_form_uses_bootstrap_classes(client, invest_view_ctx):
+    client.force_login(invest_view_ctx["agency_user"])
+    response = client.get(reverse("invest-project-edit", args=[invest_view_ctx["project"].pk]))
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert "form-control" in html
+    assert "form-select" in html
+    assert "form-label" in html
+
+
+@pytest.mark.django_db
+def test_invest_project_edit_anonymous_redirects_to_login(client, invest_view_ctx):
+    response = client.get(reverse("invest-project-edit", args=[invest_view_ctx["project"].pk]))
+    assert response.status_code == 302
+    assert "/login" in response.url or "accounts/login" in response.url or "auth" in response.url
 
 
 @pytest.mark.django_db

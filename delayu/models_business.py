@@ -132,6 +132,11 @@ class UserProfile(models.Model):
         blank=True,
         help_text="Прогресс онбординга (#50): steps, dismissed_at",
     )
+    is_platform_admin = models.BooleanField(
+        "Администратор платформы",
+        default=False,
+        help_text="Доступ к контуру ЮГИт / глобальным разделам платформы",
+    )
     active_subsystem = models.ForeignKey(
         "Subsystem", null=True, blank=True, on_delete=models.SET_NULL
     )

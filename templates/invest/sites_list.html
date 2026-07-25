@@ -26,6 +26,7 @@
           <th>МО</th>
           <th>Статус</th>
           <th>Готовность</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -36,10 +37,15 @@
           <td>{{ site.organization }}</td>
           <td>{{ site.get_status_display }}</td>
           <td>{{ site.completeness_pct }}%</td>
+          <td class="text-end">
+            {% if can_change_site %}
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'invest-site-edit' site.pk %}">Изменить</a>
+            {% endif %}
+          </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5" class="text-muted">Площадок пока нет.</td>
+          <td colspan="6" class="text-muted">Площадок пока нет.</td>
         </tr>
         {% endfor %}
       </tbody>

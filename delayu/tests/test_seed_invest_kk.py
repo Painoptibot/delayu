@@ -21,7 +21,7 @@ def test_seed_invest_kk_creates_demo_contour():
     assert subsystem.status == Subsystem.Status.ACTIVE
     assert subsystem.primary_color == "#0f766e"
     assert subsystem.invest_projects.count() == 3
-    assert subsystem.invest_sites.count() == 4
+    assert subsystem.invest_sites.count() == 5
     assert InvestProjectSite.objects.filter(
         project__subsystem=subsystem, role=InvestProjectSite.Role.BOOKED
     ).exists()
@@ -41,4 +41,10 @@ def test_seed_invest_kk_creates_demo_contour():
         ).count()
         == 4
     )
-    assert InvestSite.objects.filter(subsystem=subsystem).count() == 4
+    assert InvestSite.objects.filter(subsystem=subsystem).count() == 5
+    demo_smev = InvestSite.objects.get(subsystem=subsystem, cadastral_number="23:43:0101001:77")
+    assert demo_smev.status == InvestSite.Status.DRAFT
+    assert demo_smev.completeness_pct < 40
+    project = InvestProject.objects.get(subsystem=subsystem, code="P-INV-001")
+    assert project.contact_person
+    assert project.investment_amount == 1250

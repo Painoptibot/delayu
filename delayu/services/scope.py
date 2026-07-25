@@ -81,7 +81,16 @@ UZHV_MODULE_CODES = (
 
 
 def is_platform_admin(user) -> bool:
-    return user.is_authenticated and user.is_superuser
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    profile = getattr(user, "delayu_profile", None)
+    if profile is None:
+        from delayu.models import UserProfile
+
+        profile = UserProfile.objects.filter(user=user).first()
+    return bool(profile and profile.is_platform_admin)
 
 
 def is_subsystem_scoped_user(user) -> bool:
