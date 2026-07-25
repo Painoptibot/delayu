@@ -30,6 +30,22 @@
 </div>
 {% endif %}
 
+{% if bitrix_stage_conflict %}
+<div class="alert alert-warning d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center" role="alert">
+  <div>
+    <strong>Конфликт стадий Bitrix/Delayu.</strong>
+    Delayu: {{ bitrix_stage_conflict.delayu_stage }} · Bitrix: {{ bitrix_stage_conflict.bitrix_stage }}.
+  </div>
+  {% if can_change_project %}
+  <form class="d-flex flex-wrap gap-2" method="post" action="{% url 'invest-project-bitrix-conflict' project.pk %}">
+    {% csrf_token %}
+    <button class="btn btn-sm btn-outline-secondary" type="submit" name="resolution" value="delayu">Принять Delayu</button>
+    <button class="btn btn-sm btn-warning" type="submit" name="resolution" value="bitrix">Принять Bitrix</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
 <div class="row g-4">
   <div class="col-lg-7">
     <div class="card mb-4">
@@ -133,6 +149,33 @@
           <li class="text-muted">Критичных пропусков нет.</li>
           {% endfor %}
         </ul>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Bitrix24</h5>
+        <span class="badge {% if bitrix_can_push %}bg-label-success{% else %}bg-label-warning{% endif %}">
+          {% if bitrix_can_push %}Готово{% else %}Есть блокеры{% endif %}
+        </span>
+      </div>
+      <div class="card-body">
+        {% if bitrix_blockers %}
+        <div class="small text-body-secondary mb-3">Перед отправкой устраните блокеры:</div>
+        <ul class="mb-3">
+          {% for blocker in bitrix_blockers %}
+          <li>{{ blocker }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="small text-body-secondary mb-3">Gate пройден, карточку можно синхронизировать с Bitrix.</p>
+        {% endif %}
+        {% if can_change_project %}
+        <form method="post" action="{% url 'invest-project-bitrix-push' project.pk %}">
+          {% csrf_token %}
+          <button class="btn btn-primary" type="submit">Отправить в Bitrix</button>
+        </form>
+        {% endif %}
       </div>
     </div>
 

@@ -70,9 +70,21 @@
 
     <div class="card">
       <div class="card-header">
-        <h5 class="mb-0">СМЭВ <span class="badge bg-label-warning ms-1">тестовый контур</span></h5>
+        <h5 class="mb-0">
+          СМЭВ
+          {% if smev_live_pending_mode %}
+          <span class="badge bg-label-info ms-1">live stub</span>
+          {% else %}
+          <span class="badge bg-label-warning ms-1">тестовый контур</span>
+          {% endif %}
+        </h5>
       </div>
       <div class="card-body">
+        {% if smev_live_pending_mode %}
+        <div class="alert alert-info" role="status">
+          Live-режим включён: запросы уходят в статус ожидания промышленного шлюза, mock-ответы не применяются автоматически.
+        </div>
+        {% endif %}
         <p class="small text-body-secondary mb-3">
           Демо без промышленного шлюза: запрос формирует mock-ответ (ЕГРН) и позволяет автозаполнить карточку.
         </p>
@@ -106,7 +118,14 @@
             <tbody>
               {% for req in smev_requests %}
               <tr>
-                <td>{{ req.get_service_display }}{% if req.is_mock %} <span class="badge bg-label-secondary">mock</span>{% endif %}</td>
+                <td>
+                  {{ req.get_service_display }}
+                  {% if req.is_mock %}
+                  <span class="badge bg-label-secondary">mock</span>
+                  {% else %}
+                  <span class="badge bg-label-info">live</span>
+                  {% endif %}
+                </td>
                 <td>{{ req.get_status_display }}</td>
                 <td>{{ req.created_at|date:"d.m.Y H:i" }}</td>
                 <td class="text-end">

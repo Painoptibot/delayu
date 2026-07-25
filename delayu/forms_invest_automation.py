@@ -28,7 +28,10 @@ FLAG_LABELS = {
 class InvestAutomationConnectionForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = InvestAutomationConfig
-        fields = ("bitrix_api_base", "bitrix_webhook_token", "contract_version")
+        fields = ("bitrix_api_base", "bitrix_webhook_token", "allowed_ips", "contract_version")
+        widgets = {
+            "allowed_ips": forms.Textarea(attrs={"class": BOOTSTRAP, "rows": 3}),
+        }
 
     def clean_bitrix_webhook_token(self):
         token = (self.cleaned_data.get("bitrix_webhook_token") or "").strip()
@@ -38,6 +41,12 @@ class InvestAutomationConnectionForm(BootstrapFormMixin, forms.ModelForm):
         if flags.get("bitrix_inbound") and not token:
             raise ValidationError("Токен обязателен при включённом bitrix_inbound.")
         return token
+
+    def clean_allowed_ips(self):
+        value = self.cleaned_data.get("allowed_ips") or []
+        if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+            raise ValidationError("Укажите JSON-массив строк, например [\"10.0.0.1\"].")
+        return [item.strip() for item in value if item.strip()]
 
 
 class InvestAutomationFlagsForm(forms.Form):

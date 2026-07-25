@@ -153,7 +153,7 @@ class InvestSmevRequestAdmin(admin.ModelAdmin):
 
 @admin.register(InvestAutomationConfig)
 class InvestAutomationConfigAdmin(admin.ModelAdmin):
-    list_display = ("subsystem", "contract_version", "updated_at")
+    list_display = ("subsystem", "contract_version", "bitrix_api_base", "updated_at")
     search_fields = ("subsystem__code",)
 
 

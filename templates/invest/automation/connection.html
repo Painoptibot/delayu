@@ -54,6 +54,9 @@
     <div class="alert alert-secondary" role="status">
       URL для входящего webhook: <code>{{ webhook_url }}</code>
     </div>
+    <div class="alert alert-info" role="status">
+      Регулярно ротируйте webhook-токен, особенно после передачи доступа интегратору. Старый токен перестанет работать сразу после регенерации.
+    </div>
 
     <form method="post" novalidate>
       {% csrf_token %}
@@ -77,10 +80,16 @@
           {{ form.contract_version }}
           {% for error in form.contract_version.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
         </div>
+        <div class="col-12">
+          <label class="form-label" for="{{ form.allowed_ips.id_for_label }}">{{ form.allowed_ips.label }}</label>
+          {{ form.allowed_ips }}
+          <div class="form-text">Опционально: JSON-массив IP-адресов, которым разрешён inbound webhook, например ["10.0.0.1"]. Пустой список разрешает все IP.</div>
+          {% for error in form.allowed_ips.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
       </div>
 
       <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
-        <button class="btn btn-outline-secondary" type="submit" name="action" value="generate_token">Сгенерировать токен</button>
+        <button class="btn btn-outline-secondary" type="submit" name="action" value="generate_token">Регенерировать токен</button>
         <button class="btn btn-primary" type="submit">Сохранить</button>
       </div>
     </form>

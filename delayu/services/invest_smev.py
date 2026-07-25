@@ -8,6 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from delayu.models_invest import InvestSite, InvestSmevRequest
+from delayu.services.invest_flags import ensure_automation_config
 
 
 class InvestSmevError(Exception):
@@ -51,6 +52,24 @@ def _mock_egrn_payload(cadastral_number: str) -> dict:
 @transaction.atomic
 def request_smev_fill(*, site: InvestSite, user, service: str = InvestSmevRequest.Service.EGRN) -> InvestSmevRequest:
     """Создаёт mock-запрос и сразу заполняет ответ (тестовый контур)."""
+    cfg = ensure_automation_config(site.subsystem)
+    if cfg.flag("smev_live") and not cfg.flag("smev_mock"):
+        req = InvestSmevRequest.objects.create(
+            subsystem=site.subsystem,
+            site=site,
+            service=service,
+            status=InvestSmevRequest.Status.LIVE_PENDING,
+            is_mock=False,
+            created_by=user,
+            request_payload={"cadastral_number": site.cadastral_number, "service": service},
+            response_payload={
+                "note": "live SMEV request is pending; production gateway adapter is not connected in this build"
+            },
+        )
+        site.last_smev_at = timezone.now()
+        site.save(update_fields=["last_smev_at", "updated_at"])
+        return req
+
     if service != InvestSmevRequest.Service.EGRN:
         # Для демо достаточно ЕГРН; остальные сервисы — заглушки статуса
         req = InvestSmevRequest.objects.create(

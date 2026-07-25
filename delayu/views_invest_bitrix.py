@@ -22,6 +22,16 @@ def _parse_json(request) -> dict:
         return {}
 
 
+def _client_ip(request) -> str:
+    forwarded = (request.META.get("HTTP_X_FORWARDED_FOR") or "").split(",", 1)[0].strip()
+    return forwarded or request.META.get("REMOTE_ADDR", "")
+
+
+def _ip_allowed(cfg, request) -> bool:
+    allowed = [str(item).strip() for item in (cfg.allowed_ips or []) if str(item).strip()]
+    return not allowed or _client_ip(request) in allowed
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class InvestBitrixWebhookView(View):
     """POST /api/invest/bitrix/webhook/<subsystem_code>/?token=..."""
@@ -32,6 +42,9 @@ class InvestBitrixWebhookView(View):
         ).first()
         if not subsystem:
             return JsonResponse({"ok": False, "error": "subsystem_not_found"}, status=404)
+        cfg = ensure_automation_config(subsystem)
+        if not _ip_allowed(cfg, request):
+            return JsonResponse({"ok": False, "error": "ip_not_allowed"}, status=403)
         payload = _parse_json(request)
         if not payload:
             payload = request.POST.dict()

@@ -167,6 +167,10 @@
       <button class="btn btn-primary" type="submit" name="action" value="run">Прогнать автоматизацию</button>
       <button class="btn btn-outline-warning" type="submit" name="action" value="requeue_dead">Вернуть dead-letter в очередь</button>
     </form>
+    <form class="d-flex flex-wrap gap-2 mt-2" method="post" action="{% url 'invest-automation-simulate' %}">
+      {% csrf_token %}
+      <button class="btn btn-outline-primary" type="submit">Симулировать webhook Bitrix</button>
+    </form>
     <div class="text-muted small mt-3">
       Bitrix входящие: {{ metrics.bitrix_inbound_done }}, исходящие: {{ metrics.bitrix_outbound_done }}.
       Просрочено МО: {{ metrics.mo_overdue }}, ТП: {{ metrics.tp_overdue }}.

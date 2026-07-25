@@ -18,6 +18,7 @@ from delayu.models import Subsystem
 from delayu.models_invest import InvestExternalTask, InvestIntegrationEvent
 from delayu.services.access import get_membership_or_403
 from delayu.services.invest_automation_access import user_can_manage_invest_automation
+from delayu.services.invest_bitrix import InvestBitrixError, ingest_bitrix_webhook
 from delayu.services.invest_flags import (
     DEFAULT_FIELD_MAPPING_V1,
     DEFAULT_STAGE_MAPPING_V1,
@@ -85,7 +86,7 @@ class InvestAutomationConnectionView(InvestAutomationAdminMixin, TemplateView):
         if request.POST.get("action") == "generate_token":
             cfg.bitrix_webhook_token = f"invest-{cfg.subsystem.code}-{secrets.token_urlsafe(12)}"
             cfg.save(update_fields=["bitrix_webhook_token", "updated_at"])
-            messages.success(request, "Токен сгенерирован.")
+            messages.success(request, "Токен регенерирован. Обновите его в Bitrix и удалите старое значение.")
             return redirect("invest-automation")
 
         form = InvestAutomationConnectionForm(request.POST, instance=cfg)
@@ -202,4 +203,31 @@ class InvestAutomationStatusView(InvestAutomationAdminMixin, TemplateView):
             messages.success(request, f"Dead-letter перепоставлено: {count}.")
         else:
             messages.warning(request, "Неизвестное действие.")
+        return redirect("invest-automation-status")
+
+
+class InvestAutomationSimulateView(InvestAutomationAdminMixin, TemplateView):
+    automation_tab = "status"
+
+    def post(self, request, *args, **kwargs):
+        cfg = self.get_config()
+        payload = {
+            "ID": "SIM-100",
+            "TITLE": "Sandbox simulator deal",
+            "UF_INVESTOR": "ООО Симулятор",
+            "UF_INDUSTRY": "АПК",
+            "UF_MO_CODE": "mo1",
+            "STAGE_ID": "NEW",
+            "ASSIGNED_BY_ID": "dept",
+        }
+        try:
+            result = ingest_bitrix_webhook(
+                subsystem=self.get_subsystem(),
+                payload=payload,
+                token=cfg.bitrix_webhook_token,
+            )
+        except InvestBitrixError as exc:
+            messages.error(request, f"Симулятор Bitrix не выполнен: {exc}")
+        else:
+            messages.success(request, f"Симулятор Bitrix создал/обновил проект #{result.get('project_id')}.")
         return redirect("invest-automation-status")

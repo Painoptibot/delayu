@@ -278,6 +278,7 @@ class InvestSmevRequest(models.Model):
 
     class Status(models.TextChoices):
         QUEUED = "queued", "В очереди"
+        LIVE_PENDING = "live_pending", "Ожидает live-ответ"
         DONE = "done", "Получен ответ"
         ERROR = "error", "Ошибка"
         APPLIED = "applied", "Применено к карточке"
@@ -331,6 +332,7 @@ class InvestAutomationConfig(models.Model):
     contract_version = models.CharField(max_length=16, default="v1")
     bitrix_webhook_token = models.CharField(max_length=128, blank=True)
     bitrix_api_base = models.URLField(blank=True)
+    allowed_ips = models.JSONField(default=list, blank=True)
     field_mapping = models.JSONField(default=dict, blank=True)
     stage_mapping = models.JSONField(default=dict, blank=True)
     updated_at = models.DateTimeField(auto_now=True)

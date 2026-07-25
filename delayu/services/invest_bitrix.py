@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
 
+import httpx
 from django.db import transaction
 from django.utils import timezone
 
@@ -61,20 +62,49 @@ def _resolve_org(subsystem, code: str | None):
     return org or subsystem.organizations.filter(is_active=True).order_by("pk").first()
 
 
-def _apply_stage(cfg, project: InvestProject, bitrix_stage: str | None):
+def _apply_stage(cfg, project: InvestProject, bitrix_stage: str | None, *, allow_conflict: bool = True) -> dict | None:
     if not bitrix_stage:
-        return
+        return None
     pair = (cfg.stage_mapping or {}).get(str(bitrix_stage))
     if not pair:
-        return
+        return None
     funnel, stage = pair
     # воронку меняем только если ещё attraction→attraction или уже support
     if project.funnel == InvestProject.Funnel.SUPPORT and funnel == "attraction":
-        return
+        return None
     if funnel == "support" and project.funnel != InvestProject.Funnel.SUPPORT:
         # handoff только через InvestHandoff — не форсим
-        return
+        return None
+    if allow_conflict and project.pk and project.stage != stage:
+        return {
+            "bitrix_stage_id": str(bitrix_stage),
+            "bitrix_funnel": funnel,
+            "bitrix_stage": stage,
+            "delayu_funnel": project.funnel,
+            "delayu_stage": project.stage,
+            "detected_at": timezone.now().isoformat(),
+        }
     project.stage = stage
+    return None
+
+
+@transaction.atomic
+def resolve_bitrix_stage_conflict(*, project: InvestProject, resolution: str) -> dict:
+    ext = dict(project.external_ids or {})
+    conflict = ext.get("bitrix_stage_conflict") or {}
+    if not conflict:
+        return {"resolved": False, "reason": "no_conflict"}
+    if resolution == "bitrix":
+        project.funnel = conflict.get("bitrix_funnel") or project.funnel
+        project.stage = conflict.get("bitrix_stage") or project.stage
+    elif resolution != "delayu":
+        raise InvestBitrixError("unknown stage conflict resolution")
+    ext.pop("bitrix_stage_conflict", None)
+    ext["bitrix_stage_conflict_resolved_at"] = timezone.now().isoformat()
+    ext["bitrix_stage_conflict_resolution"] = resolution
+    project.external_ids = ext
+    project.save(update_fields=["funnel", "stage", "external_ids", "updated_at"])
+    return {"resolved": True, "resolution": resolution, "stage": project.stage}
 
 
 def _to_decimal(value):
@@ -92,7 +122,7 @@ def ingest_bitrix_webhook(*, subsystem, payload: dict, token: str = "") -> dict:
     cfg = ensure_automation_config(subsystem)
     if not cfg.flag("bitrix_inbound"):
         raise InvestBitrixError("bitrix_inbound disabled")
-    if cfg.bitrix_webhook_token and token and token != cfg.bitrix_webhook_token:
+    if cfg.bitrix_webhook_token and token != cfg.bitrix_webhook_token:
         raise InvestBitrixError("invalid webhook token")
 
     bitrix_id = str(payload.get("ID") or payload.get("bitrix_id") or "").strip()
@@ -174,7 +204,7 @@ def ingest_bitrix_webhook(*, subsystem, payload: dict, token: str = "") -> dict:
         except (TypeError, ValueError):
             pass
 
-    _apply_stage(cfg, project, mapped.get("bitrix_stage") or stage_id)
+    conflict = _apply_stage(cfg, project, mapped.get("bitrix_stage") or stage_id, allow_conflict=not created)
 
     ext = dict(project.external_ids or {})
     if bitrix_id:
@@ -189,6 +219,8 @@ def ingest_bitrix_webhook(*, subsystem, payload: dict, token: str = "") -> dict:
         ext["validation_errors"] = validation_errors
     if dup_by and created is False:
         ext["dedup_by"] = dup_by
+    if conflict:
+        ext["bitrix_stage_conflict"] = conflict
     project.external_ids = ext
     project.organization = org
     project.save()
@@ -325,9 +357,9 @@ def push_project_to_bitrix(*, project: InvestProject, force: bool = False) -> di
         payload={"fields": fields, "passport": passport, "comment": comment, "attachments": attachments},
     )
 
-    # sandbox/mock success
+    payload = {"fields": fields, "passport": passport, "comment": comment, "attachments": attachments}
     response = {
-        "mode": "sandbox" if cfg.flag("sandbox") else "live_stub",
+        "mode": "sandbox",
         "bitrix_id": (project.external_ids or {}).get("bitrix_id"),
         "updated_fields": list(fields.keys()),
         "comment": comment,
@@ -335,10 +367,32 @@ def push_project_to_bitrix(*, project: InvestProject, force: bool = False) -> di
         "contract_version": cfg.contract_version,
     }
     try:
-        # место для живого REST при smev_live/bitrix live
-        if not cfg.flag("sandbox") and cfg.bitrix_api_base:
-            response["note"] = "live endpoint configured but REST client not enabled in this build"
+        if not cfg.flag("sandbox"):
+            if not cfg.bitrix_api_base:
+                raise InvestBitrixError("Bitrix live push requires bitrix_api_base or enabled sandbox mode")
+            with httpx.Client(timeout=15) as client:
+                live_resp = client.post(cfg.bitrix_api_base, json=payload)
+                live_resp.raise_for_status()
+            try:
+                live_body = live_resp.json()
+            except ValueError:
+                live_body = {"raw": live_resp.text[:1000]}
+            response.update(
+                {
+                    "mode": "live",
+                    "status_code": live_resp.status_code if isinstance(live_resp.status_code, int) else None,
+                    "bitrix_response": live_body,
+                }
+            )
         finish_event(event, status=InvestIntegrationEvent.Status.DONE, response=response)
+    except httpx.HTTPStatusError as exc:
+        message = f"Bitrix live push failed with HTTP {exc.response.status_code}: {exc.response.text[:300]}"
+        retry_or_dead(event, error=message)
+        raise InvestBitrixError(message) from exc
+    except httpx.RequestError as exc:
+        message = f"Bitrix live push failed: {exc}"
+        retry_or_dead(event, error=message)
+        raise InvestBitrixError(message) from exc
     except Exception as exc:  # pragma: no cover
         retry_or_dead(event, error=str(exc))
         raise

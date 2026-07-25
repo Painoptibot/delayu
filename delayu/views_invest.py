@@ -34,7 +34,8 @@ from delayu.services.invest_booking import InvestBookingError, book_site, expire
 from delayu.services.invest_dashboard import build_dashboard
 from delayu.services.invest_dedup import ignore_duplicate_pair, suspected_duplicate_pairs
 from delayu.services.invest_escalation import refresh_invest_sla
-from delayu.services.invest_gates import compute_completeness, gate_blockers
+from delayu.services.invest_bitrix import InvestBitrixError, push_project_to_bitrix, resolve_bitrix_stage_conflict
+from delayu.services.invest_gates import can_push_to_bitrix, compute_completeness, gate_blockers
 from delayu.services.invest_handoff import (
     InvestHandoffError,
     RETURN_REASON_TEMPLATES,
@@ -44,6 +45,7 @@ from delayu.services.invest_handoff import (
     return_handoff,
 )
 from delayu.services.invest_import import apply_row, parse_mo_file, skip_row
+from delayu.services.invest_flags import ensure_automation_config
 from delayu.services.invest_package import ensure_package, set_item_status
 from delayu.services.invest_scope import projects_for_membership, sites_for_membership
 from delayu.services.invest_smev import InvestSmevError, apply_smev_response, request_smev_fill
@@ -354,6 +356,10 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
         ctx["package_items"] = items
         ctx["package_ready"] = f"{ready}/{len(required)}" if required else "—"
         blockers = gate_blockers(project)
+        can_push, bitrix_blockers = can_push_to_bitrix(project)
+        ctx["bitrix_can_push"] = can_push
+        ctx["bitrix_blockers"] = bitrix_blockers
+        ctx["bitrix_stage_conflict"] = (project.external_ids or {}).get("bitrix_stage_conflict")
         ctx["completeness_pct"] = compute_completeness(project)
         ctx["completeness_actions"] = _completeness_actions(project, blockers)
         ctx["audit_logs"] = AuditLog.objects.filter(
@@ -362,6 +368,41 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
             object_id=str(project.pk),
         )[:20]
         return _with_odysseus_cta(self.request, ctx, membership=membership, project=project)
+
+
+class InvestProjectBitrixPushView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(projects_for_membership(self.get_membership()), pk=kwargs["pk"])
+        try:
+            result = push_project_to_bitrix(project=project, force=False)
+        except InvestBitrixError as exc:
+            messages.error(request, str(exc))
+        else:
+            if result.get("pushed"):
+                messages.success(request, "Проект отправлен в Bitrix.")
+            else:
+                messages.warning(request, "Отправка в Bitrix заблокирована: " + ", ".join(result.get("blockers") or []))
+        return redirect(reverse("invest-project-detail", args=[project.pk]))
+
+
+class InvestProjectBitrixConflictView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(projects_for_membership(self.get_membership()), pk=kwargs["pk"])
+        resolution = request.POST.get("resolution") or ""
+        try:
+            result = resolve_bitrix_stage_conflict(project=project, resolution=resolution)
+        except InvestBitrixError as exc:
+            messages.error(request, str(exc))
+        else:
+            if result.get("resolved"):
+                messages.success(request, "Конфликт стадий Bitrix/Delayu разрешён.")
+            else:
+                messages.info(request, "Активного конфликта стадий нет.")
+        return redirect(reverse("invest-project-detail", args=[project.pk]))
 
 
 class InvestInvestorListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
@@ -790,6 +831,8 @@ class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailVi
         ctx["project_links"] = self.object.project_links.select_related("project", "project__organization")
         ctx["projects"] = projects_for_membership(membership).select_related("organization").order_by("code")
         ctx["smev_requests"] = self.object.smev_requests.all()[:10]
+        flags = ensure_automation_config(self.object.subsystem).get_flags()
+        ctx["smev_live_pending_mode"] = bool(flags.get("smev_live") and not flags.get("smev_mock"))
         egrn_requests = self.object.smev_requests.filter(service=InvestSmevRequest.Service.EGRN)[:10]
         ctx["egrn_history"] = [
             {
@@ -859,10 +902,13 @@ class InvestSiteSmevRequestView(InvestForbiddenResponseMixin, InvestSubsystemMix
         site = get_object_or_404(sites_for_membership(self.get_membership()), pk=kwargs["pk"])
         service = request.POST.get("service") or InvestSmevRequest.Service.EGRN
         req = request_smev_fill(site=site, user=request.user, service=service)
-        messages.success(
-            request,
-            f"Тестовый СМЭВ ({req.get_service_display()}): ответ получен. Можно применить к карточке.",
-        )
+        if req.status == InvestSmevRequest.Status.LIVE_PENDING:
+            messages.info(request, f"СМЭВ live ({req.get_service_display()}): запрос ожидает ответа шлюза.")
+        else:
+            messages.success(
+                request,
+                f"Тестовый СМЭВ ({req.get_service_display()}): ответ получен. Можно применить к карточке.",
+            )
         return redirect(reverse("invest-site-detail", args=[site.pk]))
 
 
