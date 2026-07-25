@@ -6,7 +6,7 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
   <div>
     <h4 class="mb-1">Инвестконтур</h4>
-    <p class="text-muted mb-0">Единый обзор инвестиционных проектов активной подсистемы.</p>
+    <p class="text-muted mb-0">{{ role_home.blurb|default:"Единый обзор инвестиционных проектов активной подсистемы." }}</p>
   </div>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Проекты</a>
@@ -18,10 +18,30 @@
     <a class="btn btn-outline-primary" href="{{ odysseus_cta_url }}">Открыть в Odysseus</a>
     {% endif %}
     {% if can_create_project %}
+    <a class="btn btn-outline-primary" href="{% url 'invest-project-wizard' %}">Мастер проекта</a>
     <a class="btn btn-primary" href="{% url 'invest-project-create' %}">Новый проект</a>
     {% endif %}
   </div>
 </div>
+
+{% if role_home %}
+<div class="card mb-6">
+  <div class="card-body">
+    <div class="d-flex flex-column flex-md-row gap-3 justify-content-between">
+      <div>
+        <div class="text-muted small mb-1">Рабочий стол роли</div>
+        <h5 class="mb-1">{{ role_home.title }}</h5>
+        <p class="text-muted mb-0">{{ role_home.blurb }}</p>
+      </div>
+      <div class="d-flex flex-wrap gap-2 align-items-start">
+        {% for widget in role_home.widgets %}
+        <span class="badge bg-label-primary">{{ widget.label }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <div class="row g-4 mb-6">
   <div class="col-md-4">

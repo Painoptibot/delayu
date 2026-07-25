@@ -1,0 +1,54 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-body-secondary mb-0">Шаг {{ step_number }} из 3: {% if step == "1" %}реквизиты{% elif step == "2" %}площадка{% else %}пакет передачи{% endif %}.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">К списку</a>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="progress mb-4" style="height: 6px;">
+      <div class="progress-bar" style="width: {% if step == "1" %}33{% elif step == "2" %}66{% else %}100{% endif %}%"></div>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="step" value="{{ step }}">
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="row g-3">
+        {% for field in form %}
+          {% if field.is_hidden %}
+          {{ field }}
+          {% for error in field.errors %}<div class="alert alert-danger py-2">{{ error }}</div>{% endfor %}
+          {% else %}
+          <div class="{% if field.name == 'package_note' %}col-12{% else %}col-md-6{% endif %}">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="d-flex justify-content-between mt-4">
+        {% if step == "1" %}
+        <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">Отмена</a>
+        {% elif step == "2" %}
+        <a class="btn btn-outline-secondary" href="{% url 'invest-project-wizard' %}?step=1">Назад</a>
+        {% else %}
+        <a class="btn btn-outline-secondary" href="{% url 'invest-project-wizard' %}?step=2">Назад</a>
+        {% endif %}
+        <button class="btn btn-primary" type="submit">{% if step == "3" %}Создать проект{% else %}Далее{% endif %}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

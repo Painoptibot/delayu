@@ -6,14 +6,20 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.dateparse import parse_date
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 
-from delayu.forms_invest import InvestProjectForm, InvestSiteForm
+from delayu.forms_invest import (
+    InvestProjectForm,
+    InvestProjectWizardStep1Form,
+    InvestProjectWizardStep2Form,
+    InvestProjectWizardStep3Form,
+    InvestSiteForm,
+)
 from delayu.mixins import ModulePermissionMixin
 from delayu.models import AuditLog, DocumentFile, Subsystem
 from delayu.models_invest import (
@@ -52,6 +58,55 @@ from delayu.services.invest_scope import projects_for_membership, sites_for_memb
 from delayu.services.invest_smev import InvestSmevError, apply_smev_response, request_smev_fill
 from delayu.services.odysseus_invest import get_invest_odysseus_open_url, prepare_odysseus_open
 from delayu.services.scope import is_platform_admin
+
+
+PROJECT_WIZARD_SESSION_KEY = "invest_project_wizard"
+
+ROLE_HOMES = {
+    "invest_agency": {
+        "title": "Агентство развития",
+        "blurb": "Фокус на привлечении инвесторов, квалификации лидов и подготовке передачи в сопровождение.",
+        "widgets": [
+            {"label": "Новые лиды", "metric": "attraction"},
+            {"label": "Передачи", "url_name": "invest-handoffs"},
+            {"label": "Площадки", "url_name": "invest-sites"},
+        ],
+    },
+    "invest_dept": {
+        "title": "Департамент инвестиций",
+        "blurb": "Контроль воронки, SLA, пакетов передачи и узких мест по муниципалитетам.",
+        "widgets": [
+            {"label": "Дашборд", "url_name": "invest-dashboard"},
+            {"label": "Канбан", "url_name": "invest-kanban"},
+            {"label": "Просрочки", "url_name": "invest-inbox"},
+        ],
+    },
+    "invest_mo": {
+        "title": "Муниципальный кабинет",
+        "blurb": "Работа с проектами и площадками своего МО, актуализация сведений и ответы на запросы.",
+        "widgets": [
+            {"label": "Мои проекты", "metric": "projects_total"},
+            {"label": "Площадки МО", "url_name": "invest-sites"},
+            {"label": "Сегодня", "url_name": "invest-inbox"},
+        ],
+    },
+    "invest_admin": {
+        "title": "Администрирование инвестконтура",
+        "blurb": "Настройка интеграций, автоматизации и сквозного контроля инвестконтура.",
+        "widgets": [
+            {"label": "Автоматизация", "url_name": "invest-automation"},
+            {"label": "Интеграции", "url_name": "platform-integrations"},
+            {"label": "Дашборд", "url_name": "invest-dashboard"},
+        ],
+    },
+}
+
+
+def _role_home_for_membership(membership):
+    role_code = membership.role.code
+    home = dict(ROLE_HOMES.get(role_code) or ROLE_HOMES["invest_agency"])
+    home["role_code"] = role_code
+    return home
 
 
 class InvestSubsystemMixin(AccessMixin):
@@ -208,6 +263,7 @@ class InvestHubView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
         }
         ctx["recent_projects"] = projects.select_related("organization", "owner")[:8]
         ctx["can_create_project"] = user_can(self.request.user, self.module_code, "create")
+        ctx["role_home"] = _role_home_for_membership(membership)
         return _with_odysseus_cta(self.request, ctx, membership=membership)
 
 
@@ -767,6 +823,108 @@ class InvestImportRowSkipView(InvestImportRowActionView):
     action = "skip"
 
 
+class InvestProjectWizardView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    template_name = "invest/project_wizard.html"
+    required_action = "create"
+
+    def _step(self):
+        raw = self.request.POST.get("step") or self.request.GET.get("step") or "1"
+        return raw if raw in {"1", "2", "3"} else "1"
+
+    def _session_data(self):
+        return dict(self.request.session.get(PROJECT_WIZARD_SESSION_KEY) or {})
+
+    def _save_session_data(self, data):
+        self.request.session[PROJECT_WIZARD_SESSION_KEY] = data
+        self.request.session.modified = True
+
+    def _form_for_step(self, step, data=None):
+        membership = self.get_membership()
+        initial = self._session_data()
+        if step == "1":
+            return InvestProjectWizardStep1Form(data=data, initial=initial.get("step1"), membership=membership)
+        if step == "2":
+            return InvestProjectWizardStep2Form(data=data, initial=initial.get("step2"), membership=membership)
+        return InvestProjectWizardStep3Form(data=data, initial=initial.get("step3"))
+
+    def _render(self, step, form):
+        return render(
+            self.request,
+            self.template_name,
+            {
+                "form": form,
+                "step": step,
+                "step_number": int(step),
+                "page_title": "Мастер нового инвестпроекта",
+                "wizard_data": self._session_data(),
+            },
+        )
+
+    def get(self, request, *args, **kwargs):
+        step = self._step()
+        if step != "1" and not self._session_data().get("step1"):
+            return redirect(reverse("invest-project-wizard"))
+        return self._render(step, self._form_for_step(step))
+
+    def post(self, request, *args, **kwargs):
+        step = self._step()
+        if step != "1" and not self._session_data().get("step1"):
+            return redirect(reverse("invest-project-wizard"))
+
+        form = self._form_for_step(step, data=request.POST)
+        if not form.is_valid():
+            return self._render(step, form)
+
+        data = self._session_data()
+        if step == "1":
+            organization = form.cleaned_data["organization"]
+            data["step1"] = {
+                "organization": organization.pk,
+                "code": form.cleaned_data["code"],
+                "name": form.cleaned_data["name"],
+                "investor_name": form.cleaned_data["investor_name"],
+            }
+            self._save_session_data(data)
+            return redirect(f"{reverse('invest-project-wizard')}?step=2")
+
+        if step == "2":
+            site = form.cleaned_data.get("site")
+            data["step2"] = {"site": site.pk if site else ""}
+            self._save_session_data(data)
+            return redirect(f"{reverse('invest-project-wizard')}?step=3")
+
+        project = self._create_project_from_session(form.cleaned_data)
+        request.session.pop(PROJECT_WIZARD_SESSION_KEY, None)
+        request.session.modified = True
+        messages.success(request, "Инвестпроект создан через мастер.")
+        return redirect(reverse("invest-project-detail", args=[project.pk]))
+
+    def _create_project_from_session(self, cleaned_step3):
+        membership = self.get_membership()
+        data = self._session_data()
+        step1 = data["step1"]
+        project = InvestProject.objects.create(
+            subsystem=membership.subsystem,
+            organization_id=step1["organization"],
+            code=step1["code"],
+            name=step1["name"],
+            investor_name=step1.get("investor_name", ""),
+            funnel=InvestProject.Funnel.ATTRACTION,
+            stage="lead",
+            owner=self.request.user,
+            municipality_notes=cleaned_step3.get("package_note", ""),
+        )
+        site_id = (data.get("step2") or {}).get("site")
+        if site_id:
+            site = get_object_or_404(sites_for_membership(membership), pk=site_id)
+            InvestProjectSite.objects.create(
+                project=project,
+                site=site,
+                role=InvestProjectSite.Role.PROPOSED,
+            )
+        return project
+
+
 class InvestProjectCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, CreateView):
     model = InvestProject
     form_class = InvestProjectForm
@@ -786,6 +944,8 @@ class InvestProjectCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin
         membership = self.get_membership()
         if membership.role.code == "invest_mo":
             form.instance.organization = membership.organization
+        if form.instance.owner_id is None:
+            form.instance.owner = self.request.user
         messages.success(self.request, "Инвестпроект создан.")
         return super().form_valid(form)
 

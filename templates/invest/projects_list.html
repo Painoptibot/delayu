@@ -12,6 +12,7 @@
     <a class="btn btn-outline-secondary" href="{% url 'invest-investors' %}">Инвесторы</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-dedupe' %}">Дубли</a>
     {% if can_create_project %}
+    <a class="btn btn-outline-primary" href="{% url 'invest-project-wizard' %}">Мастер проекта</a>
     <a class="btn btn-primary" href="{% url 'invest-project-create' %}">Новый проект</a>
     {% endif %}
   </div>

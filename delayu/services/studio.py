@@ -286,6 +286,7 @@ def flat_menu_items():
                     "label": item["label"],
                     "icon": item["icon"],
                     "codes": item.get("codes") or [],
+                    "role_codes": item.get("role_codes") or [],
                     "section": section["header"],
                     "url_query": item.get("url_query", ""),
                 }
@@ -441,6 +442,20 @@ def menu_layout_to_menu_json(layout, membership):
             codes = item.get("codes") or []
             if codes and not any(c in enabled and (c in allowed or is_admin) for c in codes):
                 continue
+            role_codes = item.get("role_codes") or []
+            if role_codes:
+                from delayu.services.invest_automation_access import (
+                    user_can_manage_invest_automation,
+                )
+                from delayu.services.scope import is_platform_admin
+
+                if item["url_name"] == "invest-automation":
+                    if not user_can_manage_invest_automation(membership.user, membership):
+                        continue
+                elif role_code not in role_codes and not (
+                    membership.user.is_superuser or is_platform_admin(membership.user)
+                ):
+                    continue
             href = reverse(item["url_name"])
             if item.get("url_query"):
                 href += item["url_query"]

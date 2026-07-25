@@ -248,7 +248,7 @@ def _role_view_codes(membership: SubsystemMembership) -> set[str]:
 
 def build_menu_for_membership(membership: SubsystemMembership) -> list[dict]:
     from delayu.services import studio
-    from delayu.services.scope import menu_item_allowed
+    from delayu.services.scope import filter_menu_for_user, menu_item_allowed
 
     layout = membership.subsystem.menu_layout
     if layout:
@@ -314,7 +314,7 @@ def build_menu_for_membership(membership: SubsystemMembership) -> list[dict]:
                 entry["menu_li_class"] = item_class
             menu.append({"menu_header": section["header"], "menu_header_class": header_class})
             menu.extend(section_items)
-    return menu
+    return filter_menu_for_user(menu, membership.user)
 
 
 def _section_header_class(section: dict) -> str:

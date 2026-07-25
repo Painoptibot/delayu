@@ -5,6 +5,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 
 from delayu.forms import BOOTSTRAP, SELECT, BootstrapFormMixin
+from delayu.models import Organization
 from delayu.models_invest import InvestProject, InvestSite
 
 User = get_user_model()
@@ -170,6 +171,64 @@ class InvestProjectForm(BootstrapFormMixin, forms.ModelForm):
         if stage not in self._allowed_stage_values():
             raise forms.ValidationError("Недопустимый переход стадии для текущей воронки.")
         return stage
+
+
+class InvestProjectWizardStep1Form(forms.Form):
+    organization = forms.ModelChoiceField(label="МО / территория", queryset=Organization.objects.none())
+    code = forms.CharField(label="Код", max_length=64)
+    name = forms.CharField(label="Наименование", max_length=255)
+    investor_name = forms.CharField(label="Инвестор", max_length=255, required=False)
+
+    def __init__(self, *args, membership=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.membership = membership
+        if membership:
+            self.fields["organization"].queryset = membership.subsystem.organizations.filter(is_active=True)
+        if self._is_mo_membership():
+            self.fields["organization"].initial = membership.organization
+            self.fields["organization"].widget = forms.HiddenInput()
+        _apply_bootstrap(self.fields)
+
+    def _is_mo_membership(self):
+        return bool(self.membership and self.membership.role.code == "invest_mo")
+
+    def clean_organization(self):
+        organization = self.cleaned_data["organization"]
+        if self.membership and organization.subsystem_id != self.membership.subsystem_id:
+            raise forms.ValidationError("Организация должна относиться к активному инвестконтуре.")
+        if self._is_mo_membership() and organization != self.membership.organization:
+            raise forms.ValidationError("Организация должна совпадать с вашим МО.")
+        return organization
+
+    def clean_code(self):
+        code = self.cleaned_data["code"].strip()
+        if self.membership and InvestProject.objects.filter(subsystem=self.membership.subsystem, code=code).exists():
+            raise forms.ValidationError("Проект с таким кодом уже есть в инвестконтуре.")
+        return code
+
+
+class InvestProjectWizardStep2Form(forms.Form):
+    site = forms.ModelChoiceField(label="Площадка", queryset=InvestSite.objects.none(), required=False)
+
+    def __init__(self, *args, membership=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if membership:
+            self.fields["site"].queryset = membership.subsystem.invest_sites.filter(
+                organization__is_active=True
+            ).order_by("cadastral_number")
+        _apply_bootstrap(self.fields)
+
+
+class InvestProjectWizardStep3Form(forms.Form):
+    package_note = forms.CharField(
+        label="Комментарий к пакету",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _apply_bootstrap(self.fields)
 
 
 class InvestSiteForm(BootstrapFormMixin, forms.ModelForm):

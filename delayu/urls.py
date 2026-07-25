@@ -1033,6 +1033,7 @@ urlpatterns = [
     path("invest/projects/", views_invest.InvestProjectListView.as_view(), name="invest-projects"),
     path("invest/projects/bulk-stage/", views_invest.InvestProjectBulkStageView.as_view(), name="invest-project-bulk-stage"),
     path("invest/projects/new/", views_invest.InvestProjectCreateView.as_view(), name="invest-project-create"),
+    path("invest/projects/wizard/", views_invest.InvestProjectWizardView.as_view(), name="invest-project-wizard"),
     path("invest/projects/<int:pk>/", views_invest.InvestProjectDetailView.as_view(), name="invest-project-detail"),
     path("invest/projects/<int:pk>/edit/", views_invest.InvestProjectUpdateView.as_view(), name="invest-project-edit"),
     path("invest/projects/<int:pk>/bitrix-push/", views_invest.InvestProjectBitrixPushView.as_view(), name="invest-project-bitrix-push"),
