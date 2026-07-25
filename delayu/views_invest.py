@@ -50,7 +50,7 @@ from delayu.models_invest import (
 from delayu.services.access import get_membership_or_403, user_can
 from delayu.services import audit
 from delayu.services.invest_booking import InvestBookingError, book_site, expire_overdue_bookings, select_site
-from delayu.services.invest_dashboard import build_dashboard
+from delayu.services.invest_dashboard import build_cockpit, build_dashboard, project_sla_risk
 from delayu.services.invest_dedup import ignore_duplicate_pair, inn_is_valid, suspected_duplicate_pairs
 from delayu.services.invest_escalation import refresh_invest_sla
 from delayu.services.invest_bitrix import InvestBitrixError, push_project_to_bitrix, resolve_bitrix_stage_conflict
@@ -467,6 +467,67 @@ class InvestDashboardExportView(InvestDashboardView):
         return response
 
 
+class InvestCockpitView(InvestDashboardView):
+    template_name = "invest/cockpit.html"
+    page_title = "Executive cockpit"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        cockpit = build_cockpit(self.get_subsystem(), **self.get_dashboard_kwargs())
+        ctx["cockpit"] = cockpit
+        ctx["dashboard"] = cockpit["dashboard"]
+        return ctx
+
+
+class InvestDashboardBriefView(InvestDashboardView):
+    def get(self, request, *args, **kwargs):
+        cockpit = build_cockpit(self.get_subsystem(), **self.get_dashboard_kwargs())
+        buffer = BytesIO()
+        pdf = canvas.Canvas(buffer, pagesize=A4, pageCompression=0)
+        width, height = A4
+        regular_font, bold_font = _passport_pdf_fonts()
+        y = height - 48
+        pdf.setFont(bold_font, 16)
+        pdf.drawString(48, y, "Invest meeting brief")
+        y -= 28
+        pdf.setFont(regular_font, 10)
+        rows = [
+            ("Projects total", cockpit["kpis"]["projects_total"]),
+            ("Attraction", cockpit["kpis"]["attraction"]),
+            ("Support", cockpit["kpis"]["support"]),
+            ("Overdue", cockpit["kpis"]["overdue"]),
+            ("Packages ready pct", f"{cockpit['kpis']['packages_ready_pct']}%"),
+            ("Active bookings", cockpit["kpis"]["active_bookings"]),
+            ("SLA high", cockpit["sla_risk"]["high_count"]),
+            ("SLA medium", cockpit["sla_risk"]["medium_count"]),
+            (
+                "Quarter target",
+                f"{cockpit['quarter_target']['actual']} / {cockpit['quarter_target']['goal']}",
+            ),
+        ]
+        for label, value in rows:
+            pdf.setFont(bold_font, 10)
+            pdf.drawString(48, y, f"{label}:")
+            pdf.setFont(regular_font, 10)
+            pdf.drawString(170, y, str(value))
+            y -= 18
+
+        y -= 10
+        pdf.setFont(bold_font, 12)
+        pdf.drawString(48, y, "Heat by MO")
+        y -= 18
+        pdf.setFont(regular_font, 10)
+        for row in cockpit["heat_by_mo"][:8]:
+            pdf.drawString(48, y, f"{row['organization_name']}: {row['overdue_count']}")
+            y -= 16
+        pdf.drawString(48, y, cockpit["heat_note"])
+        pdf.showPage()
+        pdf.save()
+        response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="invest-meeting-brief.pdf"'
+        return response
+
+
 class InvestKanbanView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
     template_name = "invest/kanban.html"
     page_title = "Канбан инвестпроектов"
@@ -644,6 +705,7 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
         }
         ctx["completeness_pct"] = compute_completeness(project)
         ctx["completeness_actions"] = _completeness_actions(project, blockers)
+        ctx["sla_risk"] = project_sla_risk(project)
         ctx["handoff_stop_factor_blocked"] = _open_stop_factors(project).exists()
         ctx["audit_logs"] = AuditLog.objects.filter(
             subsystem=project.subsystem,

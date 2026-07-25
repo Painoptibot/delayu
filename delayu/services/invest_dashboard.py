@@ -5,7 +5,14 @@ from datetime import datetime, time, timedelta
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
-from delayu.models_invest import InvestPackage, InvestPackageItem, InvestProject, InvestProjectSite, InvestRoadmapItem
+from delayu.models_invest import (
+    InvestPackage,
+    InvestPackageItem,
+    InvestProject,
+    InvestProjectSite,
+    InvestQuarterTarget,
+    InvestRoadmapItem,
+)
 
 
 def _stage_counts(subsystem, funnel: str) -> dict[str, int]:
@@ -18,8 +25,8 @@ def _stage_counts(subsystem, funnel: str) -> dict[str, int]:
     return {row["stage"]: row["total"] for row in rows}
 
 
-def _overdue_roadmap_items(subsystem):
-    now = timezone.now()
+def _overdue_roadmap_items(subsystem, *, now=None):
+    now = now or timezone.now()
     return InvestRoadmapItem.objects.filter(project__subsystem=subsystem).filter(
         Q(status=InvestRoadmapItem.Status.OVERDUE)
         | Q(status=InvestRoadmapItem.Status.OPEN, due_at__lt=now)
@@ -125,8 +132,122 @@ def _period_compare(subsystem, *, period: str = "", date_from=None, date_to=None
     }
 
 
+def _risk_rank(risk: str) -> int:
+    return {"high": 2, "medium": 1}.get(risk, 0)
+
+
+def _roadmap_item_risk(item, *, now=None) -> str:
+    now = now or timezone.now()
+    if item.status == InvestRoadmapItem.Status.DONE:
+        return "low"
+    if item.status == InvestRoadmapItem.Status.OVERDUE:
+        return "high"
+    if item.due_at and item.due_at < now:
+        return "high"
+    if item.due_at and item.due_at <= now + timedelta(days=3):
+        return "medium"
+    return "low"
+
+
+def project_sla_risk(project, *, now=None) -> dict:
+    now = now or timezone.now()
+    risks = []
+    for item in project.roadmap_items.exclude(status=InvestRoadmapItem.Status.DONE).order_by("due_at", "code"):
+        risk = _roadmap_item_risk(item, now=now)
+        if risk == "low":
+            continue
+        risks.append(
+            {
+                "code": item.code,
+                "title": item.title,
+                "due_at": item.due_at,
+                "status": item.status,
+                "risk": risk,
+            }
+        )
+    risk = "low"
+    if risks:
+        risk = max((row["risk"] for row in risks), key=_risk_rank)
+    labels = {"high": "Высокий SLA risk", "medium": "Средний SLA risk", "low": "SLA risk низкий"}
+    return {
+        "risk": risk,
+        "label": labels[risk],
+        "items": risks,
+        "items_count": len(risks),
+    }
+
+
+def _sla_risk_summary(subsystem, *, now=None):
+    now = now or timezone.now()
+    due_limit = now + timedelta(days=3)
+    items = (
+        InvestRoadmapItem.objects.filter(project__subsystem=subsystem)
+        .exclude(status=InvestRoadmapItem.Status.DONE)
+        .filter(Q(status=InvestRoadmapItem.Status.OVERDUE) | Q(due_at__lte=due_limit))
+        .select_related("project", "project__organization")
+        .order_by("due_at", "code")
+    )
+    projects = {}
+    high_count = 0
+    medium_count = 0
+    for item in items:
+        risk = _roadmap_item_risk(item, now=now)
+        if risk == "low":
+            continue
+        if risk == "high":
+            high_count += 1
+        elif risk == "medium":
+            medium_count += 1
+        row = projects.setdefault(
+            item.project_id,
+            {
+                "project_id": item.project_id,
+                "project_code": item.project.code,
+                "project_name": item.project.name,
+                "organization_name": item.project.organization.name,
+                "risk": risk,
+                "items_count": 0,
+            },
+        )
+        row["items_count"] += 1
+        if _risk_rank(risk) > _risk_rank(row["risk"]):
+            row["risk"] = risk
+    return {
+        "high_count": high_count,
+        "medium_count": medium_count,
+        "projects": sorted(projects.values(), key=lambda row: (-_risk_rank(row["risk"]), row["project_code"]))[:10],
+    }
+
+
+def _quarter_bounds(year: int, quarter: int):
+    start_month = (quarter - 1) * 3 + 1
+    start = timezone.make_aware(datetime(year, start_month, 1, 0, 0, 0))
+    if quarter == 4:
+        end = timezone.make_aware(datetime(year + 1, 1, 1, 0, 0, 0))
+    else:
+        end = timezone.make_aware(datetime(year, start_month + 3, 1, 0, 0, 0))
+    return start, end
+
+
+def _quarter_target_progress(subsystem, *, now=None):
+    now = now or timezone.now()
+    quarter = ((now.month - 1) // 3) + 1
+    target = InvestQuarterTarget.objects.filter(subsystem=subsystem, year=now.year, quarter=quarter).first()
+    goal = target.attraction_goal if target else 0
+    start, end = _quarter_bounds(now.year, quarter)
+    actual = InvestProject.objects.filter(subsystem=subsystem, created_at__gte=start, created_at__lt=end).count()
+    progress_pct = round(actual * 100 / goal) if goal else 0
+    return {
+        "year": now.year,
+        "quarter": quarter,
+        "goal": goal,
+        "actual": actual,
+        "progress_pct": min(progress_pct, 100),
+    }
+
+
 def build_dashboard(subsystem, *, period: str = "", date_from=None, date_to=None, now=None) -> dict:
-    overdue = _overdue_roadmap_items(subsystem)
+    overdue = _overdue_roadmap_items(subsystem, now=now)
     industry_metrics = _industry_metrics(subsystem)
     bottlenecks = (
         overdue.values("project__organization_id", "project__organization__name")
@@ -160,4 +281,24 @@ def build_dashboard(subsystem, *, period: str = "", date_from=None, date_to=None
             }
             for row in bottlenecks
         ],
+    }
+
+
+def build_cockpit(subsystem, *, now=None, period: str = "", date_from=None, date_to=None) -> dict:
+    dashboard = build_dashboard(subsystem, period=period, date_from=date_from, date_to=date_to, now=now)
+    projects = InvestProject.objects.filter(subsystem=subsystem)
+    return {
+        "dashboard": dashboard,
+        "kpis": {
+            "projects_total": projects.count(),
+            "attraction": projects.filter(funnel=InvestProject.Funnel.ATTRACTION).count(),
+            "support": projects.filter(funnel=InvestProject.Funnel.SUPPORT).count(),
+            "overdue": dashboard["overdue_count"],
+            "packages_ready_pct": dashboard["packages_ready_pct"],
+            "active_bookings": dashboard["active_bookings"],
+        },
+        "sla_risk": _sla_risk_summary(subsystem, now=now),
+        "heat_by_mo": dashboard["bottlenecks_by_org"],
+        "quarter_target": _quarter_target_progress(subsystem, now=now),
+        "heat_note": "Yandex heat later",
     }

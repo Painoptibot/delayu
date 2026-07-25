@@ -198,6 +198,28 @@
   <div class="col-lg-5">
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">SLA risk</h5>
+        {% if sla_risk.risk == "high" %}
+        <span class="badge bg-label-danger">{{ sla_risk.label }}</span>
+        {% elif sla_risk.risk == "medium" %}
+        <span class="badge bg-label-warning">{{ sla_risk.label }}</span>
+        {% else %}
+        <span class="badge bg-label-success">{{ sla_risk.label }}</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <ul class="mb-0">
+          {% for item in sla_risk.items %}
+          <li>{{ item.title }}{% if item.due_at %} · {{ item.due_at|date:"d.m.Y H:i" }}{% endif %}</li>
+          {% empty %}
+          <li class="text-muted">Критичных сроков дорожной карты нет.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Полнота карточки</h5>
         <span class="badge bg-label-primary">{{ completeness_pct }}%</span>
       </div>

@@ -539,3 +539,19 @@ class InvestAutomationRun(models.Model):
 
     def __str__(self):
         return f"AutomationRun#{self.pk}"
+
+
+class InvestQuarterTarget(models.Model):
+    subsystem = models.ForeignKey("Subsystem", on_delete=models.CASCADE, related_name="invest_quarter_targets")
+    year = models.PositiveSmallIntegerField("Год")
+    quarter = models.PositiveSmallIntegerField("Квартал")
+    attraction_goal = models.PositiveIntegerField("План новых проектов", default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [("subsystem", "year", "quarter")]
+        ordering = ["-year", "-quarter"]
+
+    def __str__(self):
+        return f"{self.subsystem_id} Q{self.quarter}/{self.year}: {self.attraction_goal}"
