@@ -142,7 +142,23 @@ def test_connection_denied_for_agency(client, invest_roles_ctx):
 
     resp = client.get(reverse("invest-automation"))
 
-    assert resp.status_code in (302, 403)
+    assert resp.status_code == 302
+    assert resp["Location"] == reverse("invest-hub")
+
+
+@pytest.mark.django_db
+def test_connection_get_ok_for_platform_admin_without_m22(client, invest_roles_ctx):
+    user, _ = _member(invest_roles_ctx, "padm2", "invest_agency", platform_admin=True)
+    RoleModulePermission.objects.filter(
+        role=invest_roles_ctx["roles"]["invest_agency"],
+        module=invest_roles_ctx["module"],
+    ).update(can_view=False, can_create=False, can_change=False, can_delete=False)
+    ensure_automation_config(invest_roles_ctx["sub"])
+    client.force_login(user)
+
+    resp = client.get(reverse("invest-automation"))
+
+    assert resp.status_code == 200
 
 
 @pytest.mark.django_db

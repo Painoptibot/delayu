@@ -36,7 +36,7 @@ class InvestAutomationAdminMixin(InvestSubsystemMixin, ModulePermissionMixin):
         if not user_can_manage_invest_automation(request.user, membership):
             messages.error(request, "Управление автоматизацией доступно администратору инвестконтура.")
             return redirect("invest-hub")
-        return ModulePermissionMixin.dispatch(self, request, *args, **kwargs)
+        return TemplateView.dispatch(self, request, *args, **kwargs)
 
     def get_config(self):
         return ensure_automation_config(self.get_subsystem())
