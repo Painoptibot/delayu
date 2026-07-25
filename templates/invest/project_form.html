@@ -59,6 +59,11 @@
         <div class="col-md-6">
           <label class="form-label" for="{{ form.industry.id_for_label }}">{{ form.industry.label }}</label>
           {{ form.industry }}
+          <datalist id="invest-okved-industries">
+            {% for industry in okved_industries %}
+            <option value="{{ industry }}"></option>
+            {% endfor %}
+          </datalist>
         </div>
         <div class="col-12">
           <label class="form-label" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>

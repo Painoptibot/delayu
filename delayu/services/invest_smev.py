@@ -15,6 +15,12 @@ class InvestSmevError(Exception):
     pass
 
 
+def _diff_value(value):
+    if value is None:
+        return None
+    return str(value)
+
+
 def _mock_egrn_payload(cadastral_number: str) -> dict:
     """Детерминированный ответ по кадастру — удобно для повторных демо."""
     digest = hashlib.sha1(cadastral_number.encode("utf-8")).hexdigest()
@@ -116,6 +122,17 @@ def apply_smev_response(*, request: InvestSmevRequest, user=None) -> InvestSite:
         raise InvestSmevError("Автозаполнение пока только для ЕГРН")
     data = request.response_payload or {}
     site = request.site
+    before = {
+        "address": site.address,
+        "land_category": site.land_category,
+        "vri": site.vri,
+        "right_type": site.right_type,
+        "encumbrances": site.encumbrances,
+        "zone_info": site.zone_info,
+        "area_ha": site.area_ha,
+        "latitude": site.latitude,
+        "longitude": site.longitude,
+    }
     site.address = data.get("address") or site.address
     site.land_category = data.get("land_category") or site.land_category
     site.vri = data.get("vri") or site.vri
@@ -128,6 +145,22 @@ def apply_smev_response(*, request: InvestSmevRequest, user=None) -> InvestSite:
         site.latitude = Decimal(str(data["latitude"]))
     if data.get("longitude"):
         site.longitude = Decimal(str(data["longitude"]))
+    after = {
+        "address": site.address,
+        "land_category": site.land_category,
+        "vri": site.vri,
+        "right_type": site.right_type,
+        "encumbrances": site.encumbrances,
+        "zone_info": site.zone_info,
+        "area_ha": site.area_ha,
+        "latitude": site.latitude,
+        "longitude": site.longitude,
+    }
+    field_diff = {
+        field: {"old": _diff_value(before[field]), "new": _diff_value(after[field])}
+        for field in before
+        if _diff_value(before[field]) != _diff_value(after[field])
+    }
     site.egrn_updated_at = timezone.now()
     site.last_smev_at = timezone.now()
     # Простая оценка полноты после автозаполнения
@@ -154,5 +187,6 @@ def apply_smev_response(*, request: InvestSmevRequest, user=None) -> InvestSite:
     }
     site.save()
     request.status = InvestSmevRequest.Status.APPLIED
-    request.save(update_fields=["status"])
+    request.response_payload = {**data, "field_diff": field_diff}
+    request.save(update_fields=["status", "response_payload"])
     return site

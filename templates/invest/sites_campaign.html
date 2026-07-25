@@ -1,0 +1,75 @@
+{% extends layout_path %}
+
+{% block title %}Кампании актуализации МО — ДелаЮ{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">Кампании актуализации МО</h4>
+    <p class="text-body-secondary mb-0">Массово помечайте площадки муниципалитета на обновление данных.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">К площадкам</a>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card mb-4">
+  <div class="card-header"><h5 class="mb-0">Создать кампанию</h5></div>
+  <div class="card-body">
+    <form class="row g-3 align-items-end" method="post">
+      {% csrf_token %}
+      <div class="col-md-8">
+        <label class="form-label" for="campaign-organization">МО / территория</label>
+        <select class="form-select" id="campaign-organization" name="organization" required>
+          {% for organization in organizations %}
+          <option value="{{ organization.pk }}">{{ organization.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-primary w-100" type="submit">Создать batch</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">Прогресс</h5></div>
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Кампания</th>
+          <th>МО</th>
+          <th>Создана</th>
+          <th>Всего</th>
+          <th>Статусы</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for campaign in campaigns %}
+        <tr>
+          <td>{{ campaign.campaign_id }}</td>
+          <td>{{ campaign.organization }}</td>
+          <td>{{ campaign.requested_at|default:"—" }}</td>
+          <td>{{ campaign.total }}</td>
+          <td>
+            {% for status, count in campaign.counts.items %}
+            <span class="badge bg-label-secondary me-1">{{ status }}: {{ count }}</span>
+            {% endfor %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">Кампаний пока нет.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

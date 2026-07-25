@@ -2,6 +2,7 @@
 from io import BytesIO
 import json
 import os
+import re
 
 from django.contrib import messages
 from django.contrib.auth.mixins import AccessMixin
@@ -28,6 +29,7 @@ from delayu.forms_invest import (
     InvestProjectWizardStep3Form,
     InvestSiteForm,
     InvestSupportTrackItemForm,
+    OKVED_INDUSTRIES,
 )
 from delayu.mixins import ModulePermissionMixin
 from delayu.models import AuditLog, DocumentFile, Subsystem
@@ -49,7 +51,7 @@ from delayu.services.access import get_membership_or_403, user_can
 from delayu.services import audit
 from delayu.services.invest_booking import InvestBookingError, book_site, expire_overdue_bookings, select_site
 from delayu.services.invest_dashboard import build_dashboard
-from delayu.services.invest_dedup import ignore_duplicate_pair, suspected_duplicate_pairs
+from delayu.services.invest_dedup import ignore_duplicate_pair, inn_is_valid, suspected_duplicate_pairs
 from delayu.services.invest_escalation import refresh_invest_sla
 from delayu.services.invest_bitrix import InvestBitrixError, push_project_to_bitrix, resolve_bitrix_stage_conflict
 from delayu.services.invest_gates import can_push_to_bitrix, compute_completeness, gate_blockers
@@ -210,6 +212,14 @@ def _can_bulk_update_stage(user, membership) -> bool:
     )
 
 
+def _can_admin_override(user, membership) -> bool:
+    return (
+        getattr(user, "is_superuser", False)
+        or is_platform_admin(user)
+        or membership.role.code in {"invest_admin", "invest_dept"}
+    )
+
+
 def _completeness_actions(project, blockers):
     labels = {
         "name": "Добавьте наименование проекта",
@@ -336,6 +346,38 @@ def _smev_payload_summary(payload):
     if parts:
         return "; ".join(parts)
     return "; ".join(f"{key}: {value}" for key, value in list(payload.items())[:4])
+
+
+def _smev_field_diff(payload):
+    diff = (payload or {}).get("field_diff") or {}
+    return [
+        {"field": field, "old": values.get("old") or "—", "new": values.get("new") or "—"}
+        for field, values in diff.items()
+        if isinstance(values, dict)
+    ]
+
+
+def _campaign_progress(sites):
+    campaigns = {}
+    for site in sites:
+        refresh = (site.external_ids or {}).get("mo_refresh") or {}
+        campaign_id = refresh.get("campaign_id")
+        if not campaign_id:
+            continue
+        campaign = campaigns.setdefault(
+            campaign_id,
+            {
+                "campaign_id": campaign_id,
+                "organization": site.organization,
+                "requested_at": refresh.get("requested_at", ""),
+                "counts": {},
+                "total": 0,
+            },
+        )
+        status = refresh.get("status") or "queued"
+        campaign["counts"][status] = campaign["counts"].get(status, 0) + 1
+        campaign["total"] += 1
+    return sorted(campaigns.values(), key=lambda row: row["requested_at"], reverse=True)
 
 
 class InvestHubView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
@@ -595,6 +637,11 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
         ctx["bitrix_can_push"] = can_push
         ctx["bitrix_blockers"] = bitrix_blockers
         ctx["bitrix_stage_conflict"] = (project.external_ids or {}).get("bitrix_stage_conflict")
+        ctx["inn_check"] = {
+            "inn": (project.external_ids or {}).get("investor_inn", ""),
+            "valid": (project.external_ids or {}).get("investor_inn_valid"),
+            "checked_at": (project.external_ids or {}).get("investor_inn_checked_at"),
+        }
         ctx["completeness_pct"] = compute_completeness(project)
         ctx["completeness_actions"] = _completeness_actions(project, blockers)
         ctx["handoff_stop_factor_blocked"] = _open_stop_factors(project).exists()
@@ -604,6 +651,34 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
             object_id=str(project.pk),
         )[:20]
         return _with_odysseus_cta(self.request, ctx, membership=membership, project=project)
+
+
+class InvestProjectInnCheckView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(projects_for_membership(self.get_membership()), pk=kwargs["pk"])
+        raw_inn = ""
+        if project.investor_entity_id:
+            raw_inn = project.investor_entity.inn
+        raw_inn = raw_inn or (project.external_ids or {}).get("investor_inn", "")
+        normalized = re.sub(r"\D", "", raw_inn or "")
+        valid = inn_is_valid(normalized)
+        external_ids = dict(project.external_ids or {})
+        external_ids.update(
+            {
+                "investor_inn": normalized,
+                "investor_inn_valid": valid,
+                "investor_inn_checked_at": timezone.now().isoformat(),
+            }
+        )
+        project.external_ids = external_ids
+        project.save(update_fields=["external_ids", "updated_at"])
+        if valid:
+            messages.success(request, "ИНН проверен: контрольная сумма корректна.")
+        else:
+            messages.error(request, "ИНН проверен: значение не прошло контрольную проверку.")
+        return redirect(reverse("invest-project-detail", args=[project.pk]))
 
 
 class InvestProjectPassportView(InvestSubsystemMixin, ModulePermissionMixin, View):
@@ -1106,6 +1181,11 @@ class InvestProjectCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin
     required_action = "create"
     success_url = reverse_lazy("invest-projects")
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["okved_industries"] = OKVED_INDUSTRIES
+        return ctx
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["membership"] = self.get_membership()
@@ -1139,6 +1219,11 @@ class InvestProjectUpdateView(InvestSubsystemMixin, ModulePermissionMixin, Updat
         kwargs["membership"] = self.get_membership()
         return kwargs
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["okved_industries"] = OKVED_INDUSTRIES
+        return ctx
+
     def get_success_url(self):
         return reverse_lazy("invest-project-detail", args=[self.object.pk])
 
@@ -1161,6 +1246,46 @@ class InvestSiteListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         ctx["can_create_site"] = user_can(self.request.user, self.module_code, "create")
         ctx["can_change_site"] = user_can(self.request.user, self.module_code, "change")
+        return ctx
+
+
+class InvestSiteCampaignView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/sites_campaign.html"
+    page_title = "Кампании актуализации МО"
+    required_action = "change"
+    http_method_names = ["get", "post", "head", "options"]
+
+    def _organizations(self):
+        membership = self.get_membership()
+        qs = membership.subsystem.organizations.filter(is_active=True).order_by("name")
+        if membership.role.code == "invest_mo":
+            qs = qs.filter(pk=membership.organization_id)
+        return qs
+
+    def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        organization = get_object_or_404(self._organizations(), pk=request.POST.get("organization"))
+        campaign_id = f"mo-refresh-{organization.pk}-{timezone.now().strftime('%Y%m%d%H%M%S')}"
+        requested_at = timezone.now().isoformat()
+        sites = list(sites_for_membership(membership).filter(organization=organization))
+        for site in sites:
+            external_ids = dict(site.external_ids or {})
+            external_ids["mo_refresh"] = {
+                "campaign_id": campaign_id,
+                "status": "queued",
+                "requested_at": requested_at,
+                "organization_id": organization.pk,
+            }
+            site.external_ids = external_ids
+            site.save(update_fields=["external_ids", "updated_at"])
+        messages.success(request, f"Кампания актуализации создана: {len(sites)} площадок.")
+        return redirect(reverse("invest-sites-campaign"))
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        sites = list(sites_for_membership(self.get_membership()).select_related("organization"))
+        ctx["organizations"] = self._organizations()
+        ctx["campaigns"] = _campaign_progress(sites)
         return ctx
 
 
@@ -1279,6 +1404,7 @@ class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailVi
         ctx = super().get_context_data(**kwargs)
         membership = self.get_membership()
         ctx["can_change_site"] = user_can(self.request.user, self.module_code, "change")
+        ctx["can_booking_override"] = _can_admin_override(self.request.user, membership)
         ctx["project_links"] = self.object.project_links.select_related("project", "project__organization")
         ctx["projects"] = projects_for_membership(membership).select_related("organization").order_by("code")
         ctx["smev_requests"] = self.object.smev_requests.all()[:10]
@@ -1289,6 +1415,7 @@ class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailVi
             {
                 "request": request,
                 "payload_summary": _smev_payload_summary(request.response_payload),
+                "field_diff": _smev_field_diff(request.response_payload),
             }
             for request in egrn_requests
         ]
@@ -1406,13 +1533,19 @@ class InvestSiteActionView(InvestForbiddenResponseMixin, InvestSubsystemMixin, M
     required_action = "change"
     action_service = None
     success_message = ""
+    allow_booking_override = False
 
     def post(self, request, *args, **kwargs):
         membership = self.get_membership()
         project = get_object_or_404(projects_for_membership(membership), pk=kwargs["project_pk"])
         site = get_object_or_404(sites_for_membership(membership), pk=kwargs["site_pk"])
+        service_kwargs = {"project": project, "site": site, "user": request.user}
+        if self.allow_booking_override:
+            service_kwargs["override_completeness_gate"] = bool(
+                request.POST.get("booking_override") and _can_admin_override(request.user, membership)
+            )
         try:
-            self.action_service(project=project, site=site, user=request.user)
+            self.action_service(**service_kwargs)
         except InvestBookingError as exc:
             messages.error(request, str(exc))
         else:
@@ -1423,6 +1556,7 @@ class InvestSiteActionView(InvestForbiddenResponseMixin, InvestSubsystemMixin, M
 class InvestSiteBookView(InvestSiteActionView):
     action_service = staticmethod(book_site)
     success_message = "Площадка забронирована."
+    allow_booking_override = True
 
 
 class InvestSiteSelectView(InvestSiteActionView):

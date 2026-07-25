@@ -10,6 +10,7 @@
   </div>
   <div class="d-flex gap-2 flex-wrap">
     <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">К площадкам</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-sites-campaign' %}">Кампании МО</a>
     {% if odysseus_cta_url %}
     <a class="btn btn-outline-primary" href="{{ odysseus_cta_url }}">Открыть в Odysseus</a>
     {% endif %}
@@ -159,6 +160,7 @@
               <th>Создан</th>
               <th>Завершён</th>
               <th>Сводка ответа</th>
+              <th>Изменения СМЭВ</th>
             </tr>
           </thead>
           <tbody>
@@ -169,9 +171,16 @@
               <td>{{ entry.request.created_at|date:"d.m.Y H:i" }}</td>
               <td>{% if entry.request.finished_at %}{{ entry.request.finished_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
               <td>{{ entry.payload_summary }}</td>
+              <td>
+                {% for diff in entry.field_diff %}
+                <div class="small">{{ diff.field }}: {{ diff.old }} → {{ diff.new }}</div>
+                {% empty %}
+                —
+                {% endfor %}
+              </td>
             </tr>
             {% empty %}
-            <tr><td colspan="5" class="text-muted">Запросов ЕГРН пока нет.</td></tr>
+            <tr><td colspan="6" class="text-muted">Запросов ЕГРН пока нет.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -219,6 +228,9 @@
                 <form class="d-inline" method="post" action="{% url 'invest-site-book' project.pk site.pk %}">
                   {% csrf_token %}
                   <button class="btn btn-sm btn-outline-primary" type="submit">Забронировать</button>
+                  {% if can_booking_override %}
+                  <button class="btn btn-sm btn-outline-warning" type="submit" name="booking_override" value="1">Забронировать с override</button>
+                  {% endif %}
                 </form>
                 <form class="d-inline" method="post" action="{% url 'invest-site-select' project.pk site.pk %}">
                   {% csrf_token %}

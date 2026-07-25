@@ -10,6 +10,21 @@ from delayu.models_invest import InvestProject, InvestSite, InvestSupportTrackIt
 
 User = get_user_model()
 
+OKVED_INDUSTRIES = [
+    "Сельское, лесное хозяйство, охота, рыболовство и рыбоводство",
+    "Добыча полезных ископаемых",
+    "Обрабатывающие производства",
+    "Обеспечение электрической энергией, газом и паром",
+    "Водоснабжение, водоотведение, утилизация отходов",
+    "Строительство",
+    "Торговля оптовая и розничная",
+    "Транспортировка и хранение",
+    "Деятельность гостиниц и предприятий общественного питания",
+    "Деятельность в области информации и связи",
+    "Деятельность профессиональная, научная и техническая",
+    "Туризм и рекреация",
+]
+
 
 def _apply_bootstrap(fields):
     for field in fields.values():
@@ -83,6 +98,7 @@ class InvestProjectForm(BootstrapFormMixin, forms.ModelForm):
             "municipality_notes",
         ]
         widgets = {
+            "industry": forms.TextInput(attrs={"list": "invest-okved-industries"}),
             "investment_amount": forms.NumberInput(attrs={"step": "0.01"}),
             "description": forms.Textarea(attrs={"rows": 3}),
             "support_measures": forms.Textarea(attrs={"rows": 3}),

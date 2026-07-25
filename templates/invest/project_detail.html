@@ -63,6 +63,21 @@
             <br><a href="{% url 'invest-investor-detail' project.investor_entity.pk %}">{{ project.investor_entity.name }}</a>
             {% endif %}
           </dd>
+          <dt class="col-sm-4">ИНН инвестора</dt>
+          <dd class="col-sm-8">
+            {{ inn_check.inn|default:"—" }}
+            {% if inn_check.valid is True %}
+            <span class="badge bg-label-success ms-1">валиден</span>
+            {% elif inn_check.valid is False %}
+            <span class="badge bg-label-danger ms-1">ошибка</span>
+            {% endif %}
+            {% if can_change_project %}
+            <form class="d-inline ms-2" method="post" action="{% url 'invest-project-inn-check' project.pk %}">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-outline-primary" type="submit">Проверить ИНН</button>
+            </form>
+            {% endif %}
+          </dd>
           <dt class="col-sm-4">Отрасль</dt>
           <dd class="col-sm-8">{{ project.industry|default:"—" }}</dd>
           <dt class="col-sm-4">Описание</dt>

@@ -1,21 +1,38 @@
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
 from delayu.models_invest import InvestProjectSite, InvestSite
 
 ACTIVE_ROLES = (InvestProjectSite.Role.BOOKED, InvestProjectSite.Role.SELECTED)
+DEFAULT_BOOKING_COMPLETENESS_THRESHOLD = 60
 
 
 class InvestBookingError(Exception):
     pass
 
 
+def booking_completeness_threshold() -> int:
+    return int(
+        getattr(
+            settings,
+            "INVEST_SITE_BOOKING_COMPLETENESS_THRESHOLD",
+            DEFAULT_BOOKING_COMPLETENESS_THRESHOLD,
+        )
+    )
+
+
 @transaction.atomic
-def book_site(*, project, site, user) -> InvestProjectSite:
+def book_site(*, project, site, user, override_completeness_gate: bool = False) -> InvestProjectSite:
     site = InvestSite.objects.select_for_update().get(pk=site.pk)
     if project.subsystem_id != site.subsystem_id:
         raise InvestBookingError(
             "Проект и площадка принадлежат разным подсистемам"
+        )
+    threshold = booking_completeness_threshold()
+    if site.completeness_pct < threshold and not override_completeness_gate:
+        raise InvestBookingError(
+            f"Бронирование недоступно: полнота карточки площадки {site.completeness_pct}% ниже порога {threshold}%"
         )
     conflict = (
         InvestProjectSite.objects.select_for_update()
