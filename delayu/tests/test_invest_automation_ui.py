@@ -152,6 +152,29 @@ def test_connection_get_ok_for_admin(client, invest_roles_ctx):
 
 
 @pytest.mark.django_db
+def test_integrations_hub_shows_invest_card(client, invest_roles_ctx):
+    module42 = ModuleCatalog.objects.create(code="M42", name="Integrations")
+    SubsystemModule.objects.create(subsystem=invest_roles_ctx["sub"], module=module42, enabled=True)
+    RoleModulePermission.objects.create(
+        role=invest_roles_ctx["roles"]["invest_admin"],
+        module=module42,
+        can_view=True,
+        can_create=False,
+        can_change=False,
+        can_delete=False,
+    )
+    user, _ = _member(invest_roles_ctx, "adm11", "invest_admin", platform_admin=True)
+    ensure_automation_config(invest_roles_ctx["sub"])
+    client.force_login(user)
+
+    resp = client.get(reverse("platform-integrations"))
+
+    assert resp.status_code == 200
+    assert b"invest-automation-card" in resp.content
+    assert b"invest-automation" in resp.content or "Автоматизация".encode("utf-8") in resp.content
+
+
+@pytest.mark.django_db
 def test_connection_denied_for_agency(client, invest_roles_ctx):
     user, _ = _member(invest_roles_ctx, "ag2", "invest_agency")
     client.force_login(user)

@@ -1,0 +1,41 @@
+<div class="card mb-4" id="invest-automation-card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <span>Автоматизация инвестиций</span>
+      <div class="small text-muted">Битрикс24, СМЭВ и контур обменов</div>
+    </div>
+    <a href="{{ invest_automation_card.settings_url }}" class="btn btn-sm btn-primary">
+      <i class="ri-settings-3-line me-1"></i>Открыть настройки
+    </a>
+  </div>
+  <div class="card-body">
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      {% if invest_automation_card.sandbox %}
+      <span class="badge bg-label-warning">песочница</span>
+      {% else %}
+      <span class="badge bg-label-success">боевой контур</span>
+      {% endif %}
+      {% if invest_automation_card.inbound %}
+      <span class="badge bg-label-success">входящий Bitrix: on</span>
+      {% else %}
+      <span class="badge bg-label-secondary">входящий Bitrix: off</span>
+      {% endif %}
+      {% if invest_automation_card.outbound %}
+      <span class="badge bg-label-success">исходящий Bitrix: on</span>
+      {% else %}
+      <span class="badge bg-label-secondary">исходящий Bitrix: off</span>
+      {% endif %}
+      {% if invest_automation_card.smev_mock %}
+      <span class="badge bg-label-info">СМЭВ mock</span>
+      {% else %}
+      <span class="badge bg-label-primary">СМЭВ live</span>
+      {% endif %}
+    </div>
+    <p class="mb-0 text-body-secondary">
+      Ошибки за 24 часа:
+      <span class="fw-semibold text-{% if invest_automation_card.errors_24h %}danger{% else %}success{% endif %}">
+        {{ invest_automation_card.errors_24h }}
+      </span>
+    </p>
+  </div>
+</div>

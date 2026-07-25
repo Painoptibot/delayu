@@ -49,6 +49,9 @@
     </div>
   </div>
 </div>
+{% if invest_automation_card %}
+{% include "platform/integrations/_invest_automation_card.html" %}
+{% endif %}
 {% if external_services %}
 <div class="card mb-4">
   <div class="card-header"><span>Внешние сервисы</span></div>

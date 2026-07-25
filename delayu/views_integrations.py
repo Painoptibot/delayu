@@ -1,9 +1,12 @@
 """M42–M45 — интеграции, REST, СМЭВ, внешние ИС."""
 import json
+from datetime import timedelta
 
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
@@ -50,6 +53,27 @@ class IntegrationHubView(ModulePermissionMixin, TemplateView):
         from delayu.services.integration_registry import external_services_for_subsystem
 
         ctx["external_services"] = external_services_for_subsystem(m.subsystem)
+        ctx["invest_automation_card"] = None
+        if m.subsystem.industry_template == "invest":
+            from delayu.models_invest import InvestIntegrationEvent
+            from delayu.services.invest_flags import ensure_automation_config
+
+            cfg = ensure_automation_config(m.subsystem)
+            flags = cfg.get_flags()
+            since = timezone.now() - timedelta(hours=24)
+            errors_24h = InvestIntegrationEvent.objects.filter(
+                subsystem=m.subsystem,
+                status=InvestIntegrationEvent.Status.ERROR,
+                created_at__gte=since,
+            ).count()
+            ctx["invest_automation_card"] = {
+                "sandbox": flags.get("sandbox"),
+                "inbound": flags.get("bitrix_inbound"),
+                "outbound": flags.get("bitrix_outbound"),
+                "smev_mock": flags.get("smev_mock"),
+                "errors_24h": errors_24h,
+                "settings_url": reverse("invest-automation"),
+            }
         sub_code = m.subsystem.code
         ctx["integration_api_hints"] = [
             {
