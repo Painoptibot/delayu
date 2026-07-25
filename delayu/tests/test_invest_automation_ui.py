@@ -3,7 +3,13 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from delayu.models import ModuleCatalog, Organization, Role, RoleModulePermission, Subsystem, SubsystemMembership, SubsystemModule
+from delayu.forms_invest_automation import (
+    InvestAutomationConnectionForm,
+    InvestAutomationFlagsForm,
+    InvestAutomationMappingForm,
+)
 from delayu.services.invest_automation_access import user_can_manage_invest_automation
+from delayu.services.invest_flags import ensure_automation_config
 from delayu.services.invest_roles import perm_for_role
 
 User = get_user_model()
@@ -69,3 +75,48 @@ def test_access_superuser_allowed(invest_roles_ctx):
     user.is_superuser = True
     user.save(update_fields=["is_superuser"])
     assert user_can_manage_invest_automation(user, membership) is True
+
+
+@pytest.mark.django_db
+def test_connection_form_requires_token_when_inbound(invest_roles_ctx):
+    cfg = ensure_automation_config(invest_roles_ctx["sub"])
+    cfg.flags = {**cfg.get_flags(), "bitrix_inbound": True}
+    cfg.bitrix_webhook_token = ""
+    cfg.save()
+    form = InvestAutomationConnectionForm(
+        data={
+            "bitrix_api_base": "https://example.bitrix24.ru/rest/",
+            "bitrix_webhook_token": "",
+            "contract_version": "v1",
+        },
+        instance=cfg,
+    )
+    assert form.is_valid() is False
+    assert "bitrix_webhook_token" in form.errors
+
+
+@pytest.mark.django_db
+def test_flags_form_roundtrip(invest_roles_ctx):
+    cfg = ensure_automation_config(invest_roles_ctx["sub"])
+    form = InvestAutomationFlagsForm(
+        data={"bitrix_inbound": "on", "sandbox": "on"},
+        initial_flags=cfg.get_flags(),
+    )
+    assert form.is_valid()
+    flags = form.cleaned_flags()
+    assert flags["bitrix_inbound"] is True
+    assert flags["sandbox"] is True
+    assert flags["auto_smev"] is False  # unchecked checkbox
+
+
+@pytest.mark.django_db
+def test_mapping_form_parses_stage_pairs(invest_roles_ctx):
+    form = InvestAutomationMappingForm(
+        data={
+            "field_rows": "TITLE=name\nUF_INVESTOR=investor_name",
+            "stage_rows": "NEW=attraction/lead\nSUPPORT=support/accepted",
+        }
+    )
+    assert form.is_valid()
+    assert form.cleaned_field_mapping()["TITLE"] == "name"
+    assert form.cleaned_stage_mapping()["NEW"] == ["attraction", "lead"]
