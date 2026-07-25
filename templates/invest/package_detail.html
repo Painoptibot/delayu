@@ -22,7 +22,7 @@
 </div>
 {% endif %}
 
-<div class="card">
+<div class="card mb-6">
   <div class="card-header">
     <h5 class="mb-0">Чек-лист пакета</h5>
   </div>
@@ -33,7 +33,7 @@
           <th>Документ</th>
           <th>Обязательный</th>
           <th>Статус</th>
-          <th>Файл</th>
+          <th>Файл / документ</th>
           <th class="text-end">Обновить</th>
         </tr>
       </thead>
@@ -46,6 +46,8 @@
           <td>
             {% if item.file %}
             <a href="{{ item.file.url }}">{{ item.file.name }}</a>
+            {% elif item.document %}
+            <a href="{{ item.document.file.url }}">{{ item.document.title }}</a>
             {% else %}
             <span class="text-muted">—</span>
             {% endif %}
@@ -60,6 +62,12 @@
                 {% endfor %}
               </select>
               <input class="form-control form-control-sm w-auto" type="file" name="file">
+              <select class="form-select form-select-sm w-auto" name="document" aria-label="Документ {{ item.title }}">
+                <option value="">Документ из реестра</option>
+                {% for document in recent_documents %}
+                <option value="{{ document.pk }}" {% if item.document_id == document.pk %}selected{% endif %}>{{ document.title }}</option>
+                {% endfor %}
+              </select>
               <button class="btn btn-sm btn-primary" type="submit">Сохранить</button>
             </form>
             {% else %}
@@ -70,6 +78,44 @@
         {% empty %}
         <tr>
           <td colspan="5" class="text-muted">Пакет пока пуст.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Версии пакета</h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Решение</th>
+          <th>Пункты</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for snapshot in snapshots %}
+        <tr>
+          <td>{{ snapshot.created_at|date:"d.m.Y H:i" }}</td>
+          <td>
+            {% if snapshot.decision == "accepted" %}Принята{% elif snapshot.decision == "returned" %}Возвращена{% else %}{{ snapshot.decision }}{% endif %}
+          </td>
+          <td>
+            {% for item in snapshot.payload.items %}
+            <span class="badge bg-label-secondary me-1">{{ item.code }}: {{ item.status }}</span>
+            {% empty %}
+            <span class="text-muted">Нет данных</span>
+            {% endfor %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="text-muted">Версии появятся после принятия или возврата передачи.</td>
         </tr>
         {% endfor %}
       </tbody>

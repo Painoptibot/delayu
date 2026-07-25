@@ -1,0 +1,81 @@
+{% extends layout_path %}
+
+{% block title %}Сегодня{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
+  <div>
+    <h4 class="mb-1">Сегодня</h4>
+    <p class="text-muted mb-0">Просрочки, передачи и открытые задачи активного инвестконтура.</p>
+  </div>
+  <form method="post" action="{% url 'invest-inbox' %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="refresh_sla">
+    <button class="btn btn-primary" type="submit">Обновить SLA</button>
+  </form>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0">Дорожная карта</h5>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for item in roadmap_items %}
+        <a class="list-group-item list-group-item-action" href="{% url 'invest-project-detail' item.project.pk %}">
+          <div class="fw-medium">{{ item.title }}</div>
+          <div class="small text-muted">{{ item.project.code }} · {{ item.due_at|date:"d.m.Y H:i"|default:"без срока" }}</div>
+        </a>
+        {% empty %}
+        <div class="list-group-item text-muted">Просроченных пунктов нет.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0">Передачи</h5>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for handoff in handoffs %}
+        <a class="list-group-item list-group-item-action" href="{% url 'invest-handoffs' %}">
+          <div class="fw-medium">{{ handoff.project.code }} · {{ handoff.project.name }}</div>
+          <div class="small text-muted">{{ handoff.comment|default:"без комментария" }}</div>
+        </a>
+        {% empty %}
+        <div class="list-group-item text-muted">Ожидающих передач нет.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0">Задачи МО / ТП</h5>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for task in external_tasks %}
+        <a class="list-group-item list-group-item-action" href="{% url 'invest-project-detail' task.project.pk %}">
+          <div class="fw-medium">{{ task.title }}</div>
+          <div class="small text-muted">{{ task.project.code }} · {{ task.get_status_display }} · {{ task.due_at|date:"d.m.Y H:i"|default:"без срока" }}</div>
+        </a>
+        {% empty %}
+        <div class="list-group-item text-muted">Открытых задач нет.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

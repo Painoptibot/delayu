@@ -5,7 +5,9 @@ from datetime import timedelta
 
 from django.utils import timezone
 
+from delayu.models import ActivityEvent
 from delayu.models_invest import InvestExternalTask, InvestIntegrationEvent, InvestRoadmapItem
+from delayu.services import audit
 from delayu.services.invest_flags import flag_enabled
 from delayu.services.invest_journal import log_event
 from delayu.services.invest_roadmap import mark_overdue
@@ -90,3 +92,26 @@ def escalate_external_tasks(*, subsystem) -> int:
         )
         count += 1
     return count
+
+
+def refresh_invest_sla(*, subsystem, user=None, request=None) -> dict:
+    roadmap_count = escalate_overdue_roadmap(subsystem=subsystem)
+    task_count = escalate_external_tasks(subsystem=subsystem)
+    payload = {"roadmap": roadmap_count, "external_tasks": task_count}
+    audit.log_action(
+        user,
+        subsystem,
+        "invest.sla.refresh",
+        model_name="Subsystem",
+        object_id=subsystem.pk,
+        payload=payload,
+        request=request,
+    )
+    ActivityEvent.objects.create(
+        subsystem=subsystem,
+        actor=user if getattr(user, "is_authenticated", False) else None,
+        verb="invest.sla.refresh",
+        target_repr=f"SLA: дорожная карта {roadmap_count}, задачи {task_count}",
+        module_code="M22",
+    )
+    return payload

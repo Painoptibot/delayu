@@ -5,12 +5,39 @@ from django.utils import timezone
 
 from delayu.menu import get_active_membership
 from delayu.models_invest import InvestHandoff, InvestProject
-from delayu.services.invest_package import package_is_ready
+from delayu.services.invest_package import package_is_ready, snapshot_package
 from delayu.services.invest_roadmap import seed_support_roadmap
 
 
 class InvestHandoffError(Exception):
     pass
+
+
+RETURN_REASON_TEMPLATES = [
+    {
+        "key": "missing_required_documents",
+        "text": "Верните, пожалуйста: в пакете не хватает обязательных документов.",
+    },
+    {
+        "key": "incorrect_document_data",
+        "text": "В документах обнаружены расхождения. Просим уточнить сведения и направить пакет повторно.",
+    },
+    {
+        "key": "needs_municipality_comment",
+        "text": "Необходим комментарий муниципального образования по условиям сопровождения проекта.",
+    },
+]
+
+
+def resolve_return_comment(*, template_key: str = "", comment: str = "", fallback: str = "") -> str:
+    comment = (comment or "").strip()
+    if comment:
+        return comment
+    template_key = (template_key or "").strip()
+    for template in RETURN_REASON_TEMPLATES:
+        if template["key"] == template_key:
+            return template["text"]
+    return fallback
 
 
 def _require_handoff_role(*, user, project, allowed_roles, message):
@@ -54,6 +81,7 @@ def accept_handoff(*, handoff, user):
     handoff.decided_by = user
     handoff.decided_at = timezone.now()
     handoff.save()
+    snapshot_package(handoff.project, handoff=handoff, decision=InvestHandoff.Status.ACCEPTED)
     p = handoff.project
     p.funnel = InvestProject.Funnel.SUPPORT
     p.stage = "accepted"
@@ -77,4 +105,5 @@ def return_handoff(*, handoff, user, comment):
     handoff.decided_at = timezone.now()
     handoff.comment = comment
     handoff.save()
+    snapshot_package(handoff.project, handoff=handoff, decision=InvestHandoff.Status.RETURNED)
     return handoff

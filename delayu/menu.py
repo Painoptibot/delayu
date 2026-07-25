@@ -171,6 +171,7 @@ MENU_SECTIONS = [
         "template": "invest",
         "items": [
             {"url_name": "invest-hub", "codes": ["M22"], "icon": "ri-home-smile-line", "label": "Обзор"},
+            {"url_name": "invest-inbox", "codes": ["M22"], "icon": "ri-inbox-line", "label": "Сегодня"},
             {"url_name": "invest-projects", "codes": ["M22"], "icon": "ri-briefcase-4-line", "label": "Проекты"},
             {"url_name": "invest-sites", "codes": ["M22"], "icon": "ri-map-pin-line", "label": "Площадки"},
             {"url_name": "invest-handoffs", "codes": ["M22"], "icon": "ri-exchange-box-line", "label": "Передачи"},

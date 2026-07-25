@@ -3,6 +3,24 @@ from django.conf import settings
 from django.db import models
 
 
+class InvestInvestor(models.Model):
+    subsystem = models.ForeignKey("Subsystem", on_delete=models.CASCADE, related_name="invest_investors")
+    name = models.CharField("Наименование", max_length=255)
+    inn = models.CharField("ИНН", max_length=12, blank=True)
+    extras = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["subsystem", "inn"]),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
 class InvestProject(models.Model):
     class Funnel(models.TextChoices):
         ATTRACTION = "attraction", "Привлечение"
@@ -16,6 +34,14 @@ class InvestProject(models.Model):
     code = models.CharField("Код", max_length=64)
     name = models.CharField("Наименование", max_length=255)
     investor_name = models.CharField("Инвестор", max_length=255, blank=True)
+    investor_entity = models.ForeignKey(
+        InvestInvestor,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="projects",
+        verbose_name="Юрлицо инвестора",
+    )
     industry = models.CharField("Отрасль", max_length=128, blank=True)
     description = models.TextField("Описание проекта", blank=True)
     funnel = models.CharField(max_length=16, choices=Funnel.choices, default=Funnel.ATTRACTION)
@@ -125,6 +151,20 @@ class InvestPackage(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class InvestPackageSnapshot(models.Model):
+    project = models.ForeignKey(InvestProject, on_delete=models.CASCADE, related_name="package_snapshots")
+    package = models.ForeignKey(InvestPackage, on_delete=models.CASCADE, related_name="snapshots")
+    handoff = models.ForeignKey(
+        InvestHandoff, null=True, blank=True, on_delete=models.SET_NULL, related_name="package_snapshots"
+    )
+    decision = models.CharField(max_length=16)
+    payload = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
 class InvestPackageItem(models.Model):
     class Status(models.TextChoices):
         MISSING = "missing", "Нет"
@@ -138,6 +178,13 @@ class InvestPackageItem(models.Model):
     required = models.BooleanField(default=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.MISSING)
     file = models.FileField(upload_to="invest/packages/", blank=True)
+    document = models.ForeignKey(
+        "DocumentFile",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="invest_package_items",
+    )
     due_at = models.DateTimeField(null=True, blank=True)
 
 

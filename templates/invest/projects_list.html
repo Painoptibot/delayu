@@ -8,16 +8,37 @@
     <h4 class="mb-1">Инвестпроекты</h4>
     <p class="text-muted mb-0">Проекты доступны с учётом активного членства и роли.</p>
   </div>
-  {% if can_create_project %}
-  <a class="btn btn-primary" href="{% url 'invest-project-create' %}">Новый проект</a>
-  {% endif %}
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-investors' %}">Инвесторы</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-dedupe' %}">Дубли</a>
+    {% if can_create_project %}
+    <a class="btn btn-primary" href="{% url 'invest-project-create' %}">Новый проект</a>
+    {% endif %}
+  </div>
 </div>
+
+{% if can_bulk_stage %}
+<form method="post" action="{% url 'invest-project-bulk-stage' %}">
+  {% csrf_token %}
+  <div class="card mb-4">
+    <div class="card-body d-flex flex-column flex-md-row gap-2 align-items-md-center">
+      <div class="fw-medium me-md-auto">Массовая смена стадии</div>
+      <select class="form-select w-auto" name="stage" aria-label="Новая стадия">
+        {% for value, label in bulk_stage_choices %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-outline-primary" type="submit">Обновить выбранные</button>
+    </div>
+  </div>
+{% endif %}
 
 <div class="card">
   <div class="table-responsive">
     <table class="table">
       <thead>
         <tr>
+          {% if can_bulk_stage %}<th></th>{% endif %}
           <th>Код</th>
           <th>Наименование</th>
           <th>Инвестор</th>
@@ -29,6 +50,9 @@
       <tbody>
         {% for project in projects %}
         <tr>
+          {% if can_bulk_stage %}
+          <td><input class="form-check-input" type="checkbox" name="project_ids" value="{{ project.pk }}" aria-label="Выбрать {{ project.code }}"></td>
+          {% endif %}
           <td><a href="{% url 'invest-project-detail' project.pk %}">{{ project.code }}</a></td>
           <td>{{ project.name }}</td>
           <td>{{ project.investor_name|default:"—" }}</td>
@@ -38,11 +62,14 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="6" class="text-muted">Проектов пока нет.</td>
+          <td colspan="{% if can_bulk_stage %}7{% else %}6{% endif %}" class="text-muted">Проектов пока нет.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+{% if can_bulk_stage %}
+</form>
+{% endif %}
 {% endblock %}

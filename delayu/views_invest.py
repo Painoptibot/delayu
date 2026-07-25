@@ -3,31 +3,43 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import AccessMixin
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 
 from delayu.forms_invest import InvestProjectForm, InvestSiteForm
 from delayu.mixins import ModulePermissionMixin
-from delayu.models import Subsystem
+from delayu.models import AuditLog, DocumentFile, Subsystem
 from delayu.models_invest import (
+    InvestExternalTask,
     InvestHandoff,
     InvestImportBatch,
     InvestImportRow,
+    InvestInvestor,
     InvestPackageItem,
     InvestProject,
+    InvestRoadmapItem,
     InvestSite,
     InvestSmevRequest,
 )
 from delayu.services.access import get_membership_or_403, user_can
+from delayu.services import audit
 from delayu.services.invest_booking import InvestBookingError, book_site, select_site
 from delayu.services.invest_dashboard import build_dashboard
+from delayu.services.invest_dedup import ignore_duplicate_pair, suspected_duplicate_pairs
+from delayu.services.invest_escalation import refresh_invest_sla
+from delayu.services.invest_gates import compute_completeness, gate_blockers
 from delayu.services.invest_handoff import (
     InvestHandoffError,
+    RETURN_REASON_TEMPLATES,
     accept_handoff,
     request_handoff,
+    resolve_return_comment,
     return_handoff,
 )
 from delayu.services.invest_import import apply_row, parse_mo_file, skip_row
@@ -35,6 +47,7 @@ from delayu.services.invest_package import ensure_package, set_item_status
 from delayu.services.invest_scope import projects_for_membership, sites_for_membership
 from delayu.services.invest_smev import InvestSmevError, apply_smev_response, request_smev_fill
 from delayu.services.odysseus_invest import get_invest_odysseus_open_url, prepare_odysseus_open
+from delayu.services.scope import is_platform_admin
 
 
 class InvestSubsystemMixin(AccessMixin):
@@ -109,6 +122,45 @@ def _with_odysseus_cta(request, ctx, *, membership, project=None, site=None):
     return ctx
 
 
+def _stage_to_funnel() -> dict[str, str]:
+    result = {}
+    for funnel, transitions in InvestProjectForm.STAGE_TRANSITIONS.items():
+        for stage, allowed in transitions.items():
+            result[stage] = funnel
+            for next_stage in allowed:
+                result[next_stage] = funnel
+    return result
+
+
+def _can_bulk_update_stage(user, membership) -> bool:
+    return (
+        getattr(user, "is_superuser", False)
+        or is_platform_admin(user)
+        or membership.role.code in {"invest_admin", "invest_dept"}
+    )
+
+
+def _completeness_actions(project, blockers):
+    labels = {
+        "name": "Добавьте наименование проекта",
+        "investor_name": "Добавьте инвестора",
+        "organization_id": "Укажите МО / территорию",
+        "industry": "Добавьте отрасль",
+        "package_incomplete": "Заполните обязательные пункты пакета",
+        "mo_pending": "Закройте открытые задачи МО",
+    }
+    actions = [labels.get(blocker, blocker) for blocker in blockers]
+    if not project.contact_person:
+        actions.append("Добавьте контактное лицо")
+    if not project.contact_phone:
+        actions.append("Добавьте телефон контакта")
+    if not project.description:
+        actions.append("Добавьте описание проекта")
+    if project.investment_amount is None:
+        actions.append("Укажите объём инвестиций")
+    return list(dict.fromkeys(actions))
+
+
 class InvestHubView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
     template_name = "invest/hub.html"
     page_title = "Обзор инвестконтура"
@@ -137,6 +189,51 @@ class InvestDashboardView(InvestSubsystemMixin, ModulePermissionMixin, TemplateV
         return ctx
 
 
+class InvestInboxView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/inbox.html"
+    page_title = "Сегодня"
+    http_method_names = ["get", "post", "head", "options"]
+
+    def post(self, request, *args, **kwargs):
+        if request.POST.get("action") == "refresh_sla":
+            result = refresh_invest_sla(
+                subsystem=self.get_subsystem(),
+                user=request.user,
+                request=request,
+            )
+            messages.success(
+                request,
+                f"SLA обновлены: дорожная карта {result['roadmap']}, задачи {result['external_tasks']}.",
+            )
+        return redirect(reverse("invest-inbox"))
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
+        projects = projects_for_membership(membership)
+        now = timezone.now()
+        ctx["roadmap_items"] = (
+            InvestRoadmapItem.objects.filter(project__in=projects)
+            .filter(Q(status=InvestRoadmapItem.Status.OVERDUE) | Q(status=InvestRoadmapItem.Status.OPEN, due_at__lt=now))
+            .select_related("project", "project__organization", "owner")
+            .order_by("due_at", "code")[:50]
+        )
+        ctx["handoffs"] = (
+            InvestHandoff.objects.filter(project__in=projects, status=InvestHandoff.Status.REQUESTED)
+            .select_related("project", "project__organization", "requested_by")
+            .order_by("created_at")[:50]
+        )
+        ctx["external_tasks"] = (
+            InvestExternalTask.objects.filter(
+                project__in=projects,
+                status__in=(InvestExternalTask.Status.OPEN, InvestExternalTask.Status.OVERDUE),
+            )
+            .select_related("project", "organization")
+            .order_by("due_at", "-created_at")[:50]
+        )
+        return ctx
+
+
 class InvestProjectListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
     model = InvestProject
     template_name = "invest/projects_list.html"
@@ -149,8 +246,59 @@ class InvestProjectListView(InvestSubsystemMixin, ModulePermissionMixin, ListVie
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
         ctx["can_create_project"] = user_can(self.request.user, self.module_code, "create")
+        ctx["can_bulk_stage"] = user_can(self.request.user, self.module_code, "change") and _can_bulk_update_stage(
+            self.request.user, membership
+        )
+        ctx["bulk_stage_choices"] = [
+            (stage, InvestProjectForm.STAGE_LABELS.get(stage, stage))
+            for stage in _stage_to_funnel()
+        ]
         return ctx
+
+
+class InvestProjectBulkStageView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        if not _can_bulk_update_stage(request.user, membership):
+            return _forbidden_with_message(request, "Массовая смена стадии доступна только администратору или департаменту")
+
+        project_ids = request.POST.getlist("project_ids")
+        new_stage = (request.POST.get("stage") or request.POST.get("new_stage") or "").strip()
+        target_funnel = _stage_to_funnel().get(new_stage)
+        if not project_ids or not target_funnel:
+            messages.error(request, "Выберите проекты и корректную стадию.")
+            return redirect(reverse("invest-projects"))
+
+        projects = list(projects_for_membership(membership).filter(pk__in=project_ids).select_related("organization"))
+        if len(projects) != len(set(project_ids)):
+            messages.error(request, "Часть проектов недоступна в текущем контуре.")
+            return redirect(reverse("invest-projects"))
+        if any(project.funnel != target_funnel for project in projects):
+            messages.error(request, "Массовая смена стадии разрешена только внутри той же воронки.")
+            return redirect(reverse("invest-projects"))
+
+        with transaction.atomic():
+            for project in projects:
+                old_stage = project.stage
+                if old_stage == new_stage:
+                    continue
+                project.stage = new_stage
+                project.save(update_fields=["stage", "updated_at"])
+                audit.log_action(
+                    request.user,
+                    membership.subsystem,
+                    "invest.project.bulk_stage",
+                    model_name="InvestProject",
+                    object_id=project.pk,
+                    payload={"old_stage": old_stage, "new_stage": new_stage},
+                    request=request,
+                )
+        messages.success(request, f"Стадия обновлена для {len(projects)} проектов.")
+        return redirect(reverse("invest-projects"))
 
 
 class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailView):
@@ -176,7 +324,70 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
         ctx["package"] = package
         ctx["package_items"] = items
         ctx["package_ready"] = f"{ready}/{len(required)}" if required else "—"
+        blockers = gate_blockers(project)
+        ctx["completeness_pct"] = compute_completeness(project)
+        ctx["completeness_actions"] = _completeness_actions(project, blockers)
+        ctx["audit_logs"] = AuditLog.objects.filter(
+            subsystem=project.subsystem,
+            model_name__iexact="InvestProject",
+            object_id=str(project.pk),
+        )[:20]
         return _with_odysseus_cta(self.request, ctx, membership=membership, project=project)
+
+
+class InvestInvestorListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
+    model = InvestInvestor
+    template_name = "invest/investors_list.html"
+    context_object_name = "investors"
+    page_title = "Юрлица инвесторов"
+    paginate_by = 25
+
+    def get_queryset(self):
+        return (
+            InvestInvestor.objects.filter(subsystem=self.get_subsystem())
+            .prefetch_related("projects")
+            .order_by("name")
+        )
+
+
+class InvestInvestorDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailView):
+    model = InvestInvestor
+    template_name = "invest/investor_detail.html"
+    context_object_name = "investor"
+    page_title = "Юрлицо инвестора"
+
+    def get_queryset(self):
+        return InvestInvestor.objects.filter(subsystem=self.get_subsystem())
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
+        ctx["projects"] = projects_for_membership(membership).filter(investor_entity=self.object)
+        return ctx
+
+
+class InvestDedupeView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/dedupe.html"
+    page_title = "Дедупликация проектов"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["pairs"] = suspected_duplicate_pairs(self.get_subsystem())
+        ctx["can_change_dedupe"] = user_can(self.request.user, self.module_code, "change")
+        return ctx
+
+
+class InvestDedupeIgnoreView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        projects = projects_for_membership(membership)
+        left = get_object_or_404(projects, pk=request.POST.get("left_id"))
+        right = get_object_or_404(projects, pk=request.POST.get("right_id"))
+        ignore_duplicate_pair(left, right)
+        messages.success(request, "Пара дублей скрыта.")
+        return redirect(reverse("invest-dedupe"))
 
 
 class InvestOdysseusOpenView(InvestSubsystemMixin, ModulePermissionMixin, View):
@@ -224,6 +435,7 @@ class InvestHandoffListView(InvestSubsystemMixin, ModulePermissionMixin, ListVie
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["can_change_handoff"] = user_can(self.request.user, self.module_code, "change")
+        ctx["return_reason_templates"] = RETURN_REASON_TEMPLATES
         return ctx
 
 
@@ -267,7 +479,11 @@ class InvestHandoffDecisionView(InvestForbiddenResponseMixin, InvestSubsystemMix
                 return_handoff(
                     handoff=handoff,
                     user=request.user,
-                    comment=request.POST.get("comment", handoff.comment),
+                    comment=resolve_return_comment(
+                        template_key=request.POST.get("comment_template", ""),
+                        comment=request.POST.get("comment", ""),
+                        fallback=handoff.comment,
+                    ),
                 )
         except InvestHandoffError as exc:
             messages.error(request, str(exc))
@@ -299,9 +515,14 @@ class InvestPackageDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
         ctx = super().get_context_data(**kwargs)
         package = ensure_package(self.object)
         ctx["package"] = package
-        ctx["items"] = package.items.order_by("id")
+        ctx["items"] = package.items.select_related("document").order_by("id")
+        ctx["snapshots"] = package.snapshots.select_related("handoff").order_by("-created_at")
         ctx["status_choices"] = InvestPackageItem.Status.choices
         ctx["can_change_package"] = user_can(self.request.user, self.module_code, "change")
+        ctx["recent_documents"] = DocumentFile.objects.filter(
+            subsystem=self.get_subsystem(),
+            is_current=True,
+        ).order_by("-created_at")[:25]
         return ctx
 
 
@@ -316,7 +537,11 @@ class InvestPackageItemUpdateView(InvestForbiddenResponseMixin, InvestSubsystemM
         if status not in InvestPackageItem.Status.values:
             messages.error(request, "Некорректный статус пункта пакета.")
         else:
-            set_item_status(item, status, request.FILES.get("file"))
+            document = None
+            document_id = request.POST.get("document")
+            if document_id:
+                document = get_object_or_404(DocumentFile, pk=document_id, subsystem=self.get_subsystem())
+            set_item_status(item, status, request.FILES.get("file"), document)
             messages.success(request, "Пункт пакета обновлён.")
         return redirect(reverse("invest-package-detail", args=[project.pk]))
 

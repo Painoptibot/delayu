@@ -46,9 +46,15 @@
               {% csrf_token %}
               <button class="btn btn-sm btn-primary" type="submit">Принять</button>
             </form>
-            <form class="d-inline" method="post" action="{% url 'invest-handoff-return' handoff.pk %}">
+            <form class="mt-2" method="post" action="{% url 'invest-handoff-return' handoff.pk %}">
               {% csrf_token %}
-              <input type="hidden" name="comment" value="{{ handoff.comment }}">
+              <select class="form-select form-select-sm mb-2" name="comment_template" aria-label="Причина возврата">
+                <option value="">Свободный комментарий</option>
+                {% for template in return_reason_templates %}
+                <option value="{{ template.key }}">{{ template.text }}</option>
+                {% endfor %}
+              </select>
+              <textarea class="form-control form-control-sm mb-2" name="comment" rows="2" placeholder="Комментарий к возврату">{{ handoff.comment }}</textarea>
               <button class="btn btn-sm btn-outline-secondary" type="submit">Вернуть</button>
             </form>
             {% else %}
