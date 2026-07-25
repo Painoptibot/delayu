@@ -11,6 +11,7 @@ from django.views.generic import TemplateView
 from delayu.forms_odysseus import OdysseusSettingsForm
 from delayu.mixins import ModulePermissionMixin
 from delayu.services.access import user_can
+from delayu.services.odysseus_invest import SESSION_KEY
 from delayu.services.odysseus_settings import check_odysseus_health, ensure_odysseus_settings
 from delayu.services.scope import is_platform_admin
 from delayu.views_platform import _ctx_membership
@@ -30,6 +31,7 @@ class OdysseusShellView(ModulePermissionMixin, TemplateView):
         ctx["can_manage"] = is_platform_admin(self.request.user) or user_can(
             self.request.user, "M87", "change"
         )
+        ctx["invest_context"] = self.request.session.get(SESSION_KEY)
         ctx["workspace_href"] = reverse("platform-odysseus-proxy-root")
         if cfg.embed_mode == cfg.EmbedMode.NEW_TAB:
             ctx["workspace_href"] = cfg.base_url

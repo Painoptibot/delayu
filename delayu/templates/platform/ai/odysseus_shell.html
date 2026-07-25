@@ -17,6 +17,18 @@
   </div>
 </div>
 
+{% if invest_context %}
+<div class="alert alert-primary mb-4">
+  <div class="fw-semibold mb-1">Контекст инвестконтура подготовлен</div>
+  <div class="small">
+    Подсистема: <code>{{ invest_context.subsystem_code }}</code>
+    {% if invest_context.project_id %} · проект #{{ invest_context.project_id }}{% endif %}
+    {% if invest_context.site_id %} · площадка #{{ invest_context.site_id }}{% endif %}
+  </div>
+  <div class="small mt-2">{{ invest_context.prompt_template }}</div>
+</div>
+{% endif %}
+
 <div class="row g-4 mb-4">
   <div class="col-md-4">
     <div class="card h-100">

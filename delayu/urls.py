@@ -1015,6 +1015,7 @@ urlpatterns = [
     path("uzhv/assignee/<int:user_id>/", views.UzhvAssigneeDashboardView.as_view(), name="uzhv-assignee"),
     # Инвестконтур
     path("invest/", views_invest.InvestHubView.as_view(), name="invest-hub"),
+    path("invest/odysseus/open/", views_invest.InvestOdysseusOpenView.as_view(), name="invest-odysseus-open"),
     path("invest/dashboard/", views_invest.InvestDashboardView.as_view(), name="invest-dashboard"),
     path("invest/automation/", views_invest_automation.InvestAutomationConnectionView.as_view(), name="invest-automation"),
     path("invest/automation/flags/", views_invest_automation.InvestAutomationFlagsView.as_view(), name="invest-automation-flags"),

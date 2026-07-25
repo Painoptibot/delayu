@@ -13,6 +13,9 @@
     <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">Площадки</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-package-detail' project.pk %}">Пакет</a>
     <a class="btn btn-outline-secondary" href="{% url 'invest-handoffs' %}">Передачи</a>
+    {% if odysseus_cta_url %}
+    <a class="btn btn-outline-primary" href="{{ odysseus_cta_url }}">Открыть в Odysseus</a>
+    {% endif %}
     {% if can_change_project %}
     <a class="btn btn-primary" href="{% url 'invest-project-edit' project.pk %}">Редактировать</a>
     {% endif %}

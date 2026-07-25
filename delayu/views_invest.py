@@ -34,6 +34,7 @@ from delayu.services.invest_import import apply_row, parse_mo_file, skip_row
 from delayu.services.invest_package import ensure_package, set_item_status
 from delayu.services.invest_scope import projects_for_membership, sites_for_membership
 from delayu.services.invest_smev import InvestSmevError, apply_smev_response, request_smev_fill
+from delayu.services.odysseus_invest import get_invest_odysseus_open_url, prepare_odysseus_open
 
 
 class InvestSubsystemMixin(AccessMixin):
@@ -98,13 +99,24 @@ def _forbidden_with_message(request, message):
     return HttpResponseForbidden(message)
 
 
+def _with_odysseus_cta(request, ctx, *, membership, project=None, site=None):
+    ctx["odysseus_cta_url"] = get_invest_odysseus_open_url(
+        request,
+        membership=membership,
+        project=project,
+        site=site,
+    )
+    return ctx
+
+
 class InvestHubView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
     template_name = "invest/hub.html"
     page_title = "Обзор инвестконтура"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        projects = projects_for_membership(self.get_membership())
+        membership = self.get_membership()
+        projects = projects_for_membership(membership)
         ctx["stats"] = {
             "projects_total": projects.count(),
             "attraction": projects.filter(funnel=InvestProject.Funnel.ATTRACTION).count(),
@@ -112,7 +124,7 @@ class InvestHubView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
         }
         ctx["recent_projects"] = projects.select_related("organization", "owner")[:8]
         ctx["can_create_project"] = user_can(self.request.user, self.module_code, "create")
-        return ctx
+        return _with_odysseus_cta(self.request, ctx, membership=membership)
 
 
 class InvestDashboardView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
@@ -152,6 +164,7 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
         project = self.object
         package = ensure_package(project)
         items = list(package.items.order_by("id"))
@@ -163,7 +176,34 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
         ctx["package"] = package
         ctx["package_items"] = items
         ctx["package_ready"] = f"{ready}/{len(required)}" if required else "—"
-        return ctx
+        return _with_odysseus_cta(self.request, ctx, membership=membership, project=project)
+
+
+class InvestOdysseusOpenView(InvestSubsystemMixin, ModulePermissionMixin, View):
+    """Prepare an Invest context snapshot before redirecting to Odysseus."""
+
+    def get(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        project = None
+        site = None
+        if request.GET.get("project"):
+            project = get_object_or_404(projects_for_membership(membership), pk=request.GET["project"])
+        if request.GET.get("site"):
+            site = get_object_or_404(sites_for_membership(membership), pk=request.GET["site"])
+        try:
+            return redirect(
+                prepare_odysseus_open(
+                    request,
+                    membership=membership,
+                    project=project,
+                    site=site,
+                )
+            )
+        except PermissionError as exc:
+            return HttpResponseForbidden(str(exc))
+
+    def post(self, request, *args, **kwargs):
+        return self.get(request, *args, **kwargs)
 
 
 class InvestHandoffListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
@@ -430,7 +470,7 @@ class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailVi
         ctx["projects"] = projects_for_membership(membership).select_related("organization").order_by("code")
         ctx["smev_requests"] = self.object.smev_requests.all()[:10]
         ctx["smev_services"] = InvestSmevRequest.Service.choices
-        return ctx
+        return _with_odysseus_cta(self.request, ctx, membership=membership, site=self.object)
 
 
 class InvestSiteCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, CreateView):
