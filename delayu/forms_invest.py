@@ -274,7 +274,11 @@ class InvestSiteForm(BootstrapFormMixin, forms.ModelForm):
         self.membership = membership
         subsystem = membership.subsystem if membership else getattr(self.instance, "subsystem", None)
         if self.instance and self.instance.pk:
-            self.fields["restriction_zones"].initial = "\n".join(self.instance.restriction_zones or [])
+            zones = self.instance.restriction_zones or []
+            if any(isinstance(zone, dict) for zone in zones):
+                self.fields["restriction_zones"].initial = json.dumps(zones, ensure_ascii=False)
+            else:
+                self.fields["restriction_zones"].initial = "\n".join(str(zone) for zone in zones)
         if subsystem:
             self.fields["organization"].queryset = subsystem.organizations.filter(is_active=True)
         if self._is_mo_membership():
@@ -317,5 +321,22 @@ class InvestSiteForm(BootstrapFormMixin, forms.ModelForm):
                 raise forms.ValidationError("Укажите корректный JSON-массив зон.") from exc
             if not isinstance(value, list):
                 raise forms.ValidationError("Ограничительные зоны должны быть списком.")
-            return [str(item).strip() for item in value if str(item).strip()]
+            zones = []
+            for item in value:
+                if isinstance(item, dict):
+                    name = str(item.get("name") or "").strip()
+                    coords = item.get("coords")
+                    if not name:
+                        raise forms.ValidationError("Укажите name для каждой зоны.")
+                    zone = {"name": name}
+                    if coords:
+                        if not isinstance(coords, list):
+                            raise forms.ValidationError("coords зоны должны быть списком координат.")
+                        zone["coords"] = coords
+                    zones.append(zone)
+                else:
+                    label = str(item).strip()
+                    if label:
+                        zones.append(label)
+            return zones
         return [line.strip() for line in raw.replace(",", "\n").splitlines() if line.strip()]

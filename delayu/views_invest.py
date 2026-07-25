@@ -1,8 +1,10 @@
 """Views for the invest subsystem."""
+import json
 
 from django.contrib import messages
 from django.contrib.auth.mixins import AccessMixin
 from django.core.exceptions import PermissionDenied
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden
@@ -58,6 +60,7 @@ from delayu.services.invest_scope import projects_for_membership, sites_for_memb
 from delayu.services.invest_smev import InvestSmevError, apply_smev_response, request_smev_fill
 from delayu.services.odysseus_invest import get_invest_odysseus_open_url, prepare_odysseus_open
 from delayu.services.scope import is_platform_admin
+from delayu.services.yandex_maps import YandexGeocodeError, geocode_address
 
 
 PROJECT_WIZARD_SESSION_KEY = "invest_project_wizard"
@@ -236,6 +239,59 @@ def _coordinates_for_site(site):
         lat, lon = coordinates.split(",", 1)
         return lat.strip(), lon.strip()
     return None, None
+
+
+def _restriction_zone_name(zone):
+    if isinstance(zone, dict):
+        return str(zone.get("name") or "").strip()
+    return str(zone or "").strip()
+
+
+def _restriction_zone_coords(zone):
+    if not isinstance(zone, dict):
+        return None
+    coords = zone.get("coords")
+    if not isinstance(coords, list) or len(coords) < 3:
+        return None
+    normalized = []
+    for pair in coords:
+        if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+            return None
+        try:
+            normalized.append([float(pair[0]), float(pair[1])])
+        except (TypeError, ValueError):
+            return None
+    return normalized
+
+
+def _restriction_zones_for_map(site):
+    zones = []
+    for zone in site.restriction_zones or []:
+        name = _restriction_zone_name(zone)
+        if not name:
+            continue
+        entry = {"name": name}
+        coords = _restriction_zone_coords(zone)
+        if coords:
+            entry["coords"] = coords
+        zones.append(entry)
+    return zones
+
+
+def _booking_badge_for_site(site):
+    links = list(getattr(site, "prefetched_project_links", []))
+    if not links:
+        links = list(site.project_links.all())
+    if not links:
+        return ""
+    priority = {
+        InvestProjectSite.Role.SELECTED: 0,
+        InvestProjectSite.Role.BOOKED: 1,
+        InvestProjectSite.Role.PROPOSED: 2,
+        InvestProjectSite.Role.CANDIDATE: 3,
+    }
+    link = sorted(links, key=lambda item: priority.get(item.role, 99))[0]
+    return InvestProjectSite.Role(link.role).label
 
 
 def _smev_payload_summary(payload):
@@ -997,12 +1053,47 @@ class InvestSiteMapView(InvestSubsystemMixin, ModulePermissionMixin, TemplateVie
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        sites = sites_for_membership(self.get_membership()).select_related("organization")
+        sites = (
+            sites_for_membership(self.get_membership())
+            .select_related("organization")
+            .prefetch_related("project_links")
+        )
+        org_filter = (self.request.GET.get("org") or "").strip()
+        if org_filter:
+            if org_filter.isdigit():
+                sites = sites.filter(organization_id=int(org_filter))
+            else:
+                sites = sites.filter(organization__code=org_filter)
+        booking_filter = (self.request.GET.get("booking") or "").strip()
+        if booking_filter:
+            sites = sites.filter(project_links__role=booking_filter).distinct()
         mapped_sites = []
+        map_points = []
         for site in sites:
             lat, lon = _coordinates_for_site(site)
-            mapped_sites.append({"site": site, "latitude": lat, "longitude": lon, "has_coordinates": bool(lat and lon)})
+            booking_badge = _booking_badge_for_site(site)
+            zones = _restriction_zones_for_map(site)
+            has_coordinates = bool(lat and lon)
+            mapped_sites.append({
+                "site": site,
+                "latitude": lat,
+                "longitude": lon,
+                "has_coordinates": has_coordinates,
+                "booking_badge": booking_badge,
+                "restriction_zones": zones,
+            })
+            if has_coordinates:
+                map_points.append({
+                    "lat": float(lat),
+                    "lon": float(lon),
+                    "name": site.name,
+                    "cadastral": site.cadastral_number,
+                    "url": reverse("invest-site-detail", args=[site.pk]),
+                    "bookingBadge": booking_badge,
+                    "restrictionZones": zones,
+                })
         ctx["mapped_sites"] = mapped_sites
+        ctx["map_points_json"] = json.dumps(map_points, cls=DjangoJSONEncoder, ensure_ascii=False)
         ctx["has_coordinates"] = any(entry["has_coordinates"] for entry in mapped_sites)
         return ctx
 
@@ -1127,6 +1218,30 @@ class InvestSiteUpdateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, M
 
     def get_success_url(self):
         return reverse("invest-site-detail", args=[self.object.pk])
+
+    def post(self, request, *args, **kwargs):
+        if request.POST.get("action") == "geocode":
+            self.object = self.get_object()
+            form = self.get_form()
+            if not form.is_valid():
+                return self.form_invalid(form)
+            site = form.save(commit=False)
+            membership = self.get_membership()
+            if membership.role.code == "invest_mo":
+                site.organization = membership.organization
+            try:
+                lat, lon = geocode_address(site.address or site.name or site.cadastral_number)
+            except YandexGeocodeError as exc:
+                messages.error(request, str(exc))
+                return self.form_invalid(form)
+            site.latitude = lat
+            site.longitude = lon
+            site.save()
+            form.save_m2m()
+            self.object = site
+            messages.success(request, "Координаты площадки обновлены через Яндекс Геокодер.")
+            return redirect(self.get_success_url())
+        return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
         membership = self.get_membership()

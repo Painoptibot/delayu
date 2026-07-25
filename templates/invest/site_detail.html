@@ -55,7 +55,7 @@
           <dt class="col-sm-5">Ограничительные зоны</dt>
           <dd class="col-sm-7">
             {% for zone in site.restriction_zones %}
-            <span class="badge bg-label-warning me-1 mb-1">{{ zone }}</span>
+            <span class="badge bg-label-warning me-1 mb-1">{{ zone.name|default:zone }}</span>
             {% empty %}
             —
             {% endfor %}

@@ -12,6 +12,13 @@
 <div class="card">
   <div class="card-header"><h5 class="mb-0">Площадка</h5></div>
   <div class="card-body">
+    {% if messages %}
+    <div class="mb-4">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
     <form method="post" novalidate>
       {% csrf_token %}
       {% if form.non_field_errors %}
@@ -98,6 +105,9 @@
 
       <div class="d-flex justify-content-end gap-2">
         <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">Отмена</a>
+        {% if view.object %}
+        <button class="btn btn-outline-primary" type="submit" name="action" value="geocode">Геокодировать через Яндекс</button>
+        {% endif %}
         <button class="btn btn-primary" type="submit">Сохранить</button>
       </div>
     </form>
