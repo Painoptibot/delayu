@@ -1071,6 +1071,9 @@ urlpatterns = [
     path("invest/sites/compare/", views_invest.InvestSiteCompareView.as_view(), name="invest-sites-compare"),
     path("invest/sites/campaign/", views_invest.InvestSiteCampaignView.as_view(), name="invest-sites-campaign"),
     path("invest/sites/smev-batch/", views_invest.InvestSiteSmevBatchView.as_view(), name="invest-sites-smev-batch"),
+    path("invest/smev/", views_invest.InvestSmevConsoleView.as_view(), name="invest-smev-console"),
+    path("invest/smev/report/", views_invest.InvestSmevReportView.as_view(), name="invest-smev-report"),
+    path("invest/smev/<int:pk>/protocol.pdf", views_invest.InvestSmevProtocolView.as_view(), name="invest-smev-protocol"),
     path("invest/bookings/", views_invest.InvestBookingsView.as_view(), name="invest-bookings"),
     path("invest/sites/new/", views_invest.InvestSiteCreateView.as_view(), name="invest-site-create"),
     path("invest/sites/<int:pk>/", views_invest.InvestSiteDetailView.as_view(), name="invest-site-detail"),
@@ -1079,6 +1082,16 @@ urlpatterns = [
         "invest/sites/<int:pk>/smev/",
         views_invest.InvestSiteSmevRequestView.as_view(),
         name="invest-site-smev-request",
+    ),
+    path(
+        "invest/sites/<int:pk>/smev/contour/",
+        views_invest.InvestSiteSmevContourView.as_view(),
+        name="invest-site-smev-contour",
+    ),
+    path(
+        "invest/sites/<int:pk>/smev/<int:request_pk>/emulate/",
+        views_invest.InvestSiteSmevEmulateView.as_view(),
+        name="invest-site-smev-emulate",
     ),
     path(
         "invest/sites/<int:pk>/smev/<int:request_pk>/apply/",

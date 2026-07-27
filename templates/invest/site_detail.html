@@ -74,9 +74,9 @@
         <h5 class="mb-0">
           СМЭВ
           {% if smev_live_pending_mode %}
-          <span class="badge bg-label-info ms-1">live stub</span>
+          <span class="badge bg-label-info ms-1">Live</span>
           {% else %}
-          <span class="badge bg-label-warning ms-1">тестовый контур</span>
+          <span class="badge bg-label-warning ms-1">Sandbox</span>
           {% endif %}
         </h5>
       </div>
@@ -90,6 +90,13 @@
           Демо без промышленного шлюза: запрос формирует mock-ответ (ЕГРН) и позволяет автозаполнить карточку.
         </p>
         {% if can_change_site %}
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <form method="post" action="{% url 'invest-site-smev-contour' site.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-outline-primary" type="submit">Проверить контур (ЕГРН+ИСОГД+РГИС)</button>
+          </form>
+          <a class="btn btn-outline-secondary" href="{% url 'invest-smev-console' %}">Пульт СМЭВ</a>
+        </div>
         <form method="post" action="{% url 'invest-site-smev-request' site.pk %}" class="row g-2 align-items-end mb-4">
           {% csrf_token %}
           <div class="col-md-8">
@@ -112,6 +119,7 @@
               <tr>
                 <th>Сервис</th>
                 <th>Статус</th>
+                <th>Режим</th>
                 <th>Когда</th>
                 <th></th>
               </tr>
@@ -119,27 +127,41 @@
             <tbody>
               {% for req in smev_requests %}
               <tr>
-                <td>
-                  {{ req.get_service_display }}
-                  {% if req.is_mock %}
-                  <span class="badge bg-label-secondary">mock</span>
-                  {% else %}
-                  <span class="badge bg-label-info">live</span>
-                  {% endif %}
-                </td>
+                <td>{{ req.get_service_display }}</td>
                 <td>{{ req.get_status_display }}</td>
+                <td><span class="badge {% if req.is_mock %}bg-label-warning{% else %}bg-label-info{% endif %}">{{ req.mode_label }}</span></td>
                 <td>{{ req.created_at|date:"d.m.Y H:i" }}</td>
                 <td class="text-end">
-                  {% if can_change_site and req.service == "egrn" and req.status == "done" %}
-                  <form method="post" action="{% url 'invest-site-smev-apply' site.pk req.pk %}" class="d-inline">
+                  {% if can_change_site and req.status == "live_pending" or can_change_site and req.status == "queued" %}
+                  <form method="post" action="{% url 'invest-site-smev-emulate' site.pk req.pk %}" class="d-inline">
                     {% csrf_token %}
-                    <button class="btn btn-sm btn-outline-success" type="submit">Применить</button>
+                    <button class="btn btn-sm btn-outline-warning" type="submit">Эмулировать ответ</button>
+                  </form>
+                  {% endif %}
+                  {% if can_change_site and req.service == "egrn" and req.status == "done" %}
+                  <form method="post" action="{% url 'invest-site-smev-apply' site.pk req.pk %}" class="d-inline text-start">
+                    {% csrf_token %}
+                    <div class="small mb-1">Применить поля:</div>
+                    {% for field in smev_apply_fields %}
+                    <label class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" name="fields" value="{{ field }}" checked>
+                      <span class="form-check-label">{{ field }}</span>
+                    </label>
+                    {% endfor %}
+                    <div class="small mt-1">Отклонить:</div>
+                    {% for field in smev_apply_fields %}
+                    <label class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" name="rejected_fields" value="{{ field }}">
+                      <span class="form-check-label">{{ field }}</span>
+                    </label>
+                    {% endfor %}
+                    <button class="btn btn-sm btn-outline-success mt-2" type="submit">Применить выбранное</button>
                   </form>
                   {% endif %}
                 </td>
               </tr>
               {% empty %}
-              <tr><td colspan="4" class="text-muted">Запросов пока нет.</td></tr>
+              <tr><td colspan="5" class="text-muted">Запросов пока нет.</td></tr>
               {% endfor %}
             </tbody>
           </table>

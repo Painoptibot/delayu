@@ -128,6 +128,17 @@ def test_invest_project_create_auto_assigns_owner_when_blank(client, p9_ctx):
 
 
 @pytest.mark.django_db
+def test_invest_project_wizard_get_renders_layout(client, p9_ctx):
+    client.force_login(p9_ctx["users"]["invest_agency"])
+
+    response = client.get(reverse("invest-project-wizard"))
+
+    assert response.status_code == 200
+    assert response.context["layout_path"]
+    assert "Мастер нового инвестпроекта" in response.content.decode()
+
+
+@pytest.mark.django_db
 def test_invest_project_wizard_creates_project_with_site_note_and_owner(client, p9_ctx):
     client.force_login(p9_ctx["users"]["invest_agency"])
     wizard_url = reverse("invest-project-wizard")

@@ -17,6 +17,7 @@ from django.utils.dateparse import parse_date
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
+from django.views.generic.base import ContextMixin
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -65,10 +66,21 @@ from delayu.services.invest_handoff import (
     return_handoff,
 )
 from delayu.services.invest_import import apply_row, parse_mo_file, skip_row
-from delayu.services.invest_flags import ensure_automation_config
+from delayu.services.invest_flags import ensure_automation_config, flag_enabled
 from delayu.services.invest_package import ensure_package, set_item_status
 from delayu.services.invest_scope import projects_for_membership, sites_for_membership
-from delayu.services.invest_smev import InvestSmevError, apply_smev_response, request_smev_fill
+from delayu.services.invest_pipeline import auto_smev_enrich_site
+from delayu.services.invest_smev import (
+    InvestSmevError,
+    apply_smev_response,
+    batch_smev_requests,
+    build_smev_report,
+    emulate_gateway_response,
+    render_smev_protocol_pdf,
+    request_contour_check,
+    request_smev_fill,
+    user_can_apply_live,
+)
 from delayu.services.odysseus_invest import get_invest_odysseus_open_url, prepare_odysseus_open
 from delayu.services.scope import is_platform_admin
 from delayu.services.yandex_maps import YandexGeocodeError, geocode_address
@@ -1240,9 +1252,14 @@ class InvestImportRowSkipView(InvestImportRowActionView):
     action = "skip"
 
 
-class InvestProjectWizardView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+class InvestProjectWizardView(
+    InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, ContextMixin, View
+):
+    """Multi-step View: ContextMixin needed so PlatformLayoutMixin can set layout_path."""
+
     template_name = "invest/project_wizard.html"
     required_action = "create"
+    page_title = "Мастер нового инвестпроекта"
 
     def _step(self):
         raw = self.request.POST.get("step") or self.request.GET.get("step") or "1"
@@ -1268,13 +1285,12 @@ class InvestProjectWizardView(InvestForbiddenResponseMixin, InvestSubsystemMixin
         return render(
             self.request,
             self.template_name,
-            {
-                "form": form,
-                "step": step,
-                "step_number": int(step),
-                "page_title": "Мастер нового инвестпроекта",
-                "wizard_data": self._session_data(),
-            },
+            self.get_context_data(
+                form=form,
+                step=step,
+                step_number=int(step),
+                wizard_data=self._session_data(),
+            ),
         )
 
     def get(self, request, *args, **kwargs):
@@ -1313,6 +1329,9 @@ class InvestProjectWizardView(InvestForbiddenResponseMixin, InvestSubsystemMixin
         project = self._create_project_from_session(form.cleaned_data)
         request.session.pop(PROJECT_WIZARD_SESSION_KEY, None)
         request.session.modified = True
+        if flag_enabled(project.subsystem, "auto_smev"):
+            for link in project.site_links.select_related("site"):
+                auto_smev_enrich_site(link.site, user=request.user)
         messages.success(request, "Инвестпроект создан через мастер.")
         return redirect(reverse("invest-project-detail", args=[project.pk]))
 
@@ -1502,6 +1521,7 @@ class InvestSiteMapView(InvestSubsystemMixin, ModulePermissionMixin, TemplateVie
                     "url": reverse("invest-site-detail", args=[site.pk]),
                     "bookingBadge": booking_badge,
                     "restrictionZones": zones,
+                    "smevRgisIntersections": (site.external_ids or {}).get("smev_rgis_intersections") or "",
                 })
         ctx["mapped_sites"] = mapped_sites
         ctx["map_points_json"] = json.dumps(map_points, cls=DjangoJSONEncoder, ensure_ascii=False)
@@ -1589,6 +1609,18 @@ class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailVi
             for request in egrn_requests
         ]
         ctx["smev_services"] = InvestSmevRequest.Service.choices
+        ctx["smev_apply_fields"] = [
+            "address",
+            "land_category",
+            "vri",
+            "right_type",
+            "encumbrances",
+            "zone_info",
+            "area_ha",
+            "latitude",
+            "longitude",
+        ]
+        ctx["smev_rgis_intersections"] = (self.object.external_ids or {}).get("smev_rgis_intersections")
         return _with_odysseus_cta(self.request, ctx, membership=membership, site=self.object)
 
 
@@ -1610,15 +1642,15 @@ class InvestSiteSmevBatchView(InvestForbiddenResponseMixin, InvestSubsystemMixin
             .filter(cadastral_number__in=requested)
             .select_related("organization")
         )
-        for site in sites:
-            request_smev_fill(site=site, user=request.user, service=InvestSmevRequest.Service.EGRN)
-
+        summary = batch_smev_requests(sites=sites, user=request.user)
         missing_count = max(0, len(set(requested)) - len({site.cadastral_number for site in sites}))
         messages.success(
             request,
-            f"СМЭВ batch: создано mock-запросов: {len(sites)}; пропущено: {missing_count}.",
+            f"СМЭВ batch {summary['batch_id']}: создано {summary['total']}, "
+            f"готово {summary['done']}, ожидает {summary['pending']}, ошибок {summary['error']}; "
+            f"пропущено кадастров: {missing_count}.",
         )
-        return redirect(reverse("invest-sites"))
+        return redirect(f"{reverse('invest-smev-console')}?batch_id={summary['batch_id']}&correlation_id={summary['correlation_id']}")
 
 
 class InvestSiteCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, CreateView):
@@ -1712,19 +1744,109 @@ class InvestSiteSmevRequestView(InvestForbiddenResponseMixin, InvestSubsystemMix
         return redirect(reverse("invest-site-detail", args=[site.pk]))
 
 
-class InvestSiteSmevApplyView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+class InvestSiteSmevContourView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        site = get_object_or_404(sites_for_membership(self.get_membership()), pk=kwargs["pk"])
+        created = request_contour_check(site=site, user=request.user)
+        messages.success(request, f"Контурная проверка СМЭВ: создано запросов {len(created)}.")
+        return redirect(reverse("invest-site-detail", args=[site.pk]))
+
+
+class InvestSiteSmevEmulateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
     required_action = "change"
 
     def post(self, request, *args, **kwargs):
         site = get_object_or_404(sites_for_membership(self.get_membership()), pk=kwargs["pk"])
         smev_req = get_object_or_404(InvestSmevRequest, pk=kwargs["request_pk"], site=site)
+        emulate_gateway_response(smev_req, actor=request.user)
+        messages.success(request, "Эмулятор шлюза: ответ получен.")
+        return redirect(reverse("invest-site-detail", args=[site.pk]))
+
+
+class InvestSiteSmevApplyView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        site = get_object_or_404(sites_for_membership(membership), pk=kwargs["pk"])
+        smev_req = get_object_or_404(InvestSmevRequest, pk=kwargs["request_pk"], site=site)
+        if not smev_req.is_mock and not user_can_apply_live(user=request.user, membership=membership):
+            return HttpResponseForbidden("Live-применение доступно только invest_admin / superuser")
+        fields = request.POST.getlist("fields") or None
+        rejected = request.POST.getlist("rejected_fields") or None
         try:
-            apply_smev_response(request=smev_req, user=request.user)
+            apply_smev_response(
+                request=smev_req,
+                user=request.user,
+                fields=fields,
+                rejected_fields=rejected,
+            )
         except InvestSmevError as exc:
             messages.error(request, str(exc))
         else:
             messages.success(request, "Данные тестового СМЭВ применены к карточке площадки.")
         return redirect(reverse("invest-site-detail", args=[site.pk]))
+
+
+class InvestSmevConsoleView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/smev_console.html"
+    page_title = "СМЭВ — операторский пульт"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
+        qs = InvestSmevRequest.objects.filter(subsystem=membership.subsystem).select_related(
+            "site", "site__organization", "created_by"
+        )
+        status = self.request.GET.get("status") or ""
+        service = self.request.GET.get("service") or ""
+        org = self.request.GET.get("org") or ""
+        batch_id = self.request.GET.get("batch_id") or ""
+        correlation_id = self.request.GET.get("correlation_id") or ""
+        if status:
+            qs = qs.filter(status=status)
+        if service:
+            qs = qs.filter(service=service)
+        if org:
+            qs = qs.filter(site__organization_id=org)
+        if correlation_id:
+            qs = qs.filter(correlation_id=correlation_id)
+        elif batch_id:
+            qs = qs.filter(correlation_id__icontains=batch_id)
+        flags = ensure_automation_config(membership.subsystem).get_flags()
+        ctx["smev_mode_label"] = "Live" if flags.get("smev_live") and not flags.get("smev_mock") else "Sandbox"
+        ctx["requests"] = qs.order_by("-created_at")[:200]
+        ctx["status_choices"] = InvestSmevRequest.Status.choices
+        ctx["service_choices"] = InvestSmevRequest.Service.choices
+        ctx["orgs"] = membership.subsystem.organizations.order_by("name")
+        ctx["filter_status"] = status
+        ctx["filter_service"] = service
+        ctx["filter_org"] = org
+        ctx["batch_id"] = batch_id
+        ctx["correlation_id"] = correlation_id
+        return ctx
+
+
+class InvestSmevReportView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/smev_report.html"
+    page_title = "СМЭВ — отчёт"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["report"] = build_smev_report(subsystem=self.get_subsystem(), days=7)
+        return ctx
+
+
+class InvestSmevProtocolView(InvestSubsystemMixin, ModulePermissionMixin, View):
+    def get(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        smev_req = get_object_or_404(
+            InvestSmevRequest.objects.filter(subsystem=membership.subsystem),
+            pk=kwargs["pk"],
+        )
+        return render_smev_protocol_pdf(smev_req)
 
 
 class InvestSiteActionView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
@@ -1744,6 +1866,8 @@ class InvestSiteActionView(InvestForbiddenResponseMixin, InvestSubsystemMixin, M
             )
         try:
             self.action_service(**service_kwargs)
+            if flag_enabled(site.subsystem, "auto_smev"):
+                auto_smev_enrich_site(site, user=request.user)
         except InvestBookingError as exc:
             messages.error(request, str(exc))
         else:

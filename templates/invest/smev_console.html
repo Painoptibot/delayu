@@ -1,0 +1,92 @@
+{% extends layout_path %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}
+      <span class="badge {% if smev_mode_label == 'Live' %}bg-label-info{% else %}bg-label-warning{% endif %}">{{ smev_mode_label }}</span>
+    </h4>
+    <p class="text-body-secondary mb-0">Очередь запросов, SLA timeout и журнал жизненного цикла.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-smev-report' %}">Отчёт</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">Площадки</a>
+  </div>
+</div>
+
+{% if batch_id or correlation_id %}
+<div class="alert alert-info">Сводка batch: {{ batch_id|default:correlation_id }}</div>
+{% endif %}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form class="row g-3 align-items-end" method="get">
+      <div class="col-md-3">
+        <label class="form-label">Статус</label>
+        <select class="form-select" name="status">
+          <option value="">Все</option>
+          {% for value, label in status_choices %}
+          <option value="{{ value }}"{% if filter_status == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Сервис</label>
+        <select class="form-select" name="service">
+          <option value="">Все</option>
+          {% for value, label in service_choices %}
+          <option value="{{ value }}"{% if filter_service == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">МО</label>
+        <select class="form-select" name="org">
+          <option value="">Все</option>
+          {% for org in orgs %}
+          <option value="{{ org.pk }}"{% if filter_org == org.pk|stringformat:"s" %} selected{% endif %}>{{ org.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-primary" type="submit">Фильтр</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Время</th>
+          <th>Площадка</th>
+          <th>Сервис</th>
+          <th>Статус</th>
+          <th>Режим</th>
+          <th>Correlation</th>
+          <th>Timeout</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td>{{ req.created_at|date:"d.m.Y H:i" }}</td>
+          <td><a href="{% url 'invest-site-detail' req.site_id %}">{{ req.site.cadastral_number }}</a><div class="small text-muted">{{ req.site.organization }}</div></td>
+          <td>{{ req.get_service_display }}</td>
+          <td>{{ req.get_status_display }}</td>
+          <td><span class="badge {% if req.is_mock %}bg-label-warning{% else %}bg-label-info{% endif %}">{{ req.mode_label }}</span></td>
+          <td class="small"><code>{{ req.correlation_id|default:"—" }}</code></td>
+          <td>{% if req.timeout_at %}{{ req.timeout_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'invest-smev-protocol' req.pk %}">PDF</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-muted text-center py-4">Запросов нет.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

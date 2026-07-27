@@ -1,6 +1,7 @@
 """Инвестконтур Кубани — доменные модели (тенант = Subsystem)."""
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class InvestInvestor(models.Model):
@@ -359,14 +360,24 @@ class InvestSmevRequest(models.Model):
         DONE = "done", "Получен ответ"
         ERROR = "error", "Ошибка"
         APPLIED = "applied", "Применено к карточке"
+        DEAD_LETTER = "dead_letter", "Dead-letter"
+        TIMEOUT = "timeout", "Таймаут"
+        SCHEMA_ERROR = "schema_error", "Ошибка схемы"
 
     subsystem = models.ForeignKey("Subsystem", on_delete=models.CASCADE, related_name="invest_smev_requests")
     site = models.ForeignKey(InvestSite, on_delete=models.CASCADE, related_name="smev_requests")
     service = models.CharField(max_length=16, choices=Service.choices, default=Service.EGRN)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.QUEUED)
     is_mock = models.BooleanField("Тестовый контур", default=True)
+    correlation_id = models.CharField(max_length=64, blank=True, db_index=True)
+    message_id = models.CharField(max_length=64, blank=True, db_index=True)
+    retries = models.PositiveSmallIntegerField(default=0)
+    max_retries = models.PositiveSmallIntegerField(default=3)
+    timeout_at = models.DateTimeField(null=True, blank=True)
+    dead_lettered_at = models.DateTimeField(null=True, blank=True)
     request_payload = models.JSONField(default=dict, blank=True)
     response_payload = models.JSONField(default=dict, blank=True)
+    audit_trail = models.JSONField(default=list, blank=True)
     error_message = models.CharField(max_length=512, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
@@ -381,6 +392,70 @@ class InvestSmevRequest(models.Model):
 
     def __str__(self):
         return f"{self.get_service_display()} · {self.site.cadastral_number}"
+
+    @property
+    def mode_label(self) -> str:
+        return "Sandbox" if self.is_mock else "Live"
+
+    def append_audit(self, action: str, *, actor=None, details: dict | None = None, save: bool = True) -> None:
+        trail = list(self.audit_trail or [])
+        trail.append(
+            {
+                "action": action,
+                "actor": getattr(actor, "username", "") if actor else "",
+                "details": details or {},
+                "created_at": timezone.now().isoformat(),
+            }
+        )
+        self.audit_trail = trail
+        if save:
+            self.save(update_fields=["audit_trail"])
+
+    def retry_or_dead_letter(self, *, actor=None, reason: str = ""):
+        self.retries += 1
+        update_fields = ["retries", "audit_trail"]
+        if self.retries >= self.max_retries:
+            self.status = self.Status.DEAD_LETTER
+            self.dead_lettered_at = timezone.now()
+            update_fields += ["status", "dead_lettered_at"]
+            action = "dead_letter"
+        else:
+            self.status = self.Status.QUEUED
+            update_fields.append("status")
+            action = "retry"
+        self.append_audit(action, actor=actor, details={"reason": reason, "retries": self.retries}, save=False)
+        self.save(update_fields=update_fields)
+        return self
+
+    def timeout_to_dead_letter(self, *, actor=None, reason: str = "timeout"):
+        now = timezone.now()
+        self.status = self.Status.DEAD_LETTER
+        self.dead_lettered_at = now
+        if self.timeout_at is None:
+            self.timeout_at = now
+        self.append_audit("timeout", actor=actor, details={"reason": reason}, save=False)
+        self.append_audit("dead_letter", actor=actor, details={"reason": reason}, save=False)
+        self.save(update_fields=["status", "timeout_at", "dead_lettered_at", "audit_trail"])
+        return self
+
+
+class InvestSmevInfoType(models.Model):
+    """НСИ видов сведений СМЭВ для demo-validation contracts."""
+
+    code = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=255)
+    service = models.CharField(max_length=16, choices=InvestSmevRequest.Service.choices)
+    contract_version = models.CharField(max_length=64, blank=True)
+    schema_json = models.JSONField(default=dict, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["service", "code"]
+        verbose_name = "Вид сведений СМЭВ"
+        verbose_name_plural = "Виды сведений СМЭВ"
+
+    def __str__(self):
+        return f"{self.service}:{self.code}"
 
 
 class InvestAutomationConfig(models.Model):
