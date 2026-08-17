@@ -227,5 +227,6 @@ class SubsystemMembership(models.Model):
 from delayu.models_business import *  # noqa: E402, F403
 from delayu.models_uzhv import *  # noqa: E402, F403
 from delayu.models_fuel import *  # noqa: E402, F403
+from delayu.models_fuel_ufo import *  # noqa: E402, F403
 from delayu.models_invest import *  # noqa: E402, F403
 from delayu.models_odysseus import *  # noqa: E402, F403
