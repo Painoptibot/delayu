@@ -67,10 +67,14 @@ class FuelUfoApkDownloadView(View):
         response = FileResponse(
             path.open("rb"),
             as_attachment=True,
-            filename="fuel-ufo.apk",
+            filename="Топливный пропуск.apk",
             content_type="application/vnd.android.package-archive",
         )
-        response["Cache-Control"] = "public, max-age=300"
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        response["Content-Disposition"] = (
+            "attachment; filename=\"Toplivnyy-propusk.apk\"; "
+            "filename*=UTF-8''%D0%A2%D0%BE%D0%BF%D0%BB%D0%B8%D0%B2%D0%BD%D1%8B%D0%B9%20%D0%BF%D1%80%D0%BE%D0%BF%D1%83%D1%81%D0%BA.apk"
+        )
         return response
 
 
