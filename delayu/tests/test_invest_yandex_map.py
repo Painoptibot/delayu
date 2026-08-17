@@ -82,6 +82,10 @@ def test_sites_map_uses_yandex_only(client, yandex_map_ctx):
     assert "https://yandex.ru/maps/?pt=38.654321,45.123456&amp;z=15" in html
     assert "Санитарная зона" in html
     assert "Забронирован" in html
+    assert "invest-map-balloon" in html
+    assert "invest-map-pin" in html
+    assert "Карточка площадки" in html or "siteBalloonHtml" in html
+    assert "applyElementOffset" in html
     assert "openstreetmap" not in html.lower()
     assert "leaflet" not in html.lower()
 

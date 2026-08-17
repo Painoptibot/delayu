@@ -1,0 +1,102 @@
+{% extends layout_path %}
+{% block title %}Открытые данные — ДелаЮ{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">Открытые данные</h4>
+    <p class="text-muted mb-0">
+      Каталог официальных источников проверки инвесторов, проектов и площадок (Wave 1 / P0).
+      Режим сейчас: {% if opendata_live %}<span class="badge bg-label-warning">live</span>{% else %}<span class="badge bg-label-secondary">mock</span>{% endif %}.
+    </p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-projects' %}">К проектам</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">К площадкам</a>
+    {% if can_manage_flags %}
+    <a class="btn btn-outline-primary" href="{% url 'invest-automation-flags' %}">Флаги автоматизации</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="alert alert-info" role="alert">
+  Проверка запускается с карточки <strong>проекта</strong> (кнопка «Проверить контрагента»),
+  <strong>инвестора</strong> или <strong>площадки</strong>. Результаты пишутся в снимок сущности,
+  стоп-факторы и пункт пакета «Проверка открытых данных».
+</div>
+
+<div class="card mb-4">
+  <div class="card-header"><h5 class="mb-0">Наборы источников ({{ sources|length }})</h5></div>
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Код</th>
+          <th>Наименование</th>
+          <th>Сущности</th>
+          <th>Что проверяет</th>
+          <th>Портал</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for src in sources %}
+        <tr>
+          <td><code>{{ src.code }}</code></td>
+          <td>{{ src.label }}</td>
+          <td>
+            {% for kind in src.entity_kinds %}
+            <span class="badge bg-label-primary">{{ kind }}</span>
+            {% endfor %}
+          </td>
+          <td class="small">{{ src.description }}</td>
+          <td class="small">
+            {% if src.portal_url %}
+            <a href="{{ src.portal_url }}" target="_blank" rel="noopener">открыть</a>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">Источники не зарегистрированы.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if recent_runs %}
+<div class="card">
+  <div class="card-header"><h5 class="mb-0">Последние проверки</h5></div>
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Когда</th>
+          <th>Тип</th>
+          <th>Объект</th>
+          <th>Статус</th>
+          <th>Жёстких</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in recent_runs %}
+        <tr>
+          <td>{{ run.created_at|date:"d.m.Y H:i" }}</td>
+          <td>{{ run.get_target_type_display }}</td>
+          <td>
+            {% if run.project_id %}
+            <a href="{% url 'invest-project-detail' run.project_id %}">{{ run.project.code }}</a>
+            {% elif run.investor_id %}
+            <a href="{% url 'invest-investor-detail' run.investor_id %}">{{ run.investor.name }}</a>
+            {% elif run.site_id %}
+            <a href="{% url 'invest-site-detail' run.site_id %}">{{ run.site.cadastral_number }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ run.get_status_display }}</td>
+          <td>{{ run.summary.hard_count|default:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

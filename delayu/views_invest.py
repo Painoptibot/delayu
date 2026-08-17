@@ -4,13 +4,14 @@ import json
 import os
 import re
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import AccessMixin
 from django.core.exceptions import PermissionDenied
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import Http404, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.dateparse import parse_date
@@ -36,6 +37,9 @@ from delayu.mixins import ModulePermissionMixin
 from delayu.models import AuditLog, DocumentFile, Subsystem, UserProfile
 from delayu.models_invest import (
     InvestExternalTask,
+    InvestExtract,
+    InvestFgistpDocument,
+    InvestFgistpRecord,
     InvestHandoff,
     InvestImportBatch,
     InvestImportRow,
@@ -55,6 +59,50 @@ from delayu.services.invest_booking import InvestBookingError, book_site, expire
 from delayu.services.invest_dashboard import build_cockpit, build_dashboard, project_sla_risk
 from delayu.services.invest_dedup import ignore_duplicate_pair, inn_is_valid, suspected_duplicate_pairs
 from delayu.services.invest_escalation import refresh_invest_sla
+from delayu.services.invest_opendata import (
+    run_investor_verification,
+    run_project_verification,
+    run_site_verification,
+)
+from delayu.services.invest_opendata.orchestrator import InvestOpenDataError
+from delayu.services.invest_extract_mnp import (
+    intersections_from_extract,
+    refresh_extract_mnp_intersections,
+)
+from delayu.services.invest_extracts import (
+    InvestExtractError,
+    attach_extract_to_package,
+    ensure_extract_for_site,
+    extract_geometry_for_map,
+    extracts_for_inbox,
+    generate_mock_contour,
+    import_extract_geometry,
+    latest_map_extract,
+    mark_extract_received,
+    verify_extract,
+)
+from delayu.services.invest_fgistp import (
+    InvestFgistpError,
+    attach_fgistp_document,
+    attach_fgistp_to_package,
+    ensure_fgistp_for_site,
+    fgistp_for_inbox,
+    fgistp_geometry_for_map,
+    generate_mock_zones,
+    import_fgistp_geometry,
+    latest_map_fgistp,
+    mark_fgistp_received,
+    search_fgistp_documents,
+    verify_fgistp,
+)
+from delayu.services.invest_mnp import InvestMnpError, fetch_mnp_wfs, fetch_mnp_wms, mnp_map_config
+from delayu.services.invest_mnp_store import (
+    query_features_geojson,
+    read_tile_bytes,
+    render_viewport_png,
+    store_status,
+)
+from delayu.services.invest_mnp_styles import map_style_config
 from delayu.services.invest_bitrix import InvestBitrixError, push_project_to_bitrix, resolve_bitrix_stage_conflict
 from delayu.services.invest_gates import can_push_to_bitrix, compute_completeness, gate_blockers
 from delayu.services.invest_handoff import (
@@ -308,6 +356,27 @@ def _passport_pdf_fonts():
     return regular_name, bold_name
 
 
+def _opendata_snapshot_from_entity(entity) -> dict | None:
+    if entity is None:
+        return None
+    if hasattr(entity, "extras"):
+        data = (entity.extras or {}).get("opendata")
+        if isinstance(data, dict):
+            return data
+    if hasattr(entity, "external_ids"):
+        data = (entity.external_ids or {}).get("opendata")
+        if isinstance(data, dict):
+            return data
+    return None
+
+
+def _with_opendata_context(ctx, *, entity, verify_url: str, can_verify: bool):
+    ctx["opendata_snapshot"] = _opendata_snapshot_from_entity(entity)
+    ctx["opendata_verify_url"] = verify_url
+    ctx["opendata_can_verify"] = can_verify
+    return ctx
+
+
 def _coordinates_for_site(site):
     if site.latitude is not None and site.longitude is not None:
         return str(site.latitude), str(site.longitude)
@@ -364,11 +433,16 @@ def _restriction_zones_for_map(site):
 
 
 def _booking_badge_for_site(site):
-    links = list(getattr(site, "prefetched_project_links", []))
+    info = _booking_info_for_site(site)
+    return info.get("badge") or ""
+
+
+def _booking_info_for_site(site):
+    links = list(getattr(site, "prefetched_project_links", None) or [])
     if not links:
         links = list(site.project_links.all())
     if not links:
-        return ""
+        return {}
     priority = {
         InvestProjectSite.Role.SELECTED: 0,
         InvestProjectSite.Role.BOOKED: 1,
@@ -376,7 +450,13 @@ def _booking_badge_for_site(site):
         InvestProjectSite.Role.CANDIDATE: 3,
     }
     link = sorted(links, key=lambda item: priority.get(item.role, 99))[0]
-    return InvestProjectSite.Role(link.role).label
+    project = getattr(link, "project", None)
+    return {
+        "badge": InvestProjectSite.Role(link.role).label,
+        "projectName": getattr(project, "name", "") or "",
+        "projectCode": getattr(project, "code", "") or "",
+        "projectUrl": reverse("invest-project-detail", args=[project.pk]) if project else "",
+    }
 
 
 def _smev_payload_summary(payload):
@@ -672,6 +752,8 @@ class InvestInboxView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView)
             .select_related("project", "organization")
             .order_by("due_at", "-created_at")[:50]
         )
+        ctx["overdue_extracts"] = extracts_for_inbox(projects=projects, now=now)
+        ctx["overdue_fgistp"] = fgistp_for_inbox(projects=projects, now=now)
         return ctx
 
 
@@ -792,6 +874,12 @@ class InvestProjectDetailView(InvestSubsystemMixin, ModulePermissionMixin, Detai
         )[:20]
         ctx["project_comments"] = project.comments.select_related("author")
         ctx["can_comment_project"] = user_can(self.request.user, self.module_code, "change")
+        _with_opendata_context(
+            ctx,
+            entity=project,
+            verify_url=reverse("invest-verification-project", args=[project.pk]),
+            can_verify=ctx["can_change_project"],
+        )
         return _with_odysseus_cta(self.request, ctx, membership=membership, project=project)
 
 
@@ -856,10 +944,21 @@ class InvestProjectInnCheckView(InvestForbiddenResponseMixin, InvestSubsystemMix
         project.external_ids = external_ids
         project.save(update_fields=["external_ids", "updated_at"])
         if valid:
-            messages.success(request, "ИНН проверен: контрольная сумма корректна.")
+            try:
+                run = run_project_verification(project, user=request.user)
+                hard = int((run.summary or {}).get("hard_count") or 0)
+                messages.success(
+                    request,
+                    f"ИНН валиден. Проверка открытых данных: источников "
+                    f"{(run.summary or {}).get('sources_ok', 0)}/{(run.summary or {}).get('sources_total', 0)}"
+                    f", жёстких {hard}.",
+                )
+            except InvestOpenDataError as exc:
+                messages.success(request, "ИНН проверен: контрольная сумма корректна.")
+                messages.error(request, f"Открытые данные: {exc}")
         else:
             messages.error(request, "ИНН проверен: значение не прошло контрольную проверку.")
-        return redirect(reverse("invest-project-detail", args=[project.pk]))
+        return redirect(reverse("invest-project-detail", args=[project.pk]) + "#opendata-results")
 
 
 class InvestProjectPassportView(InvestSubsystemMixin, ModulePermissionMixin, View):
@@ -1001,6 +1100,88 @@ class InvestInvestorDetailView(InvestSubsystemMixin, ModulePermissionMixin, Deta
         ctx = super().get_context_data(**kwargs)
         membership = self.get_membership()
         ctx["projects"] = projects_for_membership(membership).filter(investor_entity=self.object)
+        _with_opendata_context(
+            ctx,
+            entity=self.object,
+            verify_url=reverse("invest-verification-investor", args=[self.object.pk]),
+            can_verify=user_can(self.request.user, self.module_code, "change"),
+        )
+        return ctx
+
+
+class InvestVerificationInvestorView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        investor = get_object_or_404(
+            InvestInvestor.objects.filter(subsystem=self.get_subsystem()),
+            pk=kwargs["pk"],
+        )
+        try:
+            run = run_investor_verification(investor, user=request.user)
+            messages.success(
+                request,
+                f"Проверка открытых данных завершена: жёстких {(run.summary or {}).get('hard_count', 0)}.",
+            )
+        except InvestOpenDataError as exc:
+            messages.error(request, str(exc))
+        return redirect(reverse("invest-investor-detail", args=[investor.pk]) + "#opendata-results")
+
+
+class InvestVerificationProjectView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(projects_for_membership(self.get_membership()), pk=kwargs["pk"])
+        try:
+            run = run_project_verification(project, user=request.user)
+            messages.success(
+                request,
+                f"Проверка открытых данных завершена: жёстких {(run.summary or {}).get('hard_count', 0)}.",
+            )
+        except InvestOpenDataError as exc:
+            messages.error(request, str(exc))
+        return redirect(reverse("invest-project-detail", args=[project.pk]) + "#opendata-results")
+
+
+class InvestVerificationSiteView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        site = get_object_or_404(sites_for_membership(self.get_membership()), pk=kwargs["pk"])
+        try:
+            run = run_site_verification(site, user=request.user)
+            messages.success(
+                request,
+                f"Проверка площадки по открытым данным: жёстких {(run.summary or {}).get('hard_count', 0)}.",
+            )
+        except InvestOpenDataError as exc:
+            messages.error(request, str(exc))
+        return redirect(reverse("invest-site-detail", args=[site.pk]) + "#opendata-results")
+
+
+class InvestOpenDataCatalogView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/opendata_catalog.html"
+    page_title = "Открытые данные"
+
+    def get_context_data(self, **kwargs):
+        from delayu.services.invest_opendata import catalog_rows
+        from delayu.models_invest import InvestVerificationRun
+
+        ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
+        flags = ensure_automation_config(membership.subsystem).get_flags()
+        ctx["sources"] = catalog_rows()
+        ctx["opendata_live"] = bool(flags.get("opendata_live") and not flags.get("opendata_mock", True))
+        ctx["can_manage_flags"] = user_can(self.request.user, self.module_code, "change") and (
+            getattr(membership.role, "code", "") == "invest_admin"
+            or is_platform_admin(self.request.user)
+        )
+        ctx["recent_runs"] = (
+            InvestVerificationRun.objects.filter(subsystem=membership.subsystem)
+            .select_related("project", "investor", "site")
+            .order_by("-created_at")[:20]
+        )
         return ctx
 
 
@@ -1486,7 +1667,7 @@ class InvestSiteMapView(InvestSubsystemMixin, ModulePermissionMixin, TemplateVie
         sites = (
             sites_for_membership(self.get_membership())
             .select_related("organization")
-            .prefetch_related("project_links")
+            .prefetch_related("project_links__project")
         )
         org_filter = (self.request.GET.get("org") or "").strip()
         if org_filter:
@@ -1501,7 +1682,8 @@ class InvestSiteMapView(InvestSubsystemMixin, ModulePermissionMixin, TemplateVie
         map_points = []
         for site in sites:
             lat, lon = _coordinates_for_site(site)
-            booking_badge = _booking_badge_for_site(site)
+            booking_info = _booking_info_for_site(site)
+            booking_badge = booking_info.get("badge") or ""
             zones = _restriction_zones_for_map(site)
             has_coordinates = bool(lat and lon)
             mapped_sites.append({
@@ -1513,20 +1695,148 @@ class InvestSiteMapView(InvestSubsystemMixin, ModulePermissionMixin, TemplateVie
                 "restriction_zones": zones,
             })
             if has_coordinates:
+                map_extract = latest_map_extract(site)
+                map_fgistp = latest_map_fgistp(site)
                 map_points.append({
                     "lat": float(lat),
                     "lon": float(lon),
                     "name": site.name,
                     "cadastral": site.cadastral_number,
                     "url": reverse("invest-site-detail", args=[site.pk]),
+                    "orgName": site.organization.name if site.organization_id else "",
+                    "statusLabel": site.get_status_display(),
+                    "areaHa": str(site.area_ha) if site.area_ha is not None else "",
                     "bookingBadge": booking_badge,
+                    "projectName": booking_info.get("projectName") or "",
+                    "projectCode": booking_info.get("projectCode") or "",
+                    "projectUrl": booking_info.get("projectUrl") or "",
                     "restrictionZones": zones,
+                    "zoneCount": len(zones),
+                    "hasExtract": bool(map_extract and getattr(map_extract, "geometry", None)),
+                    "hasFgistp": bool(map_fgistp and getattr(map_fgistp, "geometry", None)),
                     "smevRgisIntersections": (site.external_ids or {}).get("smev_rgis_intersections") or "",
+                    "extractGeometry": extract_geometry_for_map(map_extract),
+                    "fgistpGeometry": fgistp_geometry_for_map(map_fgistp),
                 })
         ctx["mapped_sites"] = mapped_sites
         ctx["map_points_json"] = json.dumps(map_points, cls=DjangoJSONEncoder, ensure_ascii=False)
         ctx["has_coordinates"] = any(entry["has_coordinates"] for entry in mapped_sites)
+        mnp_cfg = mnp_map_config(self.get_membership().subsystem)
+        mnp_store = store_status()
+        ctx["mnp_config"] = mnp_cfg
+        ctx["mnp_store"] = mnp_store
+        ctx["mnp_config_json"] = json.dumps(
+            {
+                "tileUrlTemplate": reverse(
+                    "invest-mnp-tile", kwargs={"z": 99, "x": 88, "y": 77}
+                ).replace("/99/88/77.png", "/{z}/{x}/{y}.png"),
+                "viewportProxy": reverse("invest-mnp-viewport"),
+                "tileZmax": int(getattr(settings, "INVEST_MNP_TILE_ZMAX", 12)),
+                "vectorZoom": int(getattr(settings, "INVEST_MNP_VECTOR_ZOOM", 11)),
+                "detailZoom": int(getattr(settings, "INVEST_MNP_DETAIL_ZOOM", 12)),
+                "viewportMode": str(getattr(settings, "INVEST_MNP_VIEWPORT_MODE", "auto") or "auto"),
+                "liveWms": bool(getattr(settings, "INVEST_MNP_LIVE_WMS", True)),
+                "styles": map_style_config(),
+                "featuresProxy": reverse("invest-mnp-features"),
+                "wmsProxy": reverse("invest-mnp-wms"),
+                "wfsProxy": reverse("invest-mnp-wfs"),
+                "viewerUrl": mnp_cfg["viewer_url"],
+                "enabled": mnp_cfg["enabled"],
+                "maxFeatures": mnp_cfg["max_features"],
+                "store": mnp_store,
+            },
+            ensure_ascii=False,
+        )
         return ctx
+
+
+class InvestMnpTileView(InvestSubsystemMixin, ModulePermissionMixin, View):
+    """Serve local MNP PNG tile (no upstream)."""
+
+    def get(self, request, z: int, x: int, y: int, *args, **kwargs):
+        try:
+            z_i, x_i, y_i = int(z), int(x), int(y)
+        except (TypeError, ValueError):
+            return HttpResponse(status=400)
+        if z_i < 0 or z_i > 18 or x_i < 0 or y_i < 0:
+            return HttpResponse(status=400)
+        content = read_tile_bytes(z_i, x_i, y_i)
+        response = HttpResponse(content, content_type="image/png")
+        # Avoid sticky browser cache of empty/transparent placeholders.
+        response["Cache-Control"] = "public, max-age=120, must-revalidate"
+        return response
+
+
+class InvestMnpViewportView(InvestSubsystemMixin, ModulePermissionMixin, View):
+    """Compose local tiles / GeoJSON / live WMS for map viewport."""
+
+    def get(self, request, *args, **kwargs):
+        try:
+            content = render_viewport_png(
+                bbox=request.GET.get("bbox") or "",
+                width=int(request.GET.get("width") or 256),
+                height=int(request.GET.get("height") or 256),
+                mode=request.GET.get("mode"),
+                zoom=request.GET.get("zoom"),
+                allow_live=(
+                    None
+                    if request.GET.get("live") in (None, "")
+                    else str(request.GET.get("live")).lower() in ("1", "true", "yes", "on")
+                ),
+            )
+        except (InvestMnpError, ValueError, TypeError) as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        response = HttpResponse(content, content_type="image/png")
+        response["Cache-Control"] = "public, max-age=300, must-revalidate"
+        return response
+
+
+class InvestMnpFeaturesView(InvestSubsystemMixin, ModulePermissionMixin, View):
+    """GeoJSON features from local MNP store."""
+
+    def get(self, request, *args, **kwargs):
+        try:
+            data = query_features_geojson(
+                bbox=request.GET.get("bbox") or "",
+                max_features=request.GET.get("max_features"),
+            )
+        except InvestMnpError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        return JsonResponse(data, json_dumps_params={"ensure_ascii": False})
+
+
+class InvestMnpWmsProxyView(InvestSubsystemMixin, ModulePermissionMixin, View):
+    """Compat: bbox image from local tile mosaic / vector / live."""
+
+    def get(self, request, *args, **kwargs):
+        try:
+            content = render_viewport_png(
+                bbox=request.GET.get("bbox") or "",
+                width=int(request.GET.get("width") or 256),
+                height=int(request.GET.get("height") or 256),
+                mode=request.GET.get("mode"),
+                zoom=request.GET.get("zoom"),
+            )
+        except (InvestMnpError, ValueError, TypeError) as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        response = HttpResponse(content, content_type="image/png")
+        response["Cache-Control"] = "public, max-age=60, must-revalidate"
+        return response
+
+
+class InvestMnpWfsProxyView(InvestSubsystemMixin, ModulePermissionMixin, View):
+    """Compat: alias to local features store."""
+
+    def get(self, request, *args, **kwargs):
+        try:
+            data = fetch_mnp_wfs(
+                bbox=request.GET.get("bbox") or "",
+                subsystem=self.get_subsystem(),
+                max_features=request.GET.get("max_features"),
+            )
+        except InvestMnpError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        return JsonResponse(data, json_dumps_params={"ensure_ascii": False})
 
 
 class InvestSiteCompareView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
@@ -1621,6 +1931,16 @@ class InvestSiteDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailVi
             "longitude",
         ]
         ctx["smev_rgis_intersections"] = (self.object.external_ids or {}).get("smev_rgis_intersections")
+        ctx["extracts"] = self.object.extracts.select_related("project", "requested_by", "verified_by").all()[:20]
+        ctx["extract_map"] = extract_geometry_for_map(latest_map_extract(self.object))
+        ctx["fgistp_records"] = self.object.fgistp_records.select_related("project", "requested_by", "verified_by").all()[:20]
+        ctx["fgistp_map"] = fgistp_geometry_for_map(latest_map_fgistp(self.object))
+        _with_opendata_context(
+            ctx,
+            entity=self.object,
+            verify_url=reverse("invest-verification-site", args=[self.object.pk]),
+            can_verify=ctx["can_change_site"],
+        )
         return _with_odysseus_cta(self.request, ctx, membership=membership, site=self.object)
 
 
@@ -1672,7 +1992,12 @@ class InvestSiteCreateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, M
         if membership.role.code == "invest_mo":
             form.instance.organization = membership.organization
         messages.success(self.request, "Инвестплощадка создана.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        if flag_enabled(self.object.subsystem, "auto_extract", default=True):
+            ensure_extract_for_site(self.object, reason="site_created", user=self.request.user)
+        if flag_enabled(self.object.subsystem, "auto_fgistp", default=True):
+            ensure_fgistp_for_site(self.object, reason="site_created", user=self.request.user)
+        return response
 
 
 class InvestSiteUpdateView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, UpdateView):
@@ -1884,3 +2209,395 @@ class InvestSiteBookView(InvestSiteActionView):
 class InvestSiteSelectView(InvestSiteActionView):
     action_service = staticmethod(select_site)
     success_message = "Площадка выбрана для проекта."
+
+
+class InvestExtractListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
+    model = InvestExtract
+    template_name = "invest/extracts_list.html"
+    context_object_name = "extracts"
+    page_title = "Выкопировки"
+    paginate_by = 50
+
+    def get_queryset(self):
+        membership = self.get_membership()
+        qs = (
+            InvestExtract.objects.filter(subsystem=membership.subsystem, site__in=sites_for_membership(membership))
+            .select_related("site", "site__organization", "project", "requested_by")
+            .order_by("-updated_at")
+        )
+        status = (self.request.GET.get("status") or "").strip()
+        if status:
+            qs = qs.filter(status=status)
+        org = (self.request.GET.get("org") or "").strip()
+        if org.isdigit():
+            qs = qs.filter(site__organization_id=int(org))
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
+        ctx["status_choices"] = InvestExtract.Status.choices
+        ctx["filter_status"] = self.request.GET.get("status") or ""
+        ctx["filter_org"] = self.request.GET.get("org") or ""
+        from delayu.models import Organization
+
+        ctx["orgs"] = Organization.objects.filter(subsystem=membership.subsystem).order_by("name")
+        ctx["can_change"] = user_can(self.request.user, self.module_code, "change")
+        return ctx
+
+
+class InvestExtractDetailView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, DetailView):
+    model = InvestExtract
+    template_name = "invest/extract_detail.html"
+    context_object_name = "extract"
+    page_title = "Выкопировка"
+    http_method_names = ["get", "post", "head", "options"]
+
+    def get_queryset(self):
+        membership = self.get_membership()
+        return InvestExtract.objects.filter(
+            subsystem=membership.subsystem,
+            site__in=sites_for_membership(membership),
+        ).select_related("site", "site__organization", "project")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["can_change"] = user_can(self.request.user, self.module_code, "change")
+        geom = extract_geometry_for_map(self.object if self.object.geometry else None)
+        ctx["extract_map"] = geom
+        ctx["extract_map_json"] = json.dumps(geom, cls=DjangoJSONEncoder, ensure_ascii=False) if geom else "null"
+        ctx["type_choices"] = InvestExtract.ExtractType.choices
+        mnp_snap = intersections_from_extract(self.object)
+        ctx["mnp_intersections"] = mnp_snap
+        ctx["mnp_intersections_json"] = json.dumps(mnp_snap, cls=DjangoJSONEncoder, ensure_ascii=False)
+        mnp_cfg = mnp_map_config(self.get_membership().subsystem)
+        mnp_store = store_status()
+        ctx["mnp_config"] = mnp_cfg
+        ctx["mnp_store"] = mnp_store
+        ctx["mnp_config_json"] = json.dumps(
+            {
+                "tileUrlTemplate": reverse(
+                    "invest-mnp-tile", kwargs={"z": 99, "x": 88, "y": 77}
+                ).replace("/99/88/77.png", "/{z}/{x}/{y}.png"),
+                "viewportProxy": reverse("invest-mnp-viewport"),
+                "tileZmax": int(getattr(settings, "INVEST_MNP_TILE_ZMAX", 12)),
+                "vectorZoom": int(getattr(settings, "INVEST_MNP_VECTOR_ZOOM", 11)),
+                "detailZoom": int(getattr(settings, "INVEST_MNP_DETAIL_ZOOM", 12)),
+                "viewportMode": str(getattr(settings, "INVEST_MNP_VIEWPORT_MODE", "auto") or "auto"),
+                "liveWms": bool(getattr(settings, "INVEST_MNP_LIVE_WMS", True)),
+                "styles": map_style_config(),
+                "featuresProxy": reverse("invest-mnp-features"),
+                "wmsProxy": reverse("invest-mnp-wms"),
+                "wfsProxy": reverse("invest-mnp-wfs"),
+                "viewerUrl": mnp_cfg["viewer_url"],
+                "enabled": mnp_cfg["enabled"],
+                "maxFeatures": mnp_cfg["max_features"],
+                "store": mnp_store,
+            },
+            ensure_ascii=False,
+        )
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        if not user_can(request.user, self.module_code, "change"):
+            return _forbidden_with_message(request, "Недостаточно прав")
+        self.object = self.get_object()
+        action = (request.POST.get("action") or "").strip()
+        try:
+            if action == "request":
+                ensure_extract_for_site(
+                    self.object.site,
+                    reason="manual",
+                    user=request.user,
+                    project=self.object.project,
+                    force=True,
+                )
+                messages.success(request, "Запрос выкопировки создан/обновлён.")
+            elif action == "upload":
+                uploaded = request.FILES.get("file")
+                if not uploaded:
+                    messages.error(request, "Выберите файл.")
+                else:
+                    mark_extract_received(self.object, user=request.user, uploaded_file=uploaded)
+                    messages.success(request, "Файл загружен, статус: получена.")
+            elif action == "mock":
+                generate_mock_contour(self.object, user=request.user)
+                messages.success(request, "Mock-контур сгенерирован.")
+            elif action == "import_geometry":
+                uploaded = request.FILES.get("geometry_file")
+                raw = request.POST.get("geometry_json") or ""
+                if uploaded:
+                    import_extract_geometry(
+                        self.object,
+                        raw=uploaded.read(),
+                        filename=uploaded.name,
+                        user=request.user,
+                    )
+                elif raw.strip():
+                    import_extract_geometry(self.object, raw=raw, filename="inline.geojson", user=request.user)
+                else:
+                    raise InvestExtractError("Укажите GeoJSON или файл")
+                messages.success(request, "Геометрия импортирована.")
+            elif action == "verify":
+                verify_extract(self.object, user=request.user, attach=True)
+                messages.success(request, "Выкопировка проверена и приложена к пакету.")
+            elif action == "attach":
+                attach_extract_to_package(self.object, user=request.user)
+                messages.success(request, "Выкопировка приложена к пакету.")
+            elif action == "recalc_mnp":
+                snap = refresh_extract_mnp_intersections(self.object)
+                messages.success(
+                    request,
+                    f"Пересечения с генпланом пересчитаны: зон {snap.get('count', 0)}"
+                    f", жёстких {snap.get('hard_count', 0)}.",
+                )
+            else:
+                messages.warning(request, "Неизвестное действие.")
+        except InvestExtractError as exc:
+            messages.error(request, str(exc))
+        return redirect(reverse("invest-extract-detail", args=[self.object.pk]))
+
+
+class InvestSiteExtractRequestView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        site = get_object_or_404(sites_for_membership(self.get_membership()), pk=kwargs["pk"])
+        extract = ensure_extract_for_site(site, reason="manual_site", user=request.user, force=True)
+        messages.success(request, "Запрос выкопировки создан.")
+        if extract:
+            return redirect(reverse("invest-extract-detail", args=[extract.pk]))
+        return redirect(reverse("invest-site-detail", args=[site.pk]))
+
+
+class InvestFgistpListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):
+    model = InvestFgistpRecord
+    template_name = "invest/fgistp_list.html"
+    context_object_name = "records"
+    page_title = "Сведения ФГИС ТП"
+    paginate_by = 50
+
+    def get_queryset(self):
+        membership = self.get_membership()
+        qs = (
+            InvestFgistpRecord.objects.filter(
+                subsystem=membership.subsystem, site__in=sites_for_membership(membership)
+            )
+            .select_related("site", "site__organization", "project", "requested_by")
+            .order_by("-updated_at")
+        )
+        status = (self.request.GET.get("status") or "").strip()
+        if status:
+            qs = qs.filter(status=status)
+        org = (self.request.GET.get("org") or "").strip()
+        if org.isdigit():
+            qs = qs.filter(site__organization_id=int(org))
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
+        ctx["status_choices"] = InvestFgistpRecord.Status.choices
+        ctx["filter_status"] = self.request.GET.get("status") or ""
+        ctx["filter_org"] = self.request.GET.get("org") or ""
+        from delayu.models import Organization
+
+        ctx["orgs"] = Organization.objects.filter(subsystem=membership.subsystem).order_by("name")
+        ctx["can_change"] = user_can(self.request.user, self.module_code, "change")
+        return ctx
+
+
+class InvestFgistpDetailView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, DetailView):
+    model = InvestFgistpRecord
+    template_name = "invest/fgistp_detail.html"
+    context_object_name = "record"
+    page_title = "Сведения ФГИС ТП"
+    http_method_names = ["get", "post", "head", "options"]
+
+    def get_queryset(self):
+        membership = self.get_membership()
+        return InvestFgistpRecord.objects.filter(
+            subsystem=membership.subsystem,
+            site__in=sites_for_membership(membership),
+        ).select_related("site", "site__organization", "project")
+
+    def get(self, request, *args, **kwargs):
+        """If record id missing but catalog document exists — open document card (demo UX)."""
+        try:
+            self.object = self.get_object()
+        except Http404:
+            membership = self.get_membership()
+            document = (
+                InvestFgistpDocument.objects.filter(
+                    Q(subsystem=membership.subsystem) | Q(subsystem__isnull=True),
+                    is_active=True,
+                    pk=kwargs.get("pk"),
+                ).first()
+            )
+            if document:
+                messages.info(
+                    request,
+                    "Открыт документ демо-каталога ФГИС ТП (это не карточка привязанных сведений).",
+                )
+                return redirect(reverse("invest-fgistp-document-detail", args=[document.pk]))
+            raise
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["can_change"] = user_can(self.request.user, self.module_code, "change")
+        geom = fgistp_geometry_for_map(self.object if self.object.geometry else None)
+        ctx["fgistp_map"] = geom
+        ctx["fgistp_map_json"] = json.dumps(geom, cls=DjangoJSONEncoder, ensure_ascii=False) if geom else "null"
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        if not user_can(request.user, self.module_code, "change"):
+            return _forbidden_with_message(request, "Недостаточно прав")
+        self.object = self.get_object()
+        action = (request.POST.get("action") or "").strip()
+        try:
+            if action == "request":
+                ensure_fgistp_for_site(
+                    self.object.site,
+                    reason="manual",
+                    user=request.user,
+                    project=self.object.project,
+                    force=True,
+                )
+                messages.success(request, "Запрос сведений ФГИС ТП создан/обновлён.")
+            elif action == "upload":
+                uploaded = request.FILES.get("file")
+                if not uploaded:
+                    messages.error(request, "Выберите файл.")
+                else:
+                    mark_fgistp_received(self.object, user=request.user, uploaded_file=uploaded)
+                    messages.success(request, "Файл загружен, статус: получены.")
+            elif action == "mock":
+                generate_mock_zones(self.object, user=request.user)
+                messages.success(request, "Mock-зоны ФГИС ТП сгенерированы.")
+            elif action == "import_geometry":
+                uploaded = request.FILES.get("geometry_file")
+                raw = request.POST.get("geometry_json") or ""
+                if uploaded:
+                    import_fgistp_geometry(
+                        self.object,
+                        raw=uploaded.read(),
+                        filename=uploaded.name,
+                        user=request.user,
+                    )
+                elif raw.strip():
+                    import_fgistp_geometry(self.object, raw=raw, filename="inline.geojson", user=request.user)
+                else:
+                    raise InvestFgistpError("Укажите GeoJSON или файл")
+                messages.success(request, "Геометрия импортирована.")
+            elif action == "verify":
+                verify_fgistp(self.object, user=request.user, attach=True)
+                messages.success(request, "Сведения проверены и приложены к пакету (ИСОГД).")
+            elif action == "attach":
+                attach_fgistp_to_package(self.object, user=request.user)
+                messages.success(request, "Сведения приложены к пакету.")
+            else:
+                messages.warning(request, "Неизвестное действие.")
+        except InvestFgistpError as exc:
+            messages.error(request, str(exc))
+        return redirect(reverse("invest-fgistp-detail", args=[self.object.pk]))
+
+
+class InvestSiteFgistpRequestView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        site = get_object_or_404(sites_for_membership(self.get_membership()), pk=kwargs["pk"])
+        record = ensure_fgistp_for_site(site, reason="manual_site", user=request.user, force=True)
+        messages.success(request, "Запрос сведений ФГИС ТП создан.")
+        if record:
+            return redirect(reverse("invest-fgistp-detail", args=[record.pk]))
+        return redirect(reverse("invest-site-detail", args=[site.pk]))
+
+
+class InvestFgistpSearchView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    template_name = "invest/fgistp_search.html"
+    page_title = "Поиск документов ФГИС ТП"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
+        q = (self.request.GET.get("q") or "").strip()
+        level = (self.request.GET.get("level") or "").strip()
+        site_id = (self.request.GET.get("site") or "").strip()
+        results = []
+        if q or self.request.GET.get("show_all"):
+            results = search_fgistp_documents(subsystem=membership.subsystem, q=q, level=level)
+        ctx["q"] = q
+        ctx["filter_level"] = level
+        ctx["level_choices"] = InvestFgistpDocument.Level.choices
+        ctx["results"] = results
+        ctx["can_change"] = user_can(self.request.user, self.module_code, "change")
+        ctx["sites"] = sites_for_membership(membership).select_related("organization").order_by("cadastral_number")
+        ctx["preselected_site"] = None
+        if site_id.isdigit():
+            ctx["preselected_site"] = sites_for_membership(membership).filter(pk=int(site_id)).first()
+        ctx["demo_catalog_notice"] = True
+        return ctx
+
+
+class InvestFgistpDocumentDetailView(InvestSubsystemMixin, ModulePermissionMixin, DetailView):
+    model = InvestFgistpDocument
+    template_name = "invest/fgistp_document_detail.html"
+    context_object_name = "document"
+    page_title = "Документ ФГИС ТП"
+
+    def get_queryset(self):
+        membership = self.get_membership()
+        return InvestFgistpDocument.objects.filter(
+            Q(subsystem=membership.subsystem) | Q(subsystem__isnull=True),
+            is_active=True,
+        )
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
+        ctx["can_change"] = user_can(self.request.user, self.module_code, "change")
+        ctx["sites"] = sites_for_membership(membership).select_related("organization").order_by("cadastral_number")
+        site_id = (self.request.GET.get("site") or "").strip()
+        ctx["preselected_site"] = None
+        if site_id.isdigit():
+            ctx["preselected_site"] = sites_for_membership(membership).filter(pk=int(site_id)).first()
+        geom = None
+        if self.object.geometry:
+            from delayu.services.invest_extracts import geojson_ring_to_yandex_coords
+
+            coords = geojson_ring_to_yandex_coords(self.object.geometry)
+            if len(coords) >= 3:
+                geom = {"coords": coords, "name": self.object.title}
+        ctx["doc_map"] = geom
+        ctx["doc_map_json"] = json.dumps(geom, cls=DjangoJSONEncoder, ensure_ascii=False) if geom else "null"
+        return ctx
+
+
+class InvestFgistpDocumentAttachView(InvestForbiddenResponseMixin, InvestSubsystemMixin, ModulePermissionMixin, View):
+    required_action = "change"
+
+    def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        document = get_object_or_404(
+            InvestFgistpDocument.objects.filter(
+                Q(subsystem=membership.subsystem) | Q(subsystem__isnull=True),
+                is_active=True,
+            ),
+            pk=kwargs["pk"],
+        )
+        site_id = (request.POST.get("site_id") or "").strip()
+        if not site_id.isdigit():
+            messages.error(request, "Выберите площадку для привязки.")
+            return redirect(reverse("invest-fgistp-document-detail", args=[document.pk]))
+        site = get_object_or_404(sites_for_membership(membership), pk=int(site_id))
+        try:
+            record = attach_fgistp_document(document=document, site=site, user=request.user)
+        except InvestFgistpError as exc:
+            messages.error(request, str(exc))
+            return redirect(f"{reverse('invest-fgistp-search')}?q={site.cadastral_number}&site={site.pk}")
+        messages.success(request, f"Документ привязан к площадке {site.cadastral_number}.")
+        return redirect(reverse("invest-fgistp-detail", args=[record.pk]))

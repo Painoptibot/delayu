@@ -7,7 +7,10 @@ from delayu.models import UserProfile
 
 
 def profile_state(user) -> dict:
-    profile, _ = UserProfile.objects.get_or_create(user=user)
+    profile, _ = UserProfile.objects.get_or_create(
+        user=user,
+        defaults={"is_platform_admin": False},
+    )
     state = dict(profile.onboarding_state or {})
     state.setdefault("completed", [])
     state.setdefault("current_step", 0)
@@ -15,7 +18,10 @@ def profile_state(user) -> dict:
 
 
 def save_state(user, state: dict) -> None:
-    profile, _ = UserProfile.objects.get_or_create(user=user)
+    profile, _ = UserProfile.objects.get_or_create(
+        user=user,
+        defaults={"is_platform_admin": False},
+    )
     profile.onboarding_state = state
     profile.save(update_fields=["onboarding_state", "updated_at"])
 

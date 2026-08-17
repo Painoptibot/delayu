@@ -48,15 +48,25 @@ def main() -> int:
         return 1
 
     with conn.cursor() as cur:
+        # PASSWORD cannot be a bind parameter in PostgreSQL DDL.
+        from psycopg import sql
+
         cur.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (DB_USER,))
         if not cur.fetchone():
             cur.execute(
-                f'CREATE ROLE "{DB_USER}" WITH LOGIN PASSWORD %s CREATEDB',
-                (DB_PASS,),
+                sql.SQL("CREATE ROLE {} WITH LOGIN PASSWORD {} CREATEDB").format(
+                    sql.Identifier(DB_USER),
+                    sql.Literal(DB_PASS),
+                )
             )
             print(f"Пользователь {DB_USER} создан.")
         else:
-            cur.execute(f'ALTER ROLE "{DB_USER}" WITH PASSWORD %s', (DB_PASS,))
+            cur.execute(
+                sql.SQL("ALTER ROLE {} WITH PASSWORD {}").format(
+                    sql.Identifier(DB_USER),
+                    sql.Literal(DB_PASS),
+                )
+            )
             print(f"Пользователь {DB_USER} обновлён.")
 
         cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (DB_NAME,))

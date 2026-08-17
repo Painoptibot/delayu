@@ -469,6 +469,8 @@ class InvestAutomationConfig(models.Model):
         "smev_live": False,
         "auto_package": True,
         "auto_smev": True,
+        "auto_extract": True,
+        "auto_fgistp": True,
         "auto_site_match": True,
         "auto_mo_tasks": True,
         "auto_tp_tasks": True,
@@ -477,6 +479,10 @@ class InvestAutomationConfig(models.Model):
         "rgis_connector": False,
         "isogd_connector": False,
         "sandbox": True,
+        "opendata_mock": True,
+        "opendata_live": False,
+        "auto_opendata_investor": False,
+        "auto_opendata_site": False,
     }
 
     subsystem = models.OneToOneField(
@@ -645,3 +651,409 @@ class InvestProjectComment(models.Model):
 
     def __str__(self):
         return f"{self.project.code}: {self.body[:40]}"
+
+
+class InvestExtract(models.Model):
+    """Выкопировка / ситуационный план по инвестплощадке."""
+
+    class ExtractType(models.TextChoices):
+        SITUATIONAL = "situational", "Ситуационный план"
+        KPT = "kpt", "Выписка КПТ"
+        BOUNDARY = "boundary", "Схема границ"
+        OTHER = "other", "Прочее"
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Черновик"
+        REQUESTED = "requested", "Запрошена"
+        RECEIVED = "received", "Получена"
+        VERIFIED = "verified", "Проверена"
+        ATTACHED = "attached", "Приложена"
+        REJECTED = "rejected", "Отклонена"
+        EXPIRED = "expired", "Просрочена"
+
+    class GeometrySource(models.TextChoices):
+        UPLOAD = "upload", "Файл"
+        IMPORT = "import", "Импорт GeoJSON/KML"
+        MOCK = "mock", "Mock-контур"
+        SMEV_DERIVED = "smev_derived", "Из СМЭВ"
+
+    subsystem = models.ForeignKey("Subsystem", on_delete=models.CASCADE, related_name="invest_extracts")
+    site = models.ForeignKey(InvestSite, on_delete=models.CASCADE, related_name="extracts")
+    project = models.ForeignKey(
+        InvestProject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="extracts",
+    )
+    extract_type = models.CharField(max_length=16, choices=ExtractType.choices, default=ExtractType.SITUATIONAL)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
+    cadastral_number = models.CharField("Кадастровый номер", max_length=64, blank=True)
+    title = models.CharField("Наименование", max_length=255, blank=True)
+    document_date = models.DateField("Дата документа", null=True, blank=True)
+    valid_until = models.DateField("Действует до", null=True, blank=True)
+    file = models.FileField(upload_to="invest/extracts/", blank=True)
+    document = models.ForeignKey(
+        "DocumentFile",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="invest_extracts",
+    )
+    geometry = models.JSONField("Геометрия (GeoJSON)", default=dict, blank=True)
+    geometry_source = models.CharField(
+        max_length=16, choices=GeometrySource.choices, blank=True, default=""
+    )
+    requested_at = models.DateTimeField(null=True, blank=True)
+    received_at = models.DateTimeField(null=True, blank=True)
+    verified_at = models.DateTimeField(null=True, blank=True)
+    sla_due_at = models.DateTimeField(null=True, blank=True)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    external_ids = models.JSONField(default=dict, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at", "-id"]
+        verbose_name = "Выкопировка"
+        verbose_name_plural = "Выкопировки"
+        indexes = [
+            models.Index(fields=["subsystem", "status"]),
+            models.Index(fields=["site", "status"]),
+        ]
+
+    def __str__(self):
+        return self.title or f"{self.get_extract_type_display()} · {self.cadastral_number or self.site_id}"
+
+    @property
+    def has_geometry(self) -> bool:
+        return bool(self.geometry and (self.geometry.get("type") or self.geometry.get("coordinates")))
+
+
+class InvestFgistpRecord(models.Model):
+    """Сведения ФГИС ТП по инвестплощадке (mock / импорт, без live WFS)."""
+
+    class RecordType(models.TextChoices):
+        ZONES = "zones", "Зоны ТП"
+        DOCUMENT = "document", "Документ ТП"
+        OBJECTS = "objects", "Объекты"
+        OTHER = "other", "Прочее"
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Черновик"
+        REQUESTED = "requested", "Запрошены"
+        RECEIVED = "received", "Получены"
+        VERIFIED = "verified", "Проверены"
+        ATTACHED = "attached", "Приложены"
+        REJECTED = "rejected", "Отклонены"
+        EXPIRED = "expired", "Просрочены"
+
+    class GeometrySource(models.TextChoices):
+        UPLOAD = "upload", "Файл"
+        IMPORT = "import", "Импорт GeoJSON/KML"
+        MOCK = "mock", "Mock-зоны"
+        SMEV_DERIVED = "smev_derived", "Из СМЭВ"
+
+    subsystem = models.ForeignKey("Subsystem", on_delete=models.CASCADE, related_name="invest_fgistp_records")
+    site = models.ForeignKey(InvestSite, on_delete=models.CASCADE, related_name="fgistp_records")
+    project = models.ForeignKey(
+        InvestProject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="fgistp_records",
+    )
+    record_type = models.CharField(max_length=16, choices=RecordType.choices, default=RecordType.ZONES)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
+    cadastral_number = models.CharField("Кадастровый номер", max_length=64, blank=True)
+    title = models.CharField("Наименование", max_length=255, blank=True)
+    document_date = models.DateField("Дата документа", null=True, blank=True)
+    valid_until = models.DateField("Действует до", null=True, blank=True)
+    file = models.FileField(upload_to="invest/fgistp/", blank=True)
+    document = models.ForeignKey(
+        "DocumentFile",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="invest_fgistp_records",
+    )
+    payload = models.JSONField("Сведения (JSON)", default=dict, blank=True)
+    geometry = models.JSONField("Геометрия (GeoJSON)", default=dict, blank=True)
+    geometry_source = models.CharField(
+        max_length=16, choices=GeometrySource.choices, blank=True, default=""
+    )
+    requested_at = models.DateTimeField(null=True, blank=True)
+    received_at = models.DateTimeField(null=True, blank=True)
+    verified_at = models.DateTimeField(null=True, blank=True)
+    sla_due_at = models.DateTimeField(null=True, blank=True)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    external_ids = models.JSONField(default=dict, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at", "-id"]
+        verbose_name = "Сведения ФГИС ТП"
+        verbose_name_plural = "Сведения ФГИС ТП"
+        indexes = [
+            models.Index(fields=["subsystem", "status"]),
+            models.Index(fields=["site", "status"]),
+        ]
+
+    def __str__(self):
+        return self.title or f"{self.get_record_type_display()} · {self.cadastral_number or self.site_id}"
+
+    @property
+    def has_geometry(self) -> bool:
+        return bool(self.geometry and (self.geometry.get("type") or self.geometry.get("coordinates")))
+
+
+class InvestFgistpDocument(models.Model):
+    """Демо-каталог документов ФГИС ТП для поиска по адресу / КН."""
+
+    class Level(models.TextChoices):
+        FEDERAL = "federal", "Федеральный"
+        REGIONAL = "regional", "Региональный"
+        MUNICIPAL = "municipal", "Муниципальный"
+
+    class DocType(models.TextChoices):
+        STP = "stp", "Схема ТП"
+        PZZ = "pzz", "ПЗЗ"
+        SCHEME = "scheme", "Схема"
+        OTHER = "other", "Прочее"
+
+    subsystem = models.ForeignKey(
+        "Subsystem",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="invest_fgistp_documents",
+    )
+    uin = models.CharField("UIN / внешний id", max_length=128)
+    title = models.CharField("Наименование", max_length=512)
+    level = models.CharField(max_length=16, choices=Level.choices, default=Level.REGIONAL)
+    doc_type = models.CharField(max_length=16, choices=DocType.choices, default=DocType.STP)
+    address_text = models.TextField("Адрес / территория", blank=True)
+    cadastral_numbers = models.JSONField("Кадастровые номера", default=list, blank=True)
+    municipality_name = models.CharField("МО", max_length=255, blank=True)
+    payload = models.JSONField(default=dict, blank=True)
+    geometry = models.JSONField(default=dict, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name = "Документ ФГИС ТП (каталог)"
+        verbose_name_plural = "Документы ФГИС ТП (каталог)"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["subsystem", "uin"],
+                name="uniq_invest_fgistp_doc_subsystem_uin",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["subsystem", "is_active"]),
+            models.Index(fields=["level"]),
+        ]
+
+    def __str__(self):
+        return self.title
+
+
+class InvestMnpScheme(models.Model):
+    """Локальная копия схемы ДТП МНП (Краснодарский край)."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Ожидает"
+        READY = "ready", "Готово"
+        ERROR = "error", "Ошибка"
+
+    uin = models.CharField("UIN", max_length=64, unique=True, db_index=True)
+    name = models.CharField("Наименование", max_length=512, blank=True)
+    extent_raw = models.CharField("Extent 3857 raw", max_length=255, blank=True)
+    extent_min_x = models.FloatField(null=True, blank=True)
+    extent_min_y = models.FloatField(null=True, blank=True)
+    extent_max_x = models.FloatField(null=True, blank=True)
+    extent_max_y = models.FloatField(null=True, blank=True)
+    feature_count = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    error_text = models.TextField(blank=True)
+    synced_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name", "uin"]
+        verbose_name = "Схема МНП (локальный store)"
+        verbose_name_plural = "Схемы МНП (локальный store)"
+
+    def __str__(self):
+        return self.name or self.uin
+
+
+class InvestMnpFeature(models.Model):
+    """Локальная GeoJSON-фича генплана МНП (EPSG:4326)."""
+
+    scheme = models.ForeignKey(
+        InvestMnpScheme,
+        on_delete=models.CASCADE,
+        related_name="features",
+    )
+    external_id = models.CharField(max_length=128, blank=True, db_index=True)
+    classid = models.CharField(max_length=32, db_index=True)
+    class_name = models.CharField(max_length=255, blank=True)
+    geom_type = models.CharField(max_length=8, blank=True)
+    properties = models.JSONField(default=dict, blank=True)
+    geometry = models.JSONField("Геометрия GeoJSON 4326", default=dict, blank=True)
+    bbox_min_lon = models.FloatField(db_index=True)
+    bbox_min_lat = models.FloatField(db_index=True)
+    bbox_max_lon = models.FloatField(db_index=True)
+    bbox_max_lat = models.FloatField(db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Объект МНП (локальный store)"
+        verbose_name_plural = "Объекты МНП (локальный store)"
+        indexes = [
+            models.Index(fields=["bbox_min_lon", "bbox_max_lon", "bbox_min_lat", "bbox_max_lat"]),
+            models.Index(fields=["scheme", "classid"]),
+        ]
+
+    def __str__(self):
+        return self.external_id or f"{self.classid}:{self.pk}"
+
+
+class InvestMnpSyncRun(models.Model):
+    """Журнал ручного sync локального store МНП."""
+
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    ok = models.BooleanField(default=False)
+    stats = models.JSONField(default=dict, blank=True)
+    error = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-started_at"]
+        verbose_name = "Sync МНП store"
+        verbose_name_plural = "Sync МНП store"
+
+    def __str__(self):
+        mark = "ok" if self.ok else "fail"
+        return f"MNP sync {self.started_at:%Y-%m-%d %H:%M} ({mark})"
+
+
+class InvestVerificationRun(models.Model):
+    """Журнал проверки по открытым официальным источникам (Wave 1 / P0)."""
+
+    class TargetType(models.TextChoices):
+        INVESTOR = "investor", "Инвестор"
+        PROJECT = "project", "Проект"
+        SITE = "site", "Площадка"
+
+    class Status(models.TextChoices):
+        QUEUED = "queued", "В очереди"
+        RUNNING = "running", "Выполняется"
+        DONE = "done", "Готово"
+        ERROR = "error", "Ошибка"
+
+    subsystem = models.ForeignKey(
+        "Subsystem", on_delete=models.CASCADE, related_name="invest_verification_runs"
+    )
+    target_type = models.CharField(max_length=16, choices=TargetType.choices)
+    investor = models.ForeignKey(
+        InvestInvestor,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="verification_runs",
+    )
+    project = models.ForeignKey(
+        InvestProject,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="verification_runs",
+    )
+    site = models.ForeignKey(
+        InvestSite,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="verification_runs",
+    )
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.QUEUED)
+    correlation_id = models.CharField(max_length=64, blank=True, db_index=True)
+    summary = models.JSONField(default=dict, blank=True)
+    error_text = models.TextField(blank=True)
+    triggered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Проверка открытых данных"
+        verbose_name_plural = "Проверки открытых данных"
+        indexes = [
+            models.Index(fields=["subsystem", "target_type", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"VerificationRun {self.target_type}:{self.pk} ({self.status})"
+
+
+class InvestVerificationSourceResult(models.Model):
+    """Результат одного источника внутри InvestVerificationRun."""
+
+    class Status(models.TextChoices):
+        OK = "ok", "OK"
+        EMPTY = "empty", "Пусто"
+        ERROR = "error", "Ошибка"
+        SKIPPED = "skipped", "Пропущено"
+
+    class Severity(models.TextChoices):
+        INFO = "info", "Инфо"
+        WARN = "warn", "Предупреждение"
+        HARD = "hard", "Жёсткий"
+
+    run = models.ForeignKey(
+        InvestVerificationRun, on_delete=models.CASCADE, related_name="source_results"
+    )
+    source_code = models.CharField(max_length=64, db_index=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.OK)
+    severity = models.CharField(max_length=16, choices=Severity.choices, default=Severity.INFO)
+    title = models.CharField(max_length=255, blank=True)
+    payload = models.JSONField(default=dict, blank=True)
+    external_url = models.URLField(blank=True, max_length=512)
+    error_text = models.TextField(blank=True)
+    checked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Результат источника"
+        verbose_name_plural = "Результаты источников"
+        indexes = [
+            models.Index(fields=["run", "source_code"]),
+        ]
+
+    def __str__(self):
+        return f"{self.source_code}:{self.status}"

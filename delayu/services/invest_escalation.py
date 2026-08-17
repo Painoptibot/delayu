@@ -110,7 +110,19 @@ def escalate_external_tasks(*, subsystem) -> int:
 def refresh_invest_sla(*, subsystem, user=None, request=None) -> dict:
     roadmap_count = escalate_overdue_roadmap(subsystem=subsystem)
     task_count = escalate_external_tasks(subsystem=subsystem)
-    payload = {"roadmap": roadmap_count, "external_tasks": task_count}
+    from delayu.services.invest_extracts import expire_extracts
+    from delayu.services.invest_fgistp import expire_fgistp_records
+
+    extract_stats = expire_extracts(subsystem=subsystem)
+    fgistp_stats = expire_fgistp_records(subsystem=subsystem)
+    payload = {
+        "roadmap": roadmap_count,
+        "external_tasks": task_count,
+        "extracts_expired": extract_stats.get("expired", 0),
+        "extracts_overdue": extract_stats.get("overdue_sla", 0),
+        "fgistp_expired": fgistp_stats.get("expired", 0),
+        "fgistp_overdue": fgistp_stats.get("overdue_sla", 0),
+    }
     audit.log_action(
         user,
         subsystem,

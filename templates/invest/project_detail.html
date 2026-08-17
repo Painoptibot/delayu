@@ -74,7 +74,7 @@
             {% if can_change_project %}
             <form class="d-inline ms-2" method="post" action="{% url 'invest-project-inn-check' project.pk %}">
               {% csrf_token %}
-              <button class="btn btn-sm btn-outline-primary" type="submit">Проверить ИНН</button>
+              <button class="btn btn-sm btn-outline-primary" type="submit">Проверить контрагента</button>
             </form>
             {% endif %}
           </dd>
@@ -118,6 +118,8 @@
         {% endif %}
       </div>
     </div>
+
+    {% include "invest/_opendata_results.html" %}
 
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">

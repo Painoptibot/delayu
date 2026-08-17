@@ -16,6 +16,8 @@ FLAG_LABELS = {
     "smev_live": "СМЭВ live",
     "auto_package": "Авто-пакет",
     "auto_smev": "Авто СМЭВ",
+    "auto_extract": "Авто выкопировки",
+    "auto_fgistp": "Авто ФГИС ТП",
     "auto_site_match": "Авто-подбор площадок",
     "auto_mo_tasks": "Авто-задачи МО",
     "auto_tp_tasks": "Авто-задачи ТП",
@@ -24,6 +26,10 @@ FLAG_LABELS = {
     "rgis_connector": "РГИС connector stub",
     "isogd_connector": "ИСОГД connector stub",
     "sandbox": "Sandbox",
+    "opendata_mock": "Открытые данные: mock",
+    "opendata_live": "Открытые данные: live HTTP",
+    "auto_opendata_investor": "Авто-проверка инвестора (opendata)",
+    "auto_opendata_site": "Авто-проверка площадки (opendata)",
 }
 
 

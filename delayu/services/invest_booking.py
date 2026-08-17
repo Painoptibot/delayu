@@ -48,6 +48,11 @@ def book_site(*, project, site, user, override_completeness_gate: bool = False) 
     link, _ = InvestProjectSite.objects.update_or_create(
         project=project, site=site, defaults={"role": InvestProjectSite.Role.BOOKED}
     )
+    from delayu.services.invest_extracts import ensure_extract_for_site
+    from delayu.services.invest_fgistp import ensure_fgistp_for_site
+
+    ensure_extract_for_site(site, reason="booking", user=user, project=project)
+    ensure_fgistp_for_site(site, reason="booking", user=user, project=project)
     return link
 
 

@@ -4,10 +4,12 @@ from delayu.models_invest import InvestPackage, InvestPackageItem, InvestPackage
 
 DEFAULT_CHECKLIST: list[tuple[str, str, bool]] = [
     ("egrn", "Выписка ЕГРН", True),
+    ("extract", "Выкопировка / ситуационный план", True),
     ("isogd", "Материалы ИСОГД", True),
     ("rgis", "Данные РГИС", True),
     ("oiv", "Запросы ОИВ", True),
     ("focus", "Контур.Фокус", True),
+    ("opendata", "Проверка открытых данных", True),
     ("anketa", "Анкета инвестора", True),
     ("measures", "Меры господдержки", True),
     ("protocol", "Протокол о намерениях", True),
@@ -17,21 +19,36 @@ DEFAULT_CHECKLIST: list[tuple[str, str, bool]] = [
 @transaction.atomic
 def ensure_package(project) -> InvestPackage:
     pkg = InvestPackage.objects.filter(project=project, is_active=True).first()
-    if pkg:
+    if not pkg:
+        pkg = InvestPackage.objects.create(project=project, is_active=True)
+        InvestPackageItem.objects.bulk_create(
+            [
+                InvestPackageItem(
+                    package=pkg,
+                    code=code,
+                    title=title,
+                    required=required,
+                    status=InvestPackageItem.Status.MISSING,
+                )
+                for code, title, required in DEFAULT_CHECKLIST
+            ]
+        )
         return pkg
-    pkg = InvestPackage.objects.create(project=project, is_active=True)
-    InvestPackageItem.objects.bulk_create(
-        [
-            InvestPackageItem(
-                package=pkg,
-                code=code,
-                title=title,
-                required=required,
-                status=InvestPackageItem.Status.MISSING,
-            )
-            for code, title, required in DEFAULT_CHECKLIST
-        ]
-    )
+    # Backfill checklist codes added after package creation (e.g. opendata).
+    existing = set(pkg.items.values_list("code", flat=True))
+    missing = [
+        InvestPackageItem(
+            package=pkg,
+            code=code,
+            title=title,
+            required=required,
+            status=InvestPackageItem.Status.MISSING,
+        )
+        for code, title, required in DEFAULT_CHECKLIST
+        if code not in existing
+    ]
+    if missing:
+        InvestPackageItem.objects.bulk_create(missing)
     return pkg
 
 

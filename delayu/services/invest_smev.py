@@ -418,6 +418,12 @@ def apply_smev_response(
     _maybe_stop_factor(site=site, encumbrances=site.encumbrances or "", actor=user)
     _mark_package_egrn(site=site)
 
+    from delayu.services.invest_extracts import maybe_request_extract_after_smev
+    from delayu.services.invest_fgistp import maybe_request_fgistp_after_smev
+
+    maybe_request_extract_after_smev(site=site, user=user)
+    maybe_request_fgistp_after_smev(site=site, user=user)
+
     request.status = InvestSmevRequest.Status.APPLIED
     request.response_payload = {
         **data,

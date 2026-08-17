@@ -6,9 +6,12 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-6">
   <div>
     <h4 class="mb-1">Карта инвестплощадок</h4>
-    <p class="text-muted mb-0">Площадки с координатами показаны на карте, остальные доступны в таблице.</p>
+    <p class="text-muted mb-0">Площадки с координатами, выкопировки, ФГИС ТП и слой генплана МНП.</p>
   </div>
-  <div class="d-flex gap-2">
+  <div class="d-flex gap-2 flex-wrap">
+    {% if mnp_config.viewer_url %}
+    <a class="btn btn-outline-secondary" target="_blank" rel="noopener" href="{{ mnp_config.viewer_url }}">Открыть в МНП</a>
+    {% endif %}
     <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">К списку</a>
   </div>
 </div>
@@ -18,15 +21,279 @@
 {% endif %}
 
 {% if has_coordinates and yandex_maps_api_key %}
+<style>
+  .invest-map-balloon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 300px;
+    margin: 0;
+    padding: 0;
+    /* Position only via JS applyElementOffset — do NOT use CSS transform
+       (it double-offsets and autoPan flies outside the viewport). */
+    font-family: inherit;
+    z-index: 1;
+  }
+  .invest-map-balloon__card {
+    position: relative;
+    background: #fff;
+    border: 1px solid rgba(47, 43, 61, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(47, 43, 61, 0.16);
+    overflow: hidden;
+  }
+  .invest-map-balloon__accent {
+    height: 4px;
+    background: linear-gradient(90deg, #28c76f, #00cfe8);
+  }
+  .invest-map-balloon__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(47, 43, 61, 0.06);
+    color: #6f6b7d;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .invest-map-balloon__close:hover {
+    background: rgba(47, 43, 61, 0.12);
+    color: #2f2b3d;
+  }
+  .invest-map-balloon__body {
+    padding: 14px 16px 12px;
+  }
+  .invest-map-balloon__eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8c879a;
+    margin-bottom: 4px;
+  }
+  .invest-map-balloon__title {
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.3;
+    color: #2f2b3d;
+    margin: 0 28px 6px 0;
+    word-break: break-word;
+  }
+  .invest-map-balloon__subtitle {
+    font-size: 13px;
+    color: #6f6b7d;
+    margin: 0 0 10px;
+    word-break: break-word;
+  }
+  .invest-map-balloon__meta {
+    display: grid;
+    gap: 6px;
+    margin: 0 0 12px;
+  }
+  .invest-map-balloon__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+  .invest-map-balloon__label {
+    color: #8c879a;
+    flex: 0 0 auto;
+  }
+  .invest-map-balloon__value {
+    color: #2f2b3d;
+    text-align: right;
+    word-break: break-word;
+  }
+  .invest-map-balloon__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 12px;
+  }
+  .invest-map-balloon__chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #f1f0f2;
+    color: #6f6b7d;
+  }
+  .invest-map-balloon__chip--ok {
+    background: rgba(40, 199, 111, 0.14);
+    color: #28c76f;
+  }
+  .invest-map-balloon__chip--info {
+    background: rgba(0, 207, 232, 0.14);
+    color: #00cfe8;
+  }
+  .invest-map-balloon__chip--warn {
+    background: rgba(255, 159, 67, 0.16);
+    color: #ff9f43;
+  }
+  .invest-map-balloon__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .invest-map-balloon__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none !important;
+    border: 1px solid transparent;
+  }
+  .invest-map-balloon__btn--primary {
+    background: #7367f0;
+    color: #fff !important;
+  }
+  .invest-map-balloon__btn--primary:hover {
+    background: #5e50ee;
+    color: #fff !important;
+  }
+  .invest-map-balloon__btn--ghost {
+    background: #fff;
+    border-color: rgba(47, 43, 61, 0.16);
+    color: #2f2b3d !important;
+  }
+  .invest-map-balloon__btn--ghost:hover {
+    background: #f8f7fa;
+  }
+  .invest-map-balloon__tail {
+    position: absolute;
+    left: 50%;
+    bottom: -8px;
+    width: 14px;
+    height: 14px;
+    margin-left: -7px;
+    background: #fff;
+    border-right: 1px solid rgba(47, 43, 61, 0.12);
+    border-bottom: 1px solid rgba(47, 43, 61, 0.12);
+    transform: rotate(45deg);
+  }
+  .invest-map-pin {
+    position: absolute;
+    left: -14px;
+    top: -38px;
+    width: 28px;
+    height: 38px;
+    cursor: pointer;
+  }
+  .invest-map-pin__head {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #5b8def;
+    border: 2.5px solid #fff;
+    box-shadow: 0 3px 10px rgba(47, 43, 61, 0.28);
+  }
+  .invest-map-pin__head::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    border-radius: 50%;
+    background: #fff;
+  }
+  .invest-map-pin__stem {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 3px;
+    height: 10px;
+    margin-left: -1.5px;
+    border-radius: 1px;
+    background: #5b8def;
+  }
+  .invest-map-pin--booked .invest-map-pin__head,
+  .invest-map-pin--booked .invest-map-pin__stem {
+    background: #00cfe8;
+  }
+  .invest-map-pin--selected .invest-map-pin__head,
+  .invest-map-pin--selected .invest-map-pin__stem {
+    background: #28c76f;
+  }
+  .ymaps-2-1-79-balloon,
+  .ymaps-2-1-79-balloon__layout,
+  .ymaps-2-1-79-balloon__content,
+  [class*="balloon__layout"],
+  [class*="balloon__content"] {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  [class*="balloon__tail"] {
+    display: none !important;
+  }
+</style>
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+      <strong class="me-1">Слои генплана:</strong>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" id="mnp-auto-toggle" checked>
+        <label class="form-check-label" for="mnp-auto-toggle">Авто (гибрид)</label>
+      </div>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" id="mnp-wms-toggle">
+        <label class="form-check-label" for="mnp-wms-toggle">Растр</label>
+      </div>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" id="mnp-wfs-toggle">
+        <label class="form-check-label" for="mnp-wfs-toggle">Вектор зон</label>
+      </div>
+      <span id="mnp-layer-status" class="small text-muted"></span>
+      {% if mnp_store.empty %}
+      <span class="small text-warning">Store пуст — выполните <code>python manage.py sync_mnp_kk</code></span>
+      {% else %}
+      <span class="small text-muted">
+        Схем {{ mnp_store.schemes }} · объектов {{ mnp_store.features }} · тайлов {{ mnp_store.tiles }}
+        {% if mnp_store.tiles == 0 %} · растр: <code>sync_mnp_kk --tiles-only</code>{% endif %}
+      </span>
+      {% endif %}
+    </div>
+    <div id="mnp-legend" class="d-flex flex-wrap gap-2 mt-2 small"></div>
+  </div>
+</div>
 <div class="card mb-4">
   <div class="card-body p-0">
-    <div id="invest-sites-map" style="height: 420px;"></div>
+    <div class="row g-0">
+      <div class="col-lg-8 col-xl-9">
+        <div id="invest-sites-map" style="height: 520px;"></div>
+      </div>
+      <div class="col-lg-4 col-xl-3 border-start">
+        <div id="map-annotation" class="p-3 h-100" style="min-height: 520px; max-height: 520px; overflow: auto;">
+          <div class="text-muted small" id="map-annotation-empty">
+            Нажмите на зону генплана, выкопировку или ограничение — подробности появятся здесь. Площадки открываются в балуне на карте.
+          </div>
+          <div id="map-annotation-body" class="d-none"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_maps_api_key|urlencode }}&lang=ru_RU"></script>
 <script>
   ymaps.ready(function initInvestSitesMap() {
     const points = {{ map_points_json|safe }};
+    const mnpCfg = {{ mnp_config_json|safe }};
     if (!points.length) {
       return;
     }
@@ -40,39 +307,281 @@
         .replace(/'/g, "&#39;");
     };
 
+    const statusEl = document.getElementById("mnp-layer-status");
+    const setStatus = function (text, isError) {
+      if (!statusEl) return;
+      statusEl.textContent = text || "";
+      statusEl.className = "small " + (isError ? "text-danger" : "text-muted");
+    };
+
+    const annEmpty = document.getElementById("map-annotation-empty");
+    const annBody = document.getElementById("map-annotation-body");
+
+    function showAnnotation(html) {
+      if (!annBody || !annEmpty) return;
+      annEmpty.classList.add("d-none");
+      annBody.classList.remove("d-none");
+      annBody.innerHTML = html;
+    }
+
+    function clearAnnotation() {
+      if (!annBody || !annEmpty) return;
+      annBody.classList.add("d-none");
+      annBody.innerHTML = "";
+      annEmpty.classList.remove("d-none");
+    }
+
+    function annotationRow(label, value) {
+      if (value === null || value === undefined || value === "") return "";
+      return '<div class="mb-2"><div class="text-muted small">' + escapeHtml(label)
+        + '</div><div>' + value + "</div></div>";
+    }
+
+    function showMnpAnnotation(props, styleLabel) {
+      const skip = { geometry: 1 };
+      const preferred = [
+        ["name", "Наименование"],
+        ["naim", "Наименование"],
+        ["NAME", "Наименование"],
+        ["classid", "Код зоны (classid)"],
+        ["stp_name", "Схема ДТП"],
+        ["uin", "UIN схемы"]
+      ];
+      const used = {};
+      let rows = "";
+      preferred.forEach(function (pair) {
+        const key = pair[0], label = pair[1];
+        if (props[key] !== undefined && props[key] !== null && props[key] !== "" && !used[label]) {
+          rows += annotationRow(label, escapeHtml(String(props[key])));
+          used[label] = 1;
+          used[key] = 1;
+        }
+      });
+      if (styleLabel) {
+        rows = annotationRow("Тип зоны", escapeHtml(styleLabel)) + rows;
+      }
+      Object.keys(props || {}).forEach(function (key) {
+        if (used[key] || skip[key]) return;
+        if (key === "name" || key === "naim" || key === "NAME" || key === "classid"
+          || key === "stp_name" || key === "uin") return;
+        const val = props[key];
+        if (val === null || val === undefined || val === "") return;
+        if (typeof val === "object") return;
+        rows += annotationRow(key, escapeHtml(String(val)));
+      });
+      const title = props.name || props.naim || props.NAME || styleLabel || "Объект генплана";
+      const html = [
+        '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">',
+        '<h6 class="mb-0">' + escapeHtml(title) + "</h6>",
+        '<button type="button" class="btn-close btn-sm" id="map-annotation-close" aria-label="Закрыть"></button>',
+        "</div>",
+        '<div class="small text-muted mb-3">Зона генплана МНП</div>',
+        rows || '<div class="text-muted small">Нет дополнительных атрибутов</div>'
+      ].join("");
+      showAnnotation(html);
+      const closeBtn = document.getElementById("map-annotation-close");
+      if (closeBtn) closeBtn.addEventListener("click", clearAnnotation);
+    }
+
+    function metaRow(label, value) {
+      if (!value) return "";
+      return '<div class="invest-map-balloon__row"><span class="invest-map-balloon__label">'
+        + escapeHtml(label) + '</span><span class="invest-map-balloon__value">'
+        + value + "</span></div>";
+    }
+
+    function siteBalloonHtml(point) {
+      const chips = [];
+      if (point.statusLabel) {
+        chips.push('<span class="invest-map-balloon__chip">' + escapeHtml(point.statusLabel) + "</span>");
+      }
+      if (point.bookingBadge) {
+        chips.push('<span class="invest-map-balloon__chip invest-map-balloon__chip--info">'
+          + escapeHtml(point.bookingBadge) + "</span>");
+      }
+      if (point.zoneCount) {
+        chips.push('<span class="invest-map-balloon__chip invest-map-balloon__chip--warn">Зон: '
+          + escapeHtml(String(point.zoneCount)) + "</span>");
+      }
+      if (point.hasExtract) {
+        chips.push('<span class="invest-map-balloon__chip invest-map-balloon__chip--ok">Выкопировка</span>');
+      }
+      if (point.hasFgistp) {
+        chips.push('<span class="invest-map-balloon__chip invest-map-balloon__chip--info">ФГИС ТП</span>');
+      }
+      const projectValue = point.projectUrl
+        ? '<a href="' + escapeHtml(point.projectUrl) + '">'
+          + escapeHtml(point.projectCode || point.projectName || "Проект") + "</a>"
+        : escapeHtml(point.projectCode || point.projectName || "");
+      const actions = [
+        '<a class="invest-map-balloon__btn invest-map-balloon__btn--primary" href="'
+          + escapeHtml(point.url) + '">Карточка площадки</a>'
+      ];
+      if (point.projectUrl) {
+        actions.push(
+          '<a class="invest-map-balloon__btn invest-map-balloon__btn--ghost" href="'
+            + escapeHtml(point.projectUrl) + '">Проект</a>'
+        );
+      }
+      return [
+        '<div class="invest-map-balloon__eyebrow">Инвестплощадка</div>',
+        '<div class="invest-map-balloon__title">' + escapeHtml(point.cadastral) + "</div>",
+        '<p class="invest-map-balloon__subtitle">' + escapeHtml(point.name || "Без названия") + "</p>",
+        chips.length ? '<div class="invest-map-balloon__chips">' + chips.join("") + "</div>" : "",
+        '<div class="invest-map-balloon__meta">',
+        metaRow("МО", escapeHtml(point.orgName || "")),
+        metaRow("Площадь, га", escapeHtml(point.areaHa || "")),
+        metaRow("Проект", projectValue),
+        point.smevRgisIntersections
+          ? metaRow("СМЭВ / РГИС", escapeHtml(String(point.smevRgisIntersections).slice(0, 120)))
+          : "",
+        "</div>",
+        '<div class="invest-map-balloon__actions">' + actions.join("") + "</div>"
+      ].join("");
+    }
+
+    const TAIL_GAP = 10;
+
+    const InvestIconLayout = ymaps.templateLayoutFactory.createClass(
+      '<div class="invest-map-pin$[properties.pinMod]">'
+        + '<div class="invest-map-pin__head"></div>'
+        + '<div class="invest-map-pin__stem"></div>'
+        + "</div>"
+    );
+
+    const InvestBalloonLayout = ymaps.templateLayoutFactory.createClass(
+      '<div class="invest-map-balloon">'
+        + '<div class="invest-map-balloon__card">'
+        + '<div class="invest-map-balloon__accent"></div>'
+        + '<button type="button" class="invest-map-balloon__close" aria-label="Закрыть">&times;</button>'
+        + '<div class="invest-map-balloon__body"></div>'
+        + "</div>"
+        + '<div class="invest-map-balloon__tail"></div>'
+        + "</div>",
+      {
+        build: function () {
+          InvestBalloonLayout.superclass.build.call(this);
+          this._element = this.getParentElement().querySelector(".invest-map-balloon");
+          const body = this._element && this._element.querySelector(".invest-map-balloon__body");
+          const props = this.getData().properties;
+          const html = (props && props.get) ? props.get("balloonHtml") : (props && props.balloonHtml);
+          if (body && html) {
+            body.innerHTML = html;
+          }
+          this.applyElementOffset();
+          this._onCloseClick = this.onCloseClick.bind(this);
+          const closeBtn = this._element && this._element.querySelector(".invest-map-balloon__close");
+          if (closeBtn) {
+            closeBtn.addEventListener("click", this._onCloseClick);
+          }
+          const self = this;
+          // After layout paints with real height, re-anchor and let autoPan use getShape.
+          window.setTimeout(function () {
+            self.applyElementOffset();
+            try {
+              self.events.fire("shapechange");
+            } catch (err) { /* ignore */ }
+            try {
+              if (map && map.balloon) {
+                map.balloon.autoPan();
+              }
+            } catch (err2) { /* ignore */ }
+          }, 0);
+        },
+        clear: function () {
+          const closeBtn = this._element && this._element.querySelector(".invest-map-balloon__close");
+          if (closeBtn && this._onCloseClick) {
+            closeBtn.removeEventListener("click", this._onCloseClick);
+          }
+          InvestBalloonLayout.superclass.clear.call(this);
+        },
+        onSublayoutSizeChange: function () {
+          InvestBalloonLayout.superclass.onSublayoutSizeChange.apply(this, arguments);
+          this.applyElementOffset();
+          try {
+            this.events.fire("shapechange");
+          } catch (err) { /* ignore */ }
+        },
+        applyElementOffset: function () {
+          if (!this._element) return;
+          // Origin (0,0) = placemark point. Shift card so tip sits above the pin.
+          const w = this._element.offsetWidth || 300;
+          const h = this._element.offsetHeight || 180;
+          this._element.style.left = (-w / 2) + "px";
+          this._element.style.top = (-h - TAIL_GAP) + "px";
+          this._element.style.marginLeft = "0";
+          this._element.style.marginTop = "0";
+          this._element.style.transform = "none";
+        },
+        onCloseClick: function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.events.fire("userclose");
+        },
+        getShape: function () {
+          if (!this._element) {
+            return InvestBalloonLayout.superclass.getShape.call(this);
+          }
+          const w = this._element.offsetWidth || 300;
+          const h = this._element.offsetHeight || 180;
+          return new ymaps.shape.Rectangle(new ymaps.geometry.pixel.Rectangle([
+            [-w / 2, -h - TAIL_GAP],
+            [w / 2, 0]
+          ]));
+        }
+      }
+    );
+
     const map = new ymaps.Map("invest-sites-map", {
       center: [points[0].lat, points[0].lon],
       zoom: 10,
       controls: ["zoomControl", "fullscreenControl"]
     });
+    const noBalloon = {
+      hasBalloon: false,
+      openBalloonOnClick: false,
+      hasHint: true
+    };
     const clusterer = new ymaps.Clusterer({
       preset: "islands#invertedBlueClusterIcons",
       groupByCoordinates: false,
-      clusterDisableClickZoom: false
+      clusterDisableClickZoom: false,
+      clusterHasBalloon: false,
+      geoObjectOpenBalloonOnClick: true,
+      openBalloonOnClick: true
     });
+
+    function pinModForPoint(point) {
+      const badge = String(point.bookingBadge || "").toLowerCase();
+      if (badge.indexOf("выбран") >= 0 || badge.indexOf("select") >= 0) {
+        return " invest-map-pin--selected";
+      }
+      if (badge) {
+        return " invest-map-pin--booked";
+      }
+      return "";
+    }
+
     const placemarks = points.map(function (point) {
-      const zones = (point.restrictionZones || []).map(function (zone) {
-        return "<li>" + escapeHtml(zone.name) + "</li>";
-      }).join("");
-      const badge = point.bookingBadge
-        ? '<div class="mt-1"><span class="badge bg-label-info">' + escapeHtml(point.bookingBadge) + "</span></div>"
-        : "";
-      const zonesHtml = zones
-        ? '<div class="mt-2"><strong>Ограничительные зоны</strong><ul class="mb-0 ps-3">' + zones + "</ul></div>"
-        : "";
-      const balloon = [
-        '<div class="small">',
-        '<div><a href="' + point.url + '"><strong>' + escapeHtml(point.cadastral) + "</strong></a></div>",
-        '<div>' + escapeHtml(point.name) + "</div>",
-        badge,
-        zonesHtml,
-        "</div>"
-      ].join("");
       return new ymaps.Placemark([point.lat, point.lon], {
-        balloonContent: balloon,
-        hintContent: point.cadastral
+        hintContent: point.cadastral + (point.name ? " — " + point.name : ""),
+        balloonHtml: siteBalloonHtml(point),
+        pinMod: pinModForPoint(point)
       }, {
-        preset: "islands#blueIcon"
+        iconLayout: InvestIconLayout,
+        iconShape: {
+          type: "Rectangle",
+          coordinates: [[-14, -38], [14, 0]]
+        },
+        hasBalloon: true,
+        openBalloonOnClick: true,
+        hideIconOnBalloonOpen: false,
+        balloonLayout: InvestBalloonLayout,
+        balloonPanelMaxMapArea: 0,
+        balloonOffset: [0, 0],
+        balloonShadow: false,
+        balloonAutoPan: true,
+        balloonAutoPanMargin: 48
       });
     });
     clusterer.add(placemarks);
@@ -83,21 +592,484 @@
         if (!zone.coords || zone.coords.length < 3) {
           return;
         }
-        map.geoObjects.add(new ymaps.Polygon([zone.coords], {
+        const zPoly = new ymaps.Polygon([zone.coords], {
           hintContent: zone.name
-        }, {
+        }, Object.assign({
           fillColor: "#ffb40033",
           strokeColor: "#ff9f43",
-          strokeWidth: 2
-        }));
+          strokeWidth: 2,
+          cursor: "pointer"
+        }, noBalloon));
+        zPoly.events.add("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try { map.balloon.close(); } catch (err) { /* ignore */ }
+          showAnnotation([
+            '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">',
+            '<h6 class="mb-0">Ограничительная зона</h6>',
+            '<button type="button" class="btn-close btn-sm" id="map-annotation-close" aria-label="Закрыть"></button>',
+            "</div>",
+            annotationRow("Наименование", escapeHtml(zone.name)),
+            annotationRow("Площадка", '<a href="' + escapeHtml(point.url) + '">' + escapeHtml(point.cadastral) + "</a>")
+          ].join(""));
+          const closeBtn = document.getElementById("map-annotation-close");
+          if (closeBtn) closeBtn.addEventListener("click", clearAnnotation);
+        });
+        map.geoObjects.add(zPoly);
       });
+      if (point.extractGeometry && point.extractGeometry.coords && point.extractGeometry.coords.length >= 3) {
+        const ePoly = new ymaps.Polygon([point.extractGeometry.coords], {
+          hintContent: point.extractGeometry.name || "Выкопировка"
+        }, Object.assign({
+          fillColor: "#28c76f33",
+          strokeColor: "#28c76f",
+          strokeWidth: 2,
+          cursor: "pointer"
+        }, noBalloon));
+        ePoly.events.add("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try { map.balloon.close(); } catch (err) { /* ignore */ }
+          showAnnotation([
+            '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">',
+            '<h6 class="mb-0">Выкопировка</h6>',
+            '<button type="button" class="btn-close btn-sm" id="map-annotation-close" aria-label="Закрыть"></button>',
+            "</div>",
+            annotationRow("Наименование", escapeHtml(point.extractGeometry.name || "Выкопировка")),
+            annotationRow("Площадка", '<a href="' + escapeHtml(point.url) + '">' + escapeHtml(point.cadastral) + "</a>")
+          ].join(""));
+          const closeBtn = document.getElementById("map-annotation-close");
+          if (closeBtn) closeBtn.addEventListener("click", clearAnnotation);
+        });
+        map.geoObjects.add(ePoly);
+      }
+      if (point.fgistpGeometry && point.fgistpGeometry.coords && point.fgistpGeometry.coords.length >= 3) {
+        const fPoly = new ymaps.Polygon([point.fgistpGeometry.coords], {
+          hintContent: point.fgistpGeometry.name || "ФГИС ТП"
+        }, Object.assign({
+          fillColor: "#00cfe833",
+          strokeColor: "#00cfe8",
+          strokeWidth: 2,
+          cursor: "pointer"
+        }, noBalloon));
+        fPoly.events.add("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try { map.balloon.close(); } catch (err) { /* ignore */ }
+          showAnnotation([
+            '<div class="d-flex justify-content-between align-items-start gap-2 mb-2">',
+            '<h6 class="mb-0">ФГИС ТП</h6>',
+            '<button type="button" class="btn-close btn-sm" id="map-annotation-close" aria-label="Закрыть"></button>',
+            "</div>",
+            annotationRow("Наименование", escapeHtml(point.fgistpGeometry.name || "ФГИС ТП")),
+            annotationRow("Площадка", '<a href="' + escapeHtml(point.url) + '">' + escapeHtml(point.cadastral) + "</a>")
+          ].join(""));
+          const closeBtn = document.getElementById("map-annotation-close");
+          if (closeBtn) closeBtn.addEventListener("click", clearAnnotation);
+        });
+        map.geoObjects.add(fPoly);
+      }
     });
 
     if (clusterer.getBounds()) {
       map.setBounds(clusterer.getBounds(), {checkZoomRange: true, zoomMargin: 24});
     }
+
+    // --- МНП генплан: hybrid viewport + styled GeoJSON ---
+    let rasterRect = null;
+    let rasterSeq = 0;
+    let wmsTimer = null;
+    const wfsCollection = new ymaps.GeoObjectCollection({}, {});
+    map.geoObjects.add(wfsCollection);
+    let wfsTimer = null;
+    let wfsAbort = null;
+    let suppressAuto = false;
+    const vectorZoom = Number(mnpCfg.vectorZoom || 11);
+    const detailZoom = Number(mnpCfg.detailZoom || 12);
+    const liveWms = mnpCfg.liveWms !== false;
+    const styleCfg = mnpCfg.styles || {};
+    const styleByClass = styleCfg.byClassid || {};
+    const styleDefault = styleCfg.default || { fill: "#7367f0", stroke: "#5e50ee", label: "Зона" };
+
+    // Yandex Maps accepts #RRGGBB or #RRGGBBAA — not CSS rgba().
+    function hexWithAlpha(hex, alpha01) {
+      const h = String(hex || "#7367f0").replace("#", "");
+      const full = h.length === 3 ? h.split("").map(function (c) { return c + c; }).join("") : h.slice(0, 6);
+      if (!/^[0-9a-fA-F]{6}$/.test(full)) {
+        return "#7367f099";
+      }
+      const a = Math.round(Math.max(0, Math.min(1, alpha01)) * 255);
+      const aa = a.toString(16).padStart(2, "0");
+      return "#" + full + aa;
+    }
+
+    function styleForFeature(props) {
+      const cid = String((props && (props.classid || props.classId)) || "");
+      const hit = styleByClass[cid] || styleDefault;
+      return {
+        label: hit.label || styleDefault.label,
+        fill: hexWithAlpha(hit.fill || styleDefault.fill, 0.55),
+        stroke: hit.stroke || styleDefault.stroke || "#333333"
+      };
+    }
+
+    function renderLegend() {
+      const box = document.getElementById("mnp-legend");
+      if (!box) return;
+      const items = (styleCfg.legend || []).slice(0, 9);
+      if (!items.length) {
+        box.innerHTML = "";
+        return;
+      }
+      box.innerHTML = '<span class="text-muted me-2">Легенда:</span>' + items.map(function (item) {
+        return '<span class="d-inline-flex align-items-center gap-1 me-2">'
+          + '<span style="width:14px;height:14px;border-radius:2px;background:'
+          + escapeHtml(item.fill) + ';border:1px solid ' + escapeHtml(item.stroke)
+          + ';"></span>' + escapeHtml(item.label) + "</span>";
+      }).join("");
+    }
+    renderLegend();
+
+    function storeEmptyHint() {
+      const st = mnpCfg.store || {};
+      if (st.empty) {
+        return "Локальный store МНП пуст — выполните sync_mnp_kk";
+      }
+      return "";
+    }
+
+    function mapBbox4326() {
+      const b = map.getBounds();
+      if (!b) return "";
+      const lat1 = b[0][0], lon1 = b[0][1], lat2 = b[1][0], lon2 = b[1][1];
+      return [
+        Math.min(lon1, lon2),
+        Math.min(lat1, lat2),
+        Math.max(lon1, lon2),
+        Math.max(lat1, lat2)
+      ].join(",");
+    }
+
+    function clearRaster() {
+      if (rasterRect) {
+        map.geoObjects.remove(rasterRect);
+        rasterRect = null;
+      }
+    }
+
+    function resolveRasterMode() {
+      const configured = String(mnpCfg.viewportMode || "auto").toLowerCase();
+      if (configured === "tiles" || configured === "vector" || configured === "detail" || configured === "live") {
+        return configured;
+      }
+      const z = map.getZoom() || 10;
+      // Крупный масштаб: детальный live GetMap с МНП (не растянутые тайлы z12).
+      if (z >= detailZoom && liveWms) {
+        return "detail";
+      }
+      if (z >= vectorZoom) {
+        return "vector";
+      }
+      return "tiles";
+    }
+
+    function loadRaster() {
+      const toggle = document.getElementById("mnp-wms-toggle");
+      if (!toggle || !toggle.checked) {
+        return;
+      }
+      const emptyHint = storeEmptyHint();
+      // При detail/live store может быть «пустым» по тайлам, но live всё равно работает.
+      const mode = resolveRasterMode();
+      if (emptyHint && mode !== "detail" && mode !== "live") {
+        clearRaster();
+        setStatus(emptyHint, true);
+        return;
+      }
+      const bounds = map.getBounds();
+      const bbox = mapBbox4326();
+      if (!bounds || !bbox) {
+        return;
+      }
+      const size = map.container.getSize();
+      // Больше пикселей = заметно детальнее на крупном zoom.
+      const maxPx = mode === "detail" || mode === "live" ? 1600 : 1280;
+      const width = Math.max(64, Math.min(Math.round(size[0] || 800), maxPx));
+      const height = Math.max(64, Math.min(Math.round(size[1] || 480), maxPx));
+      const base = mnpCfg.viewportProxy || mnpCfg.wmsProxy || "";
+      if (!base) {
+        setStatus("Растр МНП: нет URL viewport", true);
+        return;
+      }
+      // Квантуем bbox на клиенте — тот же ключ, что и серверный кэш.
+      const zNow = map.getZoom() || 10;
+      const decimals = zNow <= 11 ? 2 : (zNow <= 14 ? 3 : 4);
+      const bboxQ = bbox.split(",").map(function (p) {
+        return Number(p).toFixed(decimals);
+      }).join(",");
+      const seq = ++rasterSeq;
+      // Стабильный URL (без Date.now) — браузерный cache + серверный disk cache.
+      const url = base
+        + "?bbox=" + encodeURIComponent(bboxQ)
+        + "&width=" + width
+        + "&height=" + height
+        + "&mode=" + encodeURIComponent(mode)
+        + "&zoom=" + encodeURIComponent(String(map.getZoom() || 10))
+        + "&v=10";
+      setStatus("Загрузка растра МНП (" + mode + ", " + width + "×" + height + ")…");
+      const img = new Image();
+      img.onload = function () {
+        if (seq !== rasterSeq || !toggle.checked) {
+          return;
+        }
+        clearRaster();
+        const opacity = map.getZoom() >= vectorZoom ? 0.78 : 0.90;
+        rasterRect = new ymaps.Rectangle(bounds, {
+          hintContent: "Генплан МНП"
+        }, {
+          fillImageHref: url,
+          fillMethod: "stretch",
+          fillOpacity: opacity,
+          strokeWidth: 0,
+          zIndex: 40,
+          interactivityModel: "default#transparent"
+        });
+        map.geoObjects.add(rasterRect);
+        setStatus("Растр МНП · " + mode + " · z=" + map.getZoom());
+      };
+      img.onerror = function () {
+        if (seq !== rasterSeq) {
+          return;
+        }
+        clearRaster();
+        setStatus("Растр МНП: не удалось загрузить изображение", true);
+      };
+      img.src = url;
+    }
+
+    function scheduleRaster() {
+      if (wmsTimer) {
+        clearTimeout(wmsTimer);
+      }
+      wmsTimer = setTimeout(loadRaster, 350);
+    }
+
+    function ringToYandex(ring) {
+      return (ring || []).map(function (pair) {
+        return [Number(pair[1]), Number(pair[0])];
+      }).filter(function (p) {
+        return isFinite(p[0]) && isFinite(p[1]);
+      });
+    }
+
+    function addGeoJsonToCollection(geojson) {
+      wfsCollection.removeAll();
+      const features = (geojson && geojson.features) || [];
+      let added = 0;
+      features.forEach(function (feature) {
+        const geom = feature.geometry || {};
+        const props = feature.properties || {};
+        const st = styleForFeature(props);
+        const hint = props.name || props.NAME || props.naim || st.label || props.uin || "Генплан МНП";
+        const polyOpts = Object.assign({
+          fillColor: st.fill,
+          strokeColor: st.stroke,
+          strokeWidth: 2,
+          opacity: 1,
+          zIndex: 60,
+          cursor: "pointer"
+        }, noBalloon);
+
+        function addPoly(outer) {
+          if (outer.length < 3) return;
+          const poly = new ymaps.Polygon([outer], {
+            hintContent: hint
+          }, polyOpts);
+          poly.events.add("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            try { map.balloon.close(); } catch (err) { /* ignore */ }
+            showMnpAnnotation(props, st.label);
+          });
+          wfsCollection.add(poly);
+          added += 1;
+        }
+
+        if (geom.type === "Polygon") {
+          addPoly(ringToYandex((geom.coordinates || [])[0] || []));
+        } else if (geom.type === "MultiPolygon") {
+          (geom.coordinates || []).forEach(function (poly) {
+            addPoly(ringToYandex((poly || [])[0] || []));
+          });
+        } else if (geom.type === "LineString") {
+          const line = ringToYandex(geom.coordinates || []);
+          if (line.length >= 2) {
+            const pl = new ymaps.Polyline(line, { hintContent: hint }, Object.assign({
+              strokeColor: st.stroke,
+              strokeWidth: 4,
+              zIndex: 60,
+              cursor: "pointer"
+            }, noBalloon));
+            pl.events.add("click", function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              try { map.balloon.close(); } catch (err) { /* ignore */ }
+              showMnpAnnotation(props, st.label);
+            });
+            wfsCollection.add(pl);
+            added += 1;
+          }
+        }
+      });
+      return added;
+    }
+
+    function loadWfs() {
+      if (!document.getElementById("mnp-wfs-toggle").checked) {
+        return;
+      }
+      const emptyHint = storeEmptyHint();
+      if (emptyHint) {
+        wfsCollection.removeAll();
+        setStatus(emptyHint, true);
+        return;
+      }
+      const bbox = mapBbox4326();
+      if (!bbox) return;
+      setStatus("Загрузка вектора МНП…");
+      if (wfsAbort) {
+        wfsAbort.abort();
+      }
+      wfsAbort = new AbortController();
+      const base = mnpCfg.featuresProxy || mnpCfg.wfsProxy;
+      const url = base
+        + "?bbox=" + encodeURIComponent(bbox)
+        + "&max_features=" + encodeURIComponent(mnpCfg.maxFeatures || 800);
+      fetch(url, { signal: wfsAbort.signal, credentials: "same-origin" })
+        .then(function (resp) {
+          return resp.json().then(function (data) {
+            if (!resp.ok) {
+              throw new Error((data && data.error) || ("HTTP " + resp.status));
+            }
+            return data;
+          });
+        })
+        .then(function (data) {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          const n = addGeoJsonToCollection(data);
+          setStatus("Вектор МНП: " + n + " зон · z=" + map.getZoom() + " (цвет по типу)");
+        })
+        .catch(function (err) {
+          if (err && err.name === "AbortError") return;
+          wfsCollection.removeAll();
+          setStatus("Вектор МНП недоступен: " + (err.message || err), true);
+        });
+    }
+
+    function scheduleWfs() {
+      if (wfsTimer) clearTimeout(wfsTimer);
+      wfsTimer = setTimeout(loadWfs, 450);
+    }
+
+    const wmsToggle = document.getElementById("mnp-wms-toggle");
+    const wfsToggle = document.getElementById("mnp-wfs-toggle");
+    const autoToggle = document.getElementById("mnp-auto-toggle");
+
+    function applyHybridPolicy() {
+      if (!autoToggle || !autoToggle.checked || !mnpCfg.enabled) {
+        return;
+      }
+      suppressAuto = true;
+      try {
+        // Авто: растр + вектор вместе на любом zoom.
+        // На крупном zoom растр идёт mode=vector (резкий PNG из GeoJSON).
+        if (wmsToggle && !wmsToggle.checked) {
+          wmsToggle.checked = true;
+        }
+        if (wfsToggle && !wfsToggle.checked) {
+          wfsToggle.checked = true;
+        }
+        if (wmsToggle && wmsToggle.checked) {
+          scheduleRaster();
+        }
+        if (wfsToggle && wfsToggle.checked) {
+          scheduleWfs();
+        }
+      } finally {
+        suppressAuto = false;
+      }
+    }
+
+    if (autoToggle) {
+      autoToggle.addEventListener("change", function () {
+        if (autoToggle.checked) {
+          applyHybridPolicy();
+        }
+      });
+    }
+
+    if (wmsToggle) {
+      wmsToggle.addEventListener("change", function () {
+        if (suppressAuto) return;
+        if (!mnpCfg.enabled) {
+          setStatus("Слой МНП отключён в настройках", true);
+          wmsToggle.checked = false;
+          return;
+        }
+        if (autoToggle) autoToggle.checked = false;
+        if (wmsToggle.checked) {
+          scheduleRaster();
+        } else {
+          rasterSeq += 1;
+          clearRaster();
+          if (!wfsToggle.checked) setStatus("");
+        }
+      });
+    }
+
+    if (wfsToggle) {
+      wfsToggle.addEventListener("change", function () {
+        if (suppressAuto) return;
+        if (!mnpCfg.enabled) {
+          setStatus("Слой МНП отключён в настройках", true);
+          wfsToggle.checked = false;
+          return;
+        }
+        if (autoToggle) autoToggle.checked = false;
+        if (wfsToggle.checked) {
+          loadWfs();
+        } else {
+          wfsCollection.removeAll();
+          if (!wmsToggle.checked) setStatus("");
+        }
+      });
+    }
+
+    map.events.add("boundschange", function () {
+      if (autoToggle && autoToggle.checked) {
+        applyHybridPolicy();
+        return;
+      }
+      if (wmsToggle && wmsToggle.checked) {
+        scheduleRaster();
+      }
+      if (wfsToggle && wfsToggle.checked) {
+        scheduleWfs();
+      }
+    });
+
+    // Стартовый гибрид: сразу цветной вектор
+    setTimeout(function () {
+      if (autoToggle && autoToggle.checked && mnpCfg.enabled) {
+        applyHybridPolicy();
+      }
+    }, 500);
   });
 </script>
+{% else %}
+<script>const mnpCfg = {{ mnp_config_json|default:'{"enabled":false}'|safe }};</script>
 {% endif %}
 
 <div class="card">

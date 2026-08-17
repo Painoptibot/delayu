@@ -1,0 +1,54 @@
+# Проверочный экземпляр «ДелаЮ» (п. 11 «а» Правил, ПП РФ № 1236).
+# Запуск из корня комплекта:
+#   docker compose -f deploy/expert/docker-compose.yml up --build -d
+#
+# После старта: http://127.0.0.1:8000/auth/login/
+# Учётки экспертизы: uzhv_spec / uzhv_spec  ·  uzhv_admin / uzhv_admin
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: delayu_expert
+      POSTGRES_USER: delayu
+      POSTGRES_PASSWORD: delayu_expert
+    volumes:
+      - delayu_expert_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U delayu -d delayu_expert"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/expert/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: "true"
+      SECRET_KEY: delayu-expert-instance-no-drm-change-in-production
+      ALLOWED_HOSTS: "*"
+      CSRF_TRUSTED_ORIGINS: http://127.0.0.1:8000,http://localhost:8000
+      POSTGRES_DB: delayu_expert
+      POSTGRES_USER: delayu
+      POSTGRES_PASSWORD: delayu_expert
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      DELAYU_PLATFORM_VERSION: "1.0"
+      DELAYU_DEMO_BASE_URL: http://127.0.0.1:8000
+      DELAYU_PUBLIC_SITE_URL: http://127.0.0.1:8000
+      DELAYU_DEMO_MODE: "false"
+      DELAYU_SEED_ON_START: "1"
+      DELAYU_TELEGRAM_DEMO_LOG: "true"
+      EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
+    volumes:
+      - delayu_expert_media:/app/media
+
+volumes:
+  delayu_expert_pg:
+  delayu_expert_media:

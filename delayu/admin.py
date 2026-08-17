@@ -17,6 +17,9 @@ from .models import (
     InvestRoadmapItem,
     InvestSite,
     InvestSmevRequest,
+    InvestExtract,
+    InvestFgistpRecord,
+    InvestFgistpDocument,
     ModuleCatalog,
     Organization,
     Role,
@@ -149,6 +152,27 @@ class InvestSmevRequestAdmin(admin.ModelAdmin):
     list_display = ("site", "service", "status", "is_mock", "created_at", "finished_at")
     list_filter = ("service", "status", "is_mock", "subsystem")
     search_fields = ("site__cadastral_number",)
+
+
+@admin.register(InvestExtract)
+class InvestExtractAdmin(admin.ModelAdmin):
+    list_display = ("title", "site", "extract_type", "status", "sla_due_at", "updated_at")
+    list_filter = ("status", "extract_type", "geometry_source", "subsystem")
+    search_fields = ("cadastral_number", "title", "site__cadastral_number")
+
+
+@admin.register(InvestFgistpRecord)
+class InvestFgistpRecordAdmin(admin.ModelAdmin):
+    list_display = ("title", "site", "record_type", "status", "sla_due_at", "updated_at")
+    list_filter = ("status", "record_type", "geometry_source", "subsystem")
+    search_fields = ("cadastral_number", "title", "site__cadastral_number")
+
+
+@admin.register(InvestFgistpDocument)
+class InvestFgistpDocumentAdmin(admin.ModelAdmin):
+    list_display = ("title", "uin", "level", "doc_type", "municipality_name", "is_active", "subsystem")
+    list_filter = ("level", "doc_type", "is_active", "subsystem")
+    search_fields = ("title", "uin", "address_text", "municipality_name")
 
 
 @admin.register(InvestAutomationConfig)

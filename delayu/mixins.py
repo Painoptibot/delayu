@@ -58,6 +58,8 @@ class ModulePermissionMixin(LoginRequiredMixin, PlatformLayoutMixin):
     required_action = "view"
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         if not user_can(request.user, self.module_code, self.required_action):
             from django.core.exceptions import PermissionDenied
 

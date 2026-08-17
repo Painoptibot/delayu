@@ -1,0 +1,107 @@
+{% extends layout_path %}
+{% block title %}{{ document.title }} — ФГИС ТП{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ document.title }}</h4>
+    <p class="text-body-secondary mb-0">
+      Документ демо-каталога · UIN {{ document.uin }} · {{ document.get_level_display }}
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'invest-fgistp-search' %}{% if preselected_site %}?site={{ preselected_site.pk }}{% endif %}">К поиску</a>
+    <a class="btn btn-outline-secondary" href="{% url 'invest-fgistp' %}">К реестру сведений</a>
+  </div>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="alert alert-warning">Это карточка документа каталога. После «Привязать» появится запись в реестре сведений с другим id.</div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card mb-4">
+      <div class="card-header"><h5 class="mb-0">Реквизиты</h5></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5">Тип</dt><dd class="col-sm-7">{{ document.get_doc_type_display }}</dd>
+          <dt class="col-sm-5">Уровень</dt><dd class="col-sm-7">{{ document.get_level_display }}</dd>
+          <dt class="col-sm-5">МО</dt><dd class="col-sm-7">{{ document.municipality_name|default:"—" }}</dd>
+          <dt class="col-sm-5">Адрес / территория</dt><dd class="col-sm-7">{{ document.address_text|default:"—" }}</dd>
+          <dt class="col-sm-5">Кадастровые номера</dt>
+          <dd class="col-sm-7">
+            {% for kn in document.cadastral_numbers %}<div><code>{{ kn }}</code></div>{% empty %}—{% endfor %}
+          </dd>
+        </dl>
+        {% if document.payload.zones %}
+        <hr>
+        <h6>Зоны</h6>
+        <ul class="mb-0">
+          {% for zone in document.payload.zones %}
+          <li>{{ zone.name }}{% if zone.code %} ({{ zone.code }}){% endif %}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if can_change %}
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0">Привязать к площадке</h5></div>
+      <div class="card-body">
+        <form method="post" action="{% url 'invest-fgistp-document-attach' document.pk %}">
+          {% csrf_token %}
+          {% if preselected_site %}
+          <input type="hidden" name="site_id" value="{{ preselected_site.pk }}">
+          <p class="mb-3">Площадка: <strong>{{ preselected_site.cadastral_number }}</strong> — {{ preselected_site.name }}</p>
+          {% else %}
+          <label class="form-label">Площадка</label>
+          <select class="form-select mb-3" name="site_id" required>
+            <option value="">Выберите…</option>
+            {% for site in sites %}
+            <option value="{{ site.pk }}">{{ site.cadastral_number }} — {{ site.name }}</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+          <button class="btn btn-primary" type="submit">Привязать</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="col-lg-7">
+    {% if doc_map and yandex_maps_api_key %}
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0">Контур документа</h5></div>
+      <div class="card-body p-0">
+        <div id="invest-fgistp-doc-map" style="height: 360px;"></div>
+      </div>
+    </div>
+    <script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_maps_api_key|urlencode }}&lang=ru_RU"></script>
+    <script>
+      ymaps.ready(function () {
+        const geom = {{ doc_map_json|safe }};
+        const map = new ymaps.Map("invest-fgistp-doc-map", {
+          center: geom.coords[0], zoom: 14, controls: ["zoomControl", "fullscreenControl"]
+        });
+        const poly = new ymaps.Polygon([geom.coords], { hintContent: geom.name }, {
+          fillColor: "#00cfe833", strokeColor: "#00cfe8", strokeWidth: 2
+        });
+        map.geoObjects.add(poly);
+        map.setBounds(poly.geometry.getBounds(), { checkZoomRange: true, zoomMargin: 24 });
+      });
+    </script>
+    {% elif doc_map %}
+    <div class="alert alert-warning">Укажите YANDEX_MAPS_API_KEY</div>
+    {% else %}
+    <div class="alert alert-secondary">У документа нет геометрии в каталоге.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

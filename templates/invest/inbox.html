@@ -107,6 +107,43 @@
         </div>
       </div>
     </div>
+  <div class="row g-4 mt-1">
+    <div class="col-lg-6">
+      <div class="card invest-dash__panel">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Просроченные выкопировки</h5>
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'invest-extracts' %}?status=requested">Реестр</a>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for item in overdue_extracts %}
+          <a class="list-group-item list-group-item-action invest-inbox-card invest-dash__inbox-card" href="{% url 'invest-extract-detail' item.pk %}">
+            <div class="fw-medium">{{ item.title|default:item.site.cadastral_number }}</div>
+            <div class="small text-muted invest-inbox-meta">{{ item.site.organization }} · SLA {{ item.sla_due_at|date:"d.m.Y H:i" }}</div>
+          </a>
+          {% empty %}
+          <div class="list-group-item text-muted">Просроченных выкопировок нет.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card invest-dash__panel">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Просроченные сведения ФГИС ТП</h5>
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'invest-fgistp' %}?status=requested">Реестр</a>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for item in overdue_fgistp %}
+          <a class="list-group-item list-group-item-action invest-inbox-card invest-dash__inbox-card" href="{% url 'invest-fgistp-detail' item.pk %}">
+            <div class="fw-medium">{{ item.title|default:item.site.cadastral_number }}</div>
+            <div class="small text-muted invest-inbox-meta">{{ item.site.organization }} · SLA {{ item.sla_due_at|date:"d.m.Y H:i" }}</div>
+          </a>
+          {% empty %}
+          <div class="list-group-item text-muted">Просроченных сведений ФГИС ТП нет.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

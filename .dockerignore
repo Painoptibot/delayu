@@ -1,0 +1,24 @@
+# Docker build context (проверочный экземпляр / общий образ)
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.env
+.env.local
+.db-credentials
+media
+staticfiles
+dist
+build
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+.idea
+.vscode
+.superpowers
+node_modules
+docs/tz-source
+*.log

@@ -1,0 +1,73 @@
+{% extends layout_path %}
+{% block title %}Выкопировки — ДелаЮ{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">Выкопировки</h4>
+    <p class="text-body-secondary mb-0">Запросы, файлы и контуры площадок инвестконтура.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'invest-sites' %}">Площадки</a>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form class="row g-3 align-items-end" method="get">
+      <div class="col-md-3">
+        <label class="form-label">Статус</label>
+        <select class="form-select" name="status">
+          <option value="">Все</option>
+          {% for value, label in status_choices %}
+          <option value="{{ value }}"{% if filter_status == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">МО</label>
+        <select class="form-select" name="org">
+          <option value="">Все</option>
+          {% for org in orgs %}
+          <option value="{{ org.pk }}"{% if filter_org == org.pk|stringformat:"s" %} selected{% endif %}>{{ org.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-primary" type="submit">Фильтр</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Обновлено</th>
+          <th>Площадка</th>
+          <th>Тип</th>
+          <th>Статус</th>
+          <th>SLA</th>
+          <th>Геометрия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in extracts %}
+        <tr>
+          <td>{{ item.updated_at|date:"d.m.Y H:i" }}</td>
+          <td>
+            <a href="{% url 'invest-extract-detail' item.pk %}">{{ item.cadastral_number|default:item.site.cadastral_number }}</a>
+            <div class="small text-muted">{{ item.site.organization }}</div>
+          </td>
+          <td>{{ item.get_extract_type_display }}</td>
+          <td>{{ item.get_status_display }}</td>
+          <td>{% if item.sla_due_at %}{{ item.sla_due_at|date:"d.m.Y" }}{% else %}—{% endif %}</td>
+          <td>{% if item.has_geometry %}{{ item.get_geometry_source_display|default:"есть" }}{% else %}—{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-muted text-center py-4">Выкопировок пока нет.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
