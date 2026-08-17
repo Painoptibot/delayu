@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f3d2e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Топливный пропуск — где заправиться</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #10241c;
+      --muted: #5a6f65;
+      --line: #d7e3dc;
+      --sheet: #f7faf8;
+      --sheet-2: #ffffff;
+      --ok: #1a9a55;
+      --ok-bg: #e6f7ee;
+      --low: #c47a12;
+      --low-bg: #fff4e5;
+      --empty: #c43c3c;
+      --empty-bg: #fdecec;
+      --unk: #6b7c74;
+      --unk-bg: #eef2f0;
+      --brand: #0f3d2e;
+      --brand-2: #1f6b4f;
+      --accent: #e8f5ef;
+      --shadow: 0 -8px 32px rgba(16, 36, 28, .14);
+      --radius: 18px;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; font-family: Manrope, system-ui, sans-serif; color: var(--ink); background: #dfe8e3; }
+    #map { position: absolute; inset: 0; }
+    .topbar {
+      position: absolute; left: 12px; right: 12px; top: max(10px, env(safe-area-inset-top));
+      z-index: 5; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .brand {
+      pointer-events: auto; align-self: flex-start;
+      background: rgba(15, 61, 46, .92); color: #f3faf6; backdrop-filter: blur(8px);
+      border-radius: 14px; padding: 10px 14px; box-shadow: 0 8px 24px rgba(15,61,46,.25);
+    }
+    .brand b { display: block; font-size: 14px; letter-spacing: -.01em; }
+    .brand span { display: block; font-size: 11px; opacity: .82; font-weight: 500; margin-top: 2px; }
+    .filters {
+      pointer-events: auto; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+      padding: 2px;
+    }
+    .filters.network-filters { margin-top: -2px; }
+    .filters.network-filters .pill { font-size: 12px; padding: 8px 12px; font-weight: 700; }
+    .filters::-webkit-scrollbar { display: none; }
+    .pill {
+      flex: 0 0 auto; border: 0; border-radius: 999px; padding: 9px 14px;
+      font: 700 13px Manrope, system-ui, sans-serif; background: #fff; color: var(--ink);
+      box-shadow: 0 4px 14px rgba(16,36,28,.12); cursor: pointer;
+    }
+    .pill.active { background: var(--brand); color: #fff; }
+    .pill.ghost { background: rgba(255,255,255,.92); font-weight: 600; color: var(--muted); }
+    .search {
+      pointer-events: auto; display: flex; gap: 8px;
+    }
+    .search input {
+      flex: 1; border: 0; border-radius: 14px; padding: 11px 14px;
+      font: 600 14px Manrope, system-ui, sans-serif; background: #fff; color: var(--ink);
+      box-shadow: 0 4px 14px rgba(16,36,28,.12); outline: none;
+    }
+    .fab {
+      position: absolute; right: 14px; bottom: calc(210px + var(--safe-b)); z-index: 4;
+      width: 48px; height: 48px; border-radius: 50%; border: 0; background: #fff; color: var(--brand);
+      box-shadow: 0 8px 22px rgba(16,36,28,.18); font-size: 20px; cursor: pointer;
+    }
+    .sheet {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+      background: var(--sheet); border-radius: 22px 22px 0 0; box-shadow: var(--shadow);
+      max-height: min(72vh, 640px); display: flex; flex-direction: column;
+      padding-bottom: var(--safe-b); transition: max-height .25s ease;
+    }
+    .sheet.collapsed { max-height: 168px; }
+    .sheet.navigating { max-height: 230px; }
+    .handle { width: 42px; height: 4px; border-radius: 99px; background: #c9d6cf; margin: 10px auto 6px; }
+    .sheet-head { padding: 0 16px 10px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+    .sheet-head h1 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+    .sheet-head p { margin: 4px 0 0; font-size: 12px; color: var(--muted); font-weight: 500; }
+    .toggle-sheet {
+      border: 0; background: var(--accent); color: var(--brand-2); border-radius: 999px;
+      padding: 8px 12px; font: 700 12px Manrope, system-ui, sans-serif; cursor: pointer; white-space: nowrap;
+    }
+    .banner {
+      margin: 0 16px 10px; padding: 10px 12px; border-radius: 12px;
+      background: #fff7e8; color: #7a4e0d; font-size: 12px; font-weight: 600; display: none;
+    }
+    .banner strong { display: block; margin-bottom: 2px; color: #5c3a08; }
+    .list { overflow: auto; padding: 0 12px 14px; flex: 1; }
+    .card {
+      background: var(--sheet-2); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 12px 12px 10px; margin-bottom: 8px; cursor: pointer;
+    }
+    .card.selected { border-color: var(--brand-2); box-shadow: 0 0 0 2px rgba(31,107,79,.15); }
+    .card-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .card h2 { margin: 0; font-size: 15px; line-height: 1.25; }
+    .card .addr { margin: 3px 0 0; font-size: 12px; color: var(--muted); font-weight: 500; }
+    .badge {
+      flex: 0 0 auto; font-size: 11px; font-weight: 800; letter-spacing: .02em;
+      padding: 5px 8px; border-radius: 999px; text-transform: uppercase;
+    }
+    .badge.ok { background: var(--ok-bg); color: var(--ok); }
+    .badge.low { background: var(--low-bg); color: var(--low); }
+    .badge.empty { background: var(--empty-bg); color: var(--empty); }
+    .badge.unknown { background: var(--unk-bg); color: var(--unk); }
+    .meta-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .meta-chip {
+      font-size: 11px; font-weight: 600; color: var(--muted); background: #eef4f0;
+      border-radius: 8px; padding: 4px 7px;
+    }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .btn {
+      border: 0; border-radius: 12px; padding: 11px 12px; font: 700 13px Manrope, system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .btn.primary { background: var(--brand); color: #fff; }
+    .btn.secondary { background: var(--accent); color: var(--brand-2); }
+    .detail { display: none; padding: 0 16px 16px; }
+    .detail.open { display: block; }
+    .detail .grades { display: flex; gap: 6px; margin: 10px 0; }
+    .gchip {
+      flex: 1; text-align: center; border-radius: 12px; padding: 10px 6px; background: var(--unk-bg);
+    }
+    .gchip b { display: block; font-size: 12px; }
+    .gchip span { display: block; font-size: 14px; font-weight: 800; margin-top: 2px; }
+    .gchip.ok { background: var(--ok-bg); color: var(--ok); }
+    .gchip.low { background: var(--low-bg); color: var(--low); }
+    .gchip.empty { background: var(--empty-bg); color: var(--empty); }
+    .gchip.unknown { color: var(--unk); }
+    .quick {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px;
+    }
+    .quick button {
+      border: 0; border-radius: 12px; padding: 14px 8px; font: 800 13px Manrope, system-ui, sans-serif; cursor: pointer;
+    }
+    .quick .ok { background: var(--ok-bg); color: var(--ok); }
+    .quick .low { background: var(--low-bg); color: var(--low); }
+    .quick .empty { background: var(--empty-bg); color: var(--empty); }
+    .hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; font-weight: 500; line-height: 1.4; }
+    .empty-state { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 14px; font-weight: 600; }
+    .toast {
+      position: absolute; left: 50%; bottom: calc(190px + var(--safe-b)); transform: translateX(-50%);
+      z-index: 20; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 13px; font-weight: 700; opacity: 0; pointer-events: none; transition: opacity .2s;
+      max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .toast.show { opacity: 1; }
+    .legend {
+      position: absolute; left: 12px; bottom: calc(178px + var(--safe-b)); z-index: 4;
+      background: rgba(255,255,255,.94); border-radius: 12px; padding: 8px 10px;
+      font-size: 11px; font-weight: 600; color: var(--muted); box-shadow: 0 4px 14px rgba(16,36,28,.12);
+      display: flex; gap: 10px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; vertical-align: middle; }
+    .dot.ok { background: var(--ok); } .dot.low { background: var(--low); }
+    .dot.empty { background: var(--empty); } .dot.unknown { background: var(--unk); }
+    .route-panel { display: none; padding: 0 16px 14px; }
+    .route-panel.open { display: block; }
+    .route-eta {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    }
+    .route-eta strong { font-size: 22px; letter-spacing: -.03em; }
+    .route-eta span { font-size: 13px; color: var(--muted); font-weight: 600; }
+    .steps { margin: 8px 0 0; padding: 0; list-style: none; }
+    .steps li {
+      font-size: 13px; font-weight: 600; color: var(--ink); padding: 6px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .steps li:last-child { border-bottom: 0; }
+    .btn:disabled { opacity: .55; }
+    .grade-bar { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 10px; }
+    .grade-cell {
+      text-align: center; border-radius: 10px; padding: 6px 4px; font-size: 11px; font-weight: 700;
+      background: var(--unk-bg); color: var(--unk);
+    }
+    .grade-cell.ok { background: var(--ok-bg); color: var(--ok); }
+    .grade-cell.low { background: var(--low-bg); color: var(--low); }
+    .grade-cell.empty { background: var(--empty-bg); color: var(--empty); }
+    .grade-cell b { display: block; font-size: 10px; font-weight: 600; opacity: .8; }
+    .info-table {
+      width: 100%; border-collapse: separate; border-spacing: 0; margin: 10px 0 4px;
+      background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+    }
+    .info-table th, .info-table td {
+      padding: 9px 10px; text-align: left; font-size: 12px; border-bottom: 1px solid var(--line);
+    }
+    .info-table th { background: #eef4f0; color: var(--muted); font-weight: 700; font-size: 11px; letter-spacing: .02em; text-transform: uppercase; }
+    .info-table tr:last-child td { border-bottom: 0; }
+    .info-table td.status { font-weight: 800; }
+    .info-table td.status.ok { color: var(--ok); }
+    .info-table td.status.low { color: var(--low); }
+    .info-table td.status.empty { color: var(--empty); }
+    .kv { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+    .kv-item {
+      background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+    }
+    .kv-item small { display: block; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+    .kv-item b { display: block; margin-top: 3px; font-size: 14px; }
+    .report-extra { margin-top: 12px; }
+    .report-extra summary {
+      cursor: pointer; font-size: 13px; font-weight: 700; color: var(--brand-2); list-style: none;
+    }
+    .report-extra summary::-webkit-details-marker { display: none; }
+    .form-grid { display: grid; gap: 8px; margin-top: 10px; }
+    .form-grid label { display: block; font-size: 11px; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+    .form-grid input, .form-grid select, .form-grid textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px;
+      font: 600 13px Manrope, system-ui, sans-serif; background: #fff; color: var(--ink);
+    }
+    .card { position: relative; }
+    .card .grade-bar { margin-top: 8px; }
+    .status-bar {
+      position: absolute; left: 12px; right: 12px; top: max(8px, env(safe-area-inset-top));
+      z-index: 8; background: rgba(255,255,255,.96); border-radius: 14px;
+      box-shadow: 0 6px 20px rgba(16,36,28,.14); padding: 8px 10px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .status-bar button {
+      margin-left: auto; border: 0; background: var(--accent); color: var(--brand-2);
+      border-radius: 999px; padding: 7px 10px; font: 700 11px Manrope, system-ui, sans-serif; cursor: pointer;
+    }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); flex: 0 0 auto; }
+    .status-dot.off { background: var(--empty); }
+    .status-dot.stale { background: var(--low); }
+    .status-bar .st { font-size: 12px; font-weight: 800; line-height: 1.2; }
+    .status-bar .su { font-size: 10px; color: var(--muted); font-weight: 600; }
+    .topbar { top: calc(58px + env(safe-area-inset-top)); }
+    .sheet { bottom: calc(62px + var(--safe-b)); }
+    .tabbar {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 10;
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      background: #fff; border-top: 1px solid var(--line);
+      padding: 6px 8px calc(8px + var(--safe-b));
+    }
+    .tabbar button {
+      border: 0; background: transparent; color: var(--muted);
+      font: 700 11px Manrope, system-ui, sans-serif; padding: 8px 4px; cursor: pointer;
+    }
+    .tabbar button.active { color: var(--brand); }
+    .screen-page {
+      display: none; position: absolute; inset: 0 0 calc(62px + var(--safe-b)) 0;
+      background: var(--sheet); z-index: 7; overflow: auto; padding: 72px 16px 24px;
+    }
+    .screen-page.open { display: block; }
+    .pin-card {
+      display: none; position: absolute; left: 12px; right: 12px; z-index: 9;
+      bottom: calc(210px + 62px + var(--safe-b));
+      background: #fff; border-radius: 20px; padding: 14px;
+      box-shadow: 0 18px 40px rgba(16,36,28,.24);
+    }
+    .pin-card.open { display: block; }
+    .pin-card h3 { margin: 0; font-size: 16px; }
+    .pin-card .addr { margin: 4px 0 8px; font-size: 12px; color: var(--muted); font-weight: 600; }
+    .pin-pick { max-height: 38vh; overflow: auto; margin-top: 8px; display: grid; gap: 8px; }
+    .pin-pick button {
+      display: block; width: 100%; text-align: left; border: 1px solid var(--line);
+      background: #fff; border-radius: 14px; padding: 10px; cursor: pointer;
+      font: 600 13px Manrope, system-ui, sans-serif; color: var(--ink);
+    }
+    .pin-pick button b { display: block; font-size: 14px; }
+    .pin-pick button span { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); font-weight: 500; }
+    .offline-badge {
+      display: none; position: absolute; left: 12px; right: 12px; z-index: 11;
+      top: calc(56px + env(safe-area-inset-top));
+      background: #fff4e5; color: #7a4e0d; border-radius: 12px; padding: 8px 12px;
+      font-size: 12px; font-weight: 700;
+    }
+    .offline-badge.show { display: block; }
+    .rec { margin: 0 12px 10px; }
+    .rec h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+    .auth-note { font-size: 13px; color: var(--muted); font-weight: 500; line-height: 1.45; }
+    .profile-links { display: grid; gap: 8px; margin: 12px 0; }
+    .profile-links a.btn { display: block; text-align: center; text-decoration: none; }
+    .chip-mine {
+      display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 800;
+      color: var(--brand-2); background: var(--accent); border-radius: 999px; padding: 4px 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="status-bar" id="status-bar">
+    <span class="status-dot" id="status-dot"></span>
+    <div>
+      <div class="st" id="status-text">Сервис: проверка…</div>
+      <div class="su" id="status-updated">Обновление данных АЗС</div>
+    </div>
+    <button type="button" id="btn-refresh">Обновить</button>
+  </div>
+  <div class="offline-badge" id="offline-badge">Нет сети — показан кэш. Сообщения уйдут, когда появится интернет.</div>
+  <div id="map"></div>
+  <div class="topbar">
+    <div class="brand">
+      <b>Топливный пропуск</b>
+      <span>Где заправиться сейчас · ЮФО</span>
+    </div>
+    <div class="filters" id="filters">
+      <button type="button" class="pill active" data-grade="ai95">АИ-95</button>
+      <button type="button" class="pill" data-grade="ai92">АИ-92</button>
+      <button type="button" class="pill" data-grade="diesel">ДТ</button>
+      <button type="button" class="pill ghost" id="btn-available" aria-pressed="false">Только с топливом</button>
+    </div>
+    <div class="filters network-filters" id="network-filters" aria-label="Сеть АЗС"></div>
+    <div class="search">
+      <input id="search" type="search" placeholder="Найти свою АЗС: город, сеть, улица" autocomplete="off" />
+    </div>
+  </div>
+  <div class="legend" id="legend">
+    <span><i class="dot ok"></i>Есть</span>
+    <span><i class="dot low"></i>Мало</span>
+    <span><i class="dot empty"></i>Нет</span>
+    <span><i class="dot unknown"></i>?</span>
+  </div>
+  <button type="button" class="fab" id="btn-locate" title="Моё местоположение" aria-label="Моё местоположение">⌖</button>
+  <div class="toast" id="toast"></div>
+
+  <section class="sheet" id="sheet">
+    <div class="handle" id="sheet-handle"></div>
+    <div class="sheet-head">
+      <div>
+        <h1 id="sheet-title">Рядом с топливом</h1>
+        <p id="sheet-sub">Выберите марку сверху — покажем актуальные АЗС</p>
+      </div>
+      <button type="button" class="toggle-sheet" id="btn-sheet">Список</button>
+    </div>
+    <div class="banner" id="banner"></div>
+    <div class="list" id="list"></div>
+    <div class="detail" id="detail"></div>
+    <div class="route-panel" id="route-panel"></div>
+  </section>
+  <div class="pin-card" id="pin-card"></div>
+
+  <section class="screen-page" id="screen-reports">
+    <h1>Мои сообщения</h1>
+    <p class="auth-note">История ваших отметок по АЗС. Без сети черновики ждут отправки.</p>
+    <div id="reports-offline"></div>
+    <div id="reports-list"></div>
+  </section>
+  <section class="screen-page" id="screen-profile">
+    <h1>Профиль</h1>
+    <div id="profile-box"></div>
+  </section>
+  <nav class="tabbar" id="tabbar">
+    <button type="button" class="active" data-tab="map">Карта</button>
+    <button type="button" data-tab="reports">Сообщения</button>
+    <button type="button" data-tab="profile">Профиль</button>
+  </nav>
+
+  <script>
+    window.FUEL_UFO = {
+      apiBase: "{{ api_base }}",
+      yandexKey: "{{ yandex_maps_api_key|escapejs }}",
+      privacyUrl: "{{ privacy_url }}",
+      rulesUrl: "{{ rules_url }}",
+      supportUrl: "{{ support_url }}",
+      deviceId: localStorage.getItem('fuel_ufo_device') || (function(){
+        var id = 'web-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem('fuel_ufo_device', id);
+        return id;
+      })()
+    };
+  </script>
+  {% if yandex_maps_api_key %}
+  <script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_maps_api_key }}&lang=ru_RU&load=package.full"></script>
+  {% endif %}
+  <script>
+(function () {
+  var GRADE_LABEL = { ai95: 'АИ-95', ai92: 'АИ-92', diesel: 'ДТ' };
+  var STATUS_RU = { ok: 'Есть', low: 'Мало', empty: 'Нет', unknown: 'Нет данных' };
+  var state = {
+    azs: [],
+    grade: localStorage.getItem('fuel_ufo_grade') || 'ai95',
+    onlyAvailable: localStorage.getItem('fuel_ufo_only') === '1',
+    network: localStorage.getItem('fuel_ufo_network') || '',
+    networks: [],
+    query: '',
+    selected: null,
+    map: null,
+    clusterer: null,
+    placemarks: {},
+    user: null,
+    userMark: null,
+    route: null,
+    routeLine: null,
+    sheetOpen: true,
+    targetAzsId: null,
+    quota: null
+  };
+
+  var el = {
+    list: document.getElementById('list'),
+    detail: document.getElementById('detail'),
+    banner: document.getElementById('banner'),
+    sheet: document.getElementById('sheet'),
+    toast: document.getElementById('toast'),
+    title: document.getElementById('sheet-title'),
+    sub: document.getElementById('sheet-sub'),
+    btnSheet: document.getElementById('btn-sheet'),
+    btnAvailable: document.getElementById('btn-available'),
+    networkFilters: document.getElementById('network-filters'),
+    search: document.getElementById('search'),
+    routePanel: document.getElementById('route-panel'),
+    pin: document.getElementById('pin-card'),
+    statusDot: document.getElementById('status-dot'),
+    statusText: document.getElementById('status-text'),
+    statusUpdated: document.getElementById('status-updated')
+  };
+  var user = null;
+
+  function todayKey() {
+    var d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  }
+
+  function loadTarget() {
+    try {
+      var t = JSON.parse(localStorage.getItem('fuel_ufo_target') || 'null');
+      if (t && t.date === todayKey() && t.id) state.targetAzsId = t.id;
+    } catch (e) {}
+  }
+
+  function setTarget(item) {
+    if (!item || !item.id) return;
+    state.targetAzsId = item.id;
+    try {
+      localStorage.setItem('fuel_ufo_target', JSON.stringify({ id: item.id, name: item.name, date: todayKey() }));
+    } catch (e) {}
+  }
+
+  function isTarget(item) {
+    return !!(item && state.targetAzsId && item.id === state.targetAzsId);
+  }
+
+  function applyQuota(q) {
+    if (q) state.quota = q;
+  }
+
+  function toast(msg) {
+    el.toast.textContent = msg;
+    el.toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.toast.classList.remove('show'); }, 2400);
+  }
+
+  function haversineKm(a, b, c, d) {
+    var R = 6371, toRad = Math.PI / 180;
+    var dLat = (c - a) * toRad, dLon = (d - b) * toRad;
+    var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(a * toRad) * Math.cos(c * toRad) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+  }
+
+  function statusOf(item) {
+    return (item.status && item.status[state.grade]) || 'unknown';
+  }
+
+  function color(st) {
+    return { ok: '#1a9a55', low: '#c47a12', empty: '#c43c3c', unknown: '#6b7c74' }[st] || '#6b7c74';
+  }
+
+  function enrich(item) {
+    var copy = Object.assign({}, item);
+    if (state.user) {
+      copy._km = haversineKm(state.user[0], state.user[1], item.lat, item.lon);
+    } else {
+      copy._km = null;
+    }
+    copy._st = statusOf(item);
+    return copy;
+  }
+
+  function sortItems(items) {
+    var rank = { ok: 0, low: 1, unknown: 2, empty: 3 };
+    return items.slice().sort(function (a, b) {
+      var ra = rank[a._st] != null ? rank[a._st] : 9;
+      var rb = rank[b._st] != null ? rank[b._st] : 9;
+      if (ra !== rb) return ra - rb;
+      var da = a._km != null ? a._km : 1e9;
+      var db = b._km != null ? b._km : 1e9;
+      if (da !== db) return da - db;
+      var fa = a.freshness_minutes != null ? a.freshness_minutes : 1e9;
+      var fb = b.freshness_minutes != null ? b.freshness_minutes : 1e9;
+      return fa - fb;
+    });
+  }
+
+  function visibleItems() {
+    var items = sortItems(state.azs.map(enrich));
+    if (state.onlyAvailable) {
+      items = items.filter(function (i) { return i._st === 'ok' || i._st === 'low'; });
+    }
+    if (state.network) {
+      items = items.filter(function (i) { return (i.network || '') === state.network; });
+    }
+    var q = (state.query || '').trim().toLowerCase();
+    if (q) {
+      items = items.filter(function (i) {
+        return (i.name + ' ' + (i.network || '') + ' ' + (i.address || '') + ' ' + (i.city || '')).toLowerCase().indexOf(q) >= 0;
+      });
+    }
+    return items;
+  }
+
+  function setSheetOpen(open) {
+    state.sheetOpen = open;
+    el.sheet.classList.toggle('collapsed', !open && !state.route);
+    el.btnSheet.textContent = open ? 'Свернуть' : 'Список';
+    var bottom = (state.route || open) ? 'calc(42vh + var(--safe-b))' : 'calc(178px + var(--safe-b))';
+    if (state.route) bottom = 'calc(240px + var(--safe-b))';
+    document.getElementById('legend').style.bottom = bottom;
+    document.getElementById('btn-locate').style.bottom = state.route ? 'calc(250px + var(--safe-b))' : (open ? 'calc(44vh + var(--safe-b))' : 'calc(210px + var(--safe-b))');
+  }
+
+  function showList() {
+    state.selected = null;
+    el.detail.classList.remove('open');
+    el.routePanel.classList.remove('open');
+    if (el.pin) el.pin.classList.remove('open');
+    el.list.style.display = '';
+    el.sheet.classList.remove('navigating');
+    el.title.textContent = state.onlyAvailable ? 'Где есть топливо' : 'АЗС рядом';
+    var visible = visibleItems();
+    var nOk = visible.filter(function (a) { return a._st === 'ok' || a._st === 'low'; }).length;
+    var parts = [GRADE_LABEL[state.grade]];
+    if (state.network) parts.push(state.network);
+    parts.push(nOk + ' с топливом из ' + visible.length);
+    el.sub.textContent = parts.join(' · ');
+    renderList();
+    setSheetOpen(true);
+  }
+
+  function renderList() {
+    var items = visibleItems();
+    if (!items.length) {
+      el.list.innerHTML = '<div class="empty-state">Нет АЗС по фильтру. Смените сеть, снимите «Только с топливом» или уточните поиск.</div>';
+      return;
+    }
+    el.list.innerHTML = items.map(function (item) {
+      var dist = item._km != null ? (item._km < 10 ? item._km.toFixed(1) + ' км' : Math.round(item._km) + ' км') : (item.city || '');
+      var queue = item.queue_minutes != null ? ('очередь ~' + item.queue_minutes + ' мин') : '';
+      var fresh = item.freshness_label || 'давность неизвестна';
+      var cells = ['ai95', 'ai92', 'diesel'].map(function (g) {
+        var s = (item.status && item.status[g]) || 'unknown';
+        var lab = (item.status_labels && item.status_labels[g]) || STATUS_RU[s];
+        return '<div class="grade-cell ' + s + '"><b>' + GRADE_LABEL[g] + '</b>' + lab + '</div>';
+      }).join('');
+      var mine = isTarget(item) ? '<span class="chip-mine">Ваша АЗС сегодня</span>' : '';
+      return (
+        '<article class="card' + (isTarget(item) ? ' selected' : '') + '" data-id="' + item.id + '">' +
+          '<div class="card-top">' +
+            '<div><h2>' + escapeHtml(item.name) + '</h2>' +
+            '<p class="addr">' + escapeHtml(item.network ? item.network + ' · ' : '') + escapeHtml(item.address || item.city || '') + '</p>' +
+            mine + '</div>' +
+            '<span class="badge ' + item._st + '">' + (STATUS_RU[item._st] || '—') + '</span>' +
+          '</div>' +
+          '<div class="grade-bar">' + cells + '</div>' +
+          '<div class="meta-row">' +
+            '<span class="meta-chip">' + escapeHtml(dist) + '</span>' +
+            '<span class="meta-chip">' + escapeHtml(fresh) + '</span>' +
+            (queue ? '<span class="meta-chip">' + queue + '</span>' : '') +
+            (item.traffic_jams != null ? '<span class="meta-chip">пробки ' + item.traffic_jams + '/10</span>' : '') +
+            (item.primary_source_label ? '<span class="meta-chip">' + escapeHtml(item.primary_source_label) + '</span>' : '') +
+          '</div>' +
+        '</article>'
+      );
+    }).join('');
+    Array.prototype.forEach.call(el.list.querySelectorAll('.card'), function (node) {
+      node.addEventListener('click', function () {
+        var id = parseInt(node.getAttribute('data-id'), 10);
+        var item = state.azs.find(function (a) { return a.id === id; });
+        if (!item) return;
+        if ((state.query || '').trim().length >= 2) setTarget(item);
+        showDetail(item, true); showPinCard(item);
+      });
+    });
+  }
+
+  function showPinCard(item) {
+    var st = statusOf(item);
+    var cells = ['ai95', 'ai92', 'diesel'].map(function (g) {
+      var s = (item.status && item.status[g]) || 'unknown';
+      var lab = (item.status_labels && item.status_labels[g]) || STATUS_RU[s];
+      return '<div class="grade-cell ' + s + '"><b>' + GRADE_LABEL[g] + '</b>' + lab + '</div>';
+    }).join('');
+    el.pin.innerHTML =
+      '<h3>' + escapeHtml(item.name) + '</h3>' +
+      '<p class="addr">' + escapeHtml((item.network ? item.network + ' · ' : '') + (item.address || item.city || '')) + '</p>' +
+      '<div class="grade-bar">' + cells + '</div>' +
+      '<div class="meta-row" style="margin-top:8px">' +
+        '<span class="badge ' + st + '">' + (STATUS_RU[st] || '—') + '</span>' +
+        '<span class="meta-chip">' + escapeHtml(item.freshness_label || 'нет данных') + '</span>' +
+        (item.queue_minutes != null ? '<span class="meta-chip">очередь ~' + item.queue_minutes + ' мин</span>' : '') +
+      '</div>' +
+      '<div class="actions"><button type="button" class="btn primary" id="pin-nav">Маршрут</button>' +
+      '<button type="button" class="btn secondary" id="pin-close">Закрыть</button></div>';
+    el.pin.classList.add('open');
+    document.getElementById('pin-nav').onclick = function () { setTarget(item); startRoute(item); };
+    document.getElementById('pin-close').onclick = function () { el.pin.classList.remove('open'); };
+  }
+
+  function itemById(id) {
+    return state.azs.find(function (a) { return a.id === id; });
+  }
+
+  function itemsFromCluster(cluster) {
+    if (!cluster || !cluster.getGeoObjects) return [];
+    return cluster.getGeoObjects().map(function (geo) {
+      var id = geo.properties && geo.properties.get ? geo.properties.get('azsId') : null;
+      return itemById(id);
+    }).filter(Boolean);
+  }
+
+  function pointsOverlap(items) {
+    if (items.length < 2) return false;
+    var first = items[0];
+    return items.every(function (a) {
+      return Math.abs(a.lat - first.lat) < 0.00035 && Math.abs(a.lon - first.lon) < 0.00035;
+    });
+  }
+
+  function showClusterPicker(items) {
+    if (!items.length) return;
+    if (items.length === 1) {
+      showDetail(items[0], false);
+      showPinCard(items[0]);
+      return;
+    }
+    el.pin.innerHTML =
+      '<h3>' + items.length + ' АЗС в этой точке</h3>' +
+      '<p class="addr">Выберите заправку — у каждой свой статус</p>' +
+      '<div class="pin-pick">' + items.map(function (item) {
+        var st = statusOf(item);
+        return '<button type="button" data-id="' + item.id + '"><b>' + escapeHtml(item.name) + '</b>' +
+          '<span>' + escapeHtml((item.network ? item.network + ' · ' : '') + (item.address || item.city || '')) +
+          ' · ' + escapeHtml(STATUS_RU[st] || st) + '</span></button>';
+      }).join('') + '</div>' +
+      '<div class="actions" style="margin-top:10px"><button type="button" class="btn secondary" id="pin-close">Закрыть</button></div>';
+    el.pin.classList.add('open');
+    document.getElementById('pin-close').onclick = function () { el.pin.classList.remove('open'); };
+    Array.prototype.forEach.call(el.pin.querySelectorAll('.pin-pick button'), function (btn) {
+      btn.onclick = function () {
+        var item = itemById(parseInt(btn.getAttribute('data-id'), 10));
+        if (!item) return;
+        showDetail(item, false);
+        showPinCard(item);
+      };
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  function showDetail(item, pan) {
+    state.selected = item;
+    var en = enrich(item);
+    el.list.style.display = 'none';
+    el.detail.classList.add('open');
+    el.routePanel.classList.remove('open');
+    el.title.textContent = item.name;
+    el.sub.textContent = (item.network || '') + (item.city ? ' · ' + item.city : '');
+    setSheetOpen(true);
+
+    var rows = ['ai95', 'ai92', 'diesel'].map(function (g) {
+      var s = (item.status && item.status[g]) || 'unknown';
+      var src = (item.sources && item.sources[g]) || {};
+      var label = src.status_label || (item.status_labels && item.status_labels[g]) || STATUS_RU[s];
+      var fresh = src.freshness_label || item.freshness_label || 'нет данных';
+      var source = src.source_label || item.primary_source_label || '—';
+      return '<tr><td>' + GRADE_LABEL[g] + '</td><td class="status ' + s + '">' + label +
+        '</td><td>' + escapeHtml(fresh) + '</td><td>' + escapeHtml(source) + '</td></tr>';
+    }).join('');
+
+    var dist = en._km != null ? (en._km.toFixed(1) + ' км') : '—';
+    var queue = item.queue_minutes != null ? ('~' + item.queue_minutes + ' мин') : 'нет данных';
+    var traffic = item.traffic_jams != null ? (item.traffic_jams + ' / 10') : 'нет данных';
+
+    el.detail.innerHTML =
+      '<table class="info-table"><thead><tr><th>Марка</th><th>Сейчас</th><th>Актуальность</th><th>Источник</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table>' +
+      '<div class="kv">' +
+        '<div class="kv-item"><small>До вас</small><b>' + escapeHtml(dist) + '</b></div>' +
+        '<div class="kv-item"><small>Очередь</small><b>' + escapeHtml(queue) + '</b></div>' +
+        '<div class="kv-item"><small>Пробки у АЗС</small><b>' + escapeHtml(traffic) + '</b></div>' +
+        '<div class="kv-item"><small>Адрес</small><b>' + escapeHtml(item.address || item.city || '—') + '</b></div>' +
+      '</div>' +
+      '<div class="actions">' +
+        '<button type="button" class="btn primary" id="btn-nav">Маршрут</button>' +
+        '<button type="button" class="btn secondary" id="btn-back">К списку</button>' +
+      '</div>' +
+      reportPanelHtml(item);
+
+    document.getElementById('btn-back').onclick = showList;
+    document.getElementById('btn-nav').onclick = function () { setTarget(item); startRoute(item); };
+    bindReportPanel(item);
+
+    if (pan && state.map) {
+      state.map.setCenter([item.lat, item.lon], Math.max(state.map.getZoom(), 13), { duration: 300 });
+    }
+  }
+
+  function reportPanelHtml(item) {
+    if (!isTarget(item)) {
+      return '<p class="hint" style="margin-top:14px">Кнопки «есть / нет» не показываем в общем списке. Отметить наличие можно только по АЗС, куда вы едете: найдите её в поиске или нажмите «Еду сюда».</p>' +
+        '<button type="button" class="btn secondary" id="btn-target">Еду сюда</button>';
+    }
+    if (!user) {
+      return '<p class="hint" style="margin-top:14px"><b>Ваша АЗС сегодня.</b> Войдите в профиле, чтобы один раз в сутки отметить есть / мало / нет.</p>';
+    }
+    if (state.quota && !state.quota.can_report) {
+      return '<p class="hint" style="margin-top:14px">' + escapeHtml(state.quota.detail || 'Сегодня отметка уже есть.') + '</p>';
+    }
+    return '<p class="hint" style="margin-top:14px"><b>Ваша АЗС сегодня.</b> Один раз в сутки отметьте наличие ' + GRADE_LABEL[state.grade] + ':</p>' +
+      '<div class="quick">' +
+        '<button type="button" class="ok" data-av="ok">Есть</button>' +
+        '<button type="button" class="low" data-av="low">Мало</button>' +
+        '<button type="button" class="empty" data-av="empty">Нет</button>' +
+      '</div>' +
+      '<details class="report-extra">' +
+        '<summary>Подробный отчёт (очередь, лимит, канистры)</summary>' +
+        '<div class="form-grid">' +
+          '<div><label>Статус</label><select id="rep-status">' +
+            '<option value="ok">Есть</option><option value="low">Мало</option><option value="empty">Нет</option>' +
+          '</select></div>' +
+          '<div><label>Марка</label><select id="rep-grade">' +
+            '<option value="ai95">АИ-95</option><option value="ai92">АИ-92</option><option value="diesel">ДТ</option>' +
+          '</select></div>' +
+          '<div><label>Очередь, мин</label><input id="rep-queue" type="number" min="0" max="300" placeholder="например 35" /></div>' +
+          '<div><label>Лимит, л</label><input id="rep-limit" type="number" min="0" max="200" placeholder="20–40" /></div>' +
+          '<div><label>Канистры</label><select id="rep-cans"><option value="">Не знаю</option><option value="yes">Можно</option><option value="no">Запрещены</option></select></div>' +
+          '<div><label>Комментарий</label><textarea id="rep-comment" rows="2" maxlength="500" placeholder="Колонка, лимит, что видели"></textarea></div>' +
+          '<button type="button" class="btn secondary" id="rep-send">Отправить подробный отчёт</button>' +
+        '</div>' +
+      '</details>';
+  }
+
+  function bindReportPanel(item) {
+    var targetBtn = document.getElementById('btn-target');
+    if (targetBtn) {
+      targetBtn.onclick = function () {
+        setTarget(item);
+        toast('Эта АЗС — ваша на сегодня');
+        showDetail(item, false);
+        renderList();
+      };
+    }
+    Array.prototype.forEach.call(el.detail.querySelectorAll('.quick button'), function (btn) {
+      btn.onclick = function () { sendReport(item, btn.getAttribute('data-av'), { fuel_grade: state.grade }); };
+    });
+    var sendBtn = document.getElementById('rep-send');
+    if (sendBtn) {
+      document.getElementById('rep-grade').value = state.grade;
+      sendBtn.onclick = function () {
+        var cans = document.getElementById('rep-cans').value;
+        sendReport(item, document.getElementById('rep-status').value, {
+          fuel_grade: document.getElementById('rep-grade').value,
+          queue_minutes: parseInt(document.getElementById('rep-queue').value || '', 10) || null,
+          limit_liters: parseInt(document.getElementById('rep-limit').value || '', 10) || null,
+          cans_allowed: cans === 'yes' ? true : (cans === 'no' ? false : null),
+          comment: document.getElementById('rep-comment').value || ''
+        });
+      };
+    }
+  }
+
+  function sendReport(item, availability, extra) {
+    extra = extra || {};
+    if (!user) { toast('Войдите в профиле, чтобы отметить наличие'); return; }
+    if (!isTarget(item)) { toast('Сначала выберите АЗС в поиске или нажмите «Еду сюда»'); return; }
+    var body = {
+      azs_id: item.id,
+      device_id: window.FUEL_UFO.deviceId,
+      availability: availability,
+      fuel_grade: extra.fuel_grade || state.grade
+    };
+    if (extra.queue_minutes != null) body.queue_minutes = extra.queue_minutes;
+    if (extra.limit_liters != null) body.limit_liters = extra.limit_liters;
+    if (extra.cans_allowed != null) body.cans_allowed = extra.cans_allowed;
+    if (extra.comment) body.comment = extra.comment;
+    if (state.user) { body.lat = state.user[0]; body.lon = state.user[1]; }
+    fetch(window.FUEL_UFO.apiBase + '/reports/', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Id': window.FUEL_UFO.deviceId },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); })
+      .then(function (res) {
+        if (res.j && res.j.report_quota) applyQuota(res.j.report_quota);
+        if (!res.ok) {
+          toast(res.j.detail || res.j.error || 'Не удалось отправить');
+          if (state.selected && state.selected.id === item.id) showDetail(item, false);
+          return;
+        }
+        toast('Спасибо! Статус обновлён');
+        if (res.j.azs) {
+          var idx = state.azs.findIndex(function (a) { return a.id === res.j.azs.id; });
+          if (idx >= 0) state.azs[idx] = res.j.azs;
+          else state.azs.push(res.j.azs);
+          paintMap();
+          showDetail(res.j.azs, false);
+        }
+      }).catch(function () { toast('Нет связи с сервером'); });
+  }
+
+  function clearRoute() {
+    if (state.route && state.map) {
+      try { state.map.geoObjects.remove(state.route); } catch (e) {}
+    }
+    if (state.routeLine && state.map) {
+      try { state.map.geoObjects.remove(state.routeLine); } catch (e) {}
+    }
+    state.route = null;
+    state.routeLine = null;
+    el.sheet.classList.remove('navigating');
+    el.routePanel.classList.remove('open');
+    setSheetOpen(true);
+  }
+
+  function showRoutePanel(item, summary) {
+    el.list.style.display = 'none';
+    el.detail.classList.remove('open');
+    el.routePanel.classList.add('open');
+    el.sheet.classList.add('navigating');
+    el.title.textContent = 'Маршрут';
+    el.sub.textContent = item.name;
+    var steps = (summary.steps || []).slice(0, 4).map(function (s) {
+      return '<li>' + escapeHtml(s.text || s) + '</li>';
+    }).join('');
+    el.routePanel.innerHTML =
+      '<div class="route-eta"><strong>' + escapeHtml(summary.duration_text || '…') + '</strong>' +
+      '<span>' + escapeHtml(summary.distance_text || '') + ' · ' + escapeHtml(item.name) + '</span></div>' +
+      (steps ? '<ul class="steps">' + steps + '</ul>' : '<p class="hint">Ведём по дорогам на нашей карте — не уходим в Яндекс.Карты.</p>') +
+      '<div class="actions">' +
+        '<button type="button" class="btn primary" id="btn-follow">Показать путь</button>' +
+        '<button type="button" class="btn secondary" id="btn-cancel-route">Сбросить</button>' +
+      '</div>';
+    document.getElementById('btn-cancel-route').onclick = function () {
+      clearRoute();
+      showDetail(item, false);
+    };
+    document.getElementById('btn-follow').onclick = function () {
+      setSheetOpen(false);
+      if (state.route && state.route.getBounds) {
+        try { state.map.setBounds(state.route.getBounds(), { checkZoomRange: true, duration: 300 }); } catch (e) {}
+      } else if (state.routeLine) {
+        try { state.map.setBounds(state.routeLine.geometry.getBounds(), { checkZoomRange: true, duration: 300 }); } catch (e) {}
+      }
+    };
+    setSheetOpen(true);
+  }
+
+  function drawPolyline(coords) {
+    if (!state.map || !coords || coords.length < 3) return false;
+    state.routeLine = new ymaps.Polyline(coords, {}, {
+      strokeColor: '#0f3d2e',
+      strokeWidth: 6,
+      strokeOpacity: 0.92
+    });
+    state.map.geoObjects.add(state.routeLine);
+    try { state.map.setBounds(state.routeLine.geometry.getBounds(), { checkZoomRange: true, zoomMargin: 48 }); } catch (e) {}
+    return true;
+  }
+
+  function applyBackendRoute(item, data) {
+    var summary = {
+      duration_text: data.duration_text || '',
+      distance_text: data.distance_text || '',
+      steps: data.steps || []
+    };
+    showRoutePanel(item, summary);
+    if (data.polyline && data.polyline.length > 2) {
+      drawPolyline(data.polyline);
+    }
+  }
+
+  function startYandexRouter(from, item, backendData) {
+    function failToBackend() {
+      if (backendData && backendData.polyline && backendData.polyline.length > 2) {
+        applyBackendRoute(item, backendData);
+        return;
+      }
+      toast('Не удалось построить дорожный путь');
+    }
+    function attach(multiRoute) {
+      state.route = multiRoute;
+      state.map.geoObjects.add(multiRoute);
+      multiRoute.model.events.add('requestsuccess', function () {
+        var active = multiRoute.getActiveRoute();
+        if (!active) { failToBackend(); return; }
+        var dist = active.properties.get('distance');
+        var dur = active.properties.get('duration');
+        var steps = [];
+        try {
+          active.getPaths().each(function (path) {
+            path.getSegments().each(function (seg) {
+              var street = seg.properties.get('street') || seg.properties.get('text');
+              if (street) steps.push({ text: street });
+            });
+          });
+        } catch (e) {}
+        showRoutePanel(item, {
+          duration_text: (dur && dur.text) || (backendData && backendData.duration_text) || '',
+          distance_text: (dist && dist.text) || (backendData && backendData.distance_text) || '',
+          steps: steps.slice(0, 5)
+        });
+      });
+      multiRoute.model.events.add('requestfail', failToBackend);
+    }
+    var opts = {
+      referencePoints: [from, [item.lat, item.lon]],
+      params: { routingMode: 'auto', results: 1 }
+    };
+    var view = {
+      boundsAutoApply: true,
+      routeActiveStrokeWidth: 6,
+      routeActiveStrokeColor: '#0f3d2e',
+      wayPointVisible: true
+    };
+    if (ymaps.modules && ymaps.modules.require) {
+      ymaps.modules.require(['multiRouter.MultiRoute'], function (MultiRoute) {
+        attach(new MultiRoute(opts, view));
+      }, failToBackend);
+    } else if (ymaps.multiRouter && ymaps.multiRouter.MultiRoute) {
+      attach(new ymaps.multiRouter.MultiRoute(opts, view));
+    } else {
+      failToBackend();
+    }
+  }
+
+  function startRoute(item) {
+    setTarget(item);
+    function go(from) {
+      toast('Строим маршрут по дорогам…');
+      clearRoute();
+      state.user = from;
+      placeUser();
+      showRoutePanel(item, { duration_text: '…', distance_text: '', steps: [] });
+      var qs = 'from_lat=' + encodeURIComponent(from[0]) +
+        '&from_lon=' + encodeURIComponent(from[1]) +
+        '&azs_id=' + encodeURIComponent(item.id);
+      fetch(window.FUEL_UFO.apiBase + '/route/?' + qs)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          startYandexRouter(from, item, data && data.ok ? data : null);
+        })
+        .catch(function () {
+          startYandexRouter(from, item, null);
+        });
+    }
+    function fromBrowser() {
+      if (!navigator.geolocation) {
+        toast('Включите геолокацию — откуда вести маршрут');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        go([pos.coords.latitude, pos.coords.longitude]);
+      }, function () {
+        toast('Нужна геолокация, чтобы вести к АЗС');
+      }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+    if (window.ymaps && ymaps.geolocation && ymaps.geolocation.get) {
+      ymaps.geolocation.get({ provider: 'auto', mapStateAutoApply: false }).then(function (res) {
+        go(res.geoObjects.position);
+      }).catch(fromBrowser);
+    } else if (state.user) {
+      go(state.user);
+    } else {
+      fromBrowser();
+    }
+  }
+
+  function placeUser() {
+    if (!state.map || !state.user) return;
+    if (state.userMark) {
+      try { state.map.geoObjects.remove(state.userMark); } catch (e) {}
+    }
+    state.userMark = new ymaps.Placemark(state.user, { hintContent: 'Вы здесь' }, {
+      preset: 'islands#geolocationIcon'
+    });
+    state.map.geoObjects.add(state.userMark);
+  }
+
+  function paintMap() {
+    if (!window.ymaps || !state.map) return;
+    if (!state.clusterer) {
+      state.clusterer = new ymaps.Clusterer({
+        preset: 'islands#darkGreenClusterIcons',
+        groupByCoordinates: false,
+        clusterDisableClickZoom: true,
+        clusterHasBalloon: false,
+        clusterOpenBalloonOnClick: false,
+        hasBalloon: false,
+        gridSize: 64
+      });
+      state.clusterer.events.add('click', function (e) {
+        var target = e.get('target');
+        if (!target || !target.getGeoObjects) return;
+        var items = itemsFromCluster(target);
+        if (!items.length) return;
+        var zoom = state.map.getZoom();
+        if (!pointsOverlap(items) && zoom < 16 && items.length > 3) {
+          try {
+            state.map.setBounds(target.getBounds(), { checkZoomRange: true, zoomMargin: 48, duration: 250 });
+          } catch (err) {
+            showClusterPicker(items);
+          }
+          return;
+        }
+        showClusterPicker(items);
+      });
+      state.map.geoObjects.add(state.clusterer);
+    }
+    state.clusterer.removeAll();
+    state.placemarks = {};
+    var marks = [];
+    visibleItems().forEach(function (a) {
+      var st = a._st || statusOf(a);
+      var pm = new ymaps.Placemark([a.lat, a.lon], {
+        hintContent: a.name + ' — ' + (STATUS_RU[st] || st),
+        azsId: a.id
+      }, {
+        preset: 'islands#circleDotIcon',
+        iconColor: color(st),
+        hasBalloon: false,
+        openBalloonOnClick: false
+      });
+      pm.events.add('click', function () { showDetail(a, false); showPinCard(a); });
+      state.placemarks[String(a.id)] = pm;
+      marks.push(pm);
+    });
+    state.clusterer.add(marks);
+    placeUser();
+  }
+
+  function ensureMap(cb) {
+    if (!window.ymaps) {
+      el.list.innerHTML = '<div class="empty-state">Карта недоступна без ключа Яндекс.Ниже — список АЗС.</div>';
+      cb(false);
+      return;
+    }
+    ymaps.ready(function () {
+      if (!state.map) {
+        state.map = new ymaps.Map('map', {
+          center: [45.04, 38.98],
+          zoom: 7,
+          controls: ['zoomControl', 'geolocationControl', 'trafficControl']
+        }, { suppressMapOpenBlock: true });
+      }
+      cb(true);
+    });
+  }
+
+  function loadAzs() {
+    var q = '?grade=' + encodeURIComponent(state.grade);
+    if (state.onlyAvailable) q += '&available=1';
+    return fetch(window.FUEL_UFO.apiBase + '/azs/' + q)
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        state.azs = d.results || [];
+        try { localStorage.setItem('fuel_ufo_azs_cache', JSON.stringify({ at: Date.now(), results: state.azs })); } catch (e) {}
+        ensureMap(function () {
+          paintMap();
+          showList();
+        });
+      }).catch(function () {
+        try {
+          var cached = JSON.parse(localStorage.getItem('fuel_ufo_azs_cache') || 'null');
+          if (cached && cached.results) {
+            state.azs = cached.results;
+            document.getElementById('offline-badge').classList.add('show');
+            ensureMap(function () { paintMap(); showList(); });
+            return;
+          }
+        } catch (e) {}
+        throw new Error('Нет сети и нет кэша');
+      });
+  }
+
+  function loadMeta() {
+    return fetch(window.FUEL_UFO.apiBase + '/meta/').then(function (r) { return r.json(); }).then(function (d) {
+      if (d.banners && d.banners.length) {
+        var b = d.banners[0];
+        el.banner.style.display = 'block';
+        el.banner.innerHTML = '<strong>' + escapeHtml(b.title) + '</strong>' + escapeHtml(b.body || '');
+      }
+      state.networks = d.networks || [];
+      renderNetworkFilters();
+    });
+  }
+
+  function renderNetworkFilters() {
+    if (!el.networkFilters) return;
+    var html = '<button type="button" class="pill ghost' + (!state.network ? ' active' : '') + '" data-network="">Все сети</button>';
+    state.networks.forEach(function (n) {
+      var active = state.network === n.name ? ' active' : '';
+      html += '<button type="button" class="pill ghost' + active + '" data-network="' + escapeHtml(n.name) + '">' +
+        escapeHtml(n.name) + '</button>';
+    });
+    el.networkFilters.innerHTML = html;
+    Array.prototype.forEach.call(el.networkFilters.querySelectorAll('.pill[data-network]'), function (btn) {
+      btn.addEventListener('click', function () {
+        state.network = btn.getAttribute('data-network') || '';
+        if (state.network) localStorage.setItem('fuel_ufo_network', state.network);
+        else localStorage.removeItem('fuel_ufo_network');
+        Array.prototype.forEach.call(el.networkFilters.querySelectorAll('.pill[data-network]'), function (b) {
+          b.classList.toggle('active', b === btn);
+        });
+        if (state.selected && state.network && state.selected.network !== state.network) {
+          showList();
+        } else if (state.selected) {
+          showDetail(state.selected, false);
+        } else {
+          showList();
+        }
+        paintMap();
+      });
+    });
+  }
+
+  function locate() {
+    if (!navigator.geolocation) {
+      toast('Геолокация недоступна');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      state.user = [pos.coords.latitude, pos.coords.longitude];
+      if (state.map) {
+        state.map.setCenter(state.user, 12, { duration: 400 });
+        placeUser();
+      }
+      showList();
+      paintMap();
+      toast('Показываем ближайшие АЗС');
+    }, function () {
+      toast('Не удалось определить местоположение');
+    }, { enableHighAccuracy: true, timeout: 10000 });
+  }
+
+  /* filters */
+  Array.prototype.forEach.call(document.querySelectorAll('.pill[data-grade]'), function (btn) {
+    if (btn.getAttribute('data-grade') === state.grade) btn.classList.add('active');
+    else btn.classList.remove('active');
+    btn.addEventListener('click', function () {
+      state.grade = btn.getAttribute('data-grade');
+      localStorage.setItem('fuel_ufo_grade', state.grade);
+      Array.prototype.forEach.call(document.querySelectorAll('.pill[data-grade]'), function (b) {
+        b.classList.toggle('active', b === btn);
+      });
+      loadAzs();
+    });
+  });
+  if (state.onlyAvailable) {
+    el.btnAvailable.classList.add('active');
+    el.btnAvailable.setAttribute('aria-pressed', 'true');
+  }
+  el.btnAvailable.addEventListener('click', function () {
+    state.onlyAvailable = !state.onlyAvailable;
+    localStorage.setItem('fuel_ufo_only', state.onlyAvailable ? '1' : '0');
+    el.btnAvailable.classList.toggle('active', state.onlyAvailable);
+    el.btnAvailable.setAttribute('aria-pressed', state.onlyAvailable ? 'true' : 'false');
+    loadAzs();
+  });
+  el.btnSheet.addEventListener('click', function () { setSheetOpen(!state.sheetOpen); });
+  document.getElementById('sheet-handle').addEventListener('click', function () { setSheetOpen(!state.sheetOpen); });
+  document.getElementById('btn-locate').addEventListener('click', locate);
+  var searchTimer = null;
+  el.search.addEventListener('input', function () {
+    state.query = el.search.value || '';
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(function () {
+      renderList();
+      paintMap();
+    }, 180);
+  });
+
+  function setOnlineUI(online, text, sub) {
+    el.statusDot.classList.toggle('off', !online);
+    el.statusText.textContent = text || (online ? 'Сервис: онлайн' : 'Сервис: офлайн');
+    if (sub) el.statusUpdated.textContent = sub;
+    document.getElementById('offline-badge').classList.toggle('show', !online);
+  }
+
+  function pingStatus() {
+    fetch(window.FUEL_UFO.apiBase + '/status/')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var when = d.checked_at ? new Date(d.checked_at).toLocaleString('ru-RU') : '';
+        setOnlineUI(true, 'Сервис: онлайн', (d.azs_count || state.azs.length) + ' АЗС · проверено ' + when);
+      })
+      .catch(function () {
+        setOnlineUI(false, 'Сервис: офлайн', 'Показан кэш. Обновите, когда появится сеть.');
+      });
+  }
+
+  function flushReportQueue() {
+    var q;
+    try { q = JSON.parse(localStorage.getItem('fuel_ufo_report_queue') || '[]'); } catch (e) { q = []; }
+    if (!q.length) return;
+    var left = [];
+    var chain = Promise.resolve();
+    q.forEach(function (item) {
+      chain = chain.then(function () {
+        return fetch(window.FUEL_UFO.apiBase + '/reports/', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'X-Device-Id': window.FUEL_UFO.deviceId },
+          body: JSON.stringify(item)
+        }).then(function (r) {
+          if (r.status === 401 || r.status === 429) return;
+          if (!r.ok) left.push(item);
+        }).catch(function () { left.push(item); });
+      });
+    });
+    chain.then(function () {
+      localStorage.setItem('fuel_ufo_report_queue', JSON.stringify(left));
+      if (q.length && left.length < q.length) toast('Офлайн-сообщения отправлены');
+    });
+  }
+
+  var origSend = sendReport;
+  sendReport = function (item, availability, extra) {
+    extra = extra || {};
+    if (!user) { toast('Войдите в профиле, чтобы отметить наличие'); return; }
+    if (!navigator.onLine) {
+      var queued = [];
+      try { queued = JSON.parse(localStorage.getItem('fuel_ufo_report_queue') || '[]'); } catch (e) {}
+      queued.push({
+        azs_id: item.id,
+        device_id: window.FUEL_UFO.deviceId,
+        availability: availability,
+        fuel_grade: extra.fuel_grade || state.grade,
+        queue_minutes: extra.queue_minutes || null,
+        comment: extra.comment || '',
+        queued_at: new Date().toISOString()
+      });
+      localStorage.setItem('fuel_ufo_report_queue', JSON.stringify(queued));
+      toast('Нет сети — сообщение в очереди');
+      return;
+    }
+    origSend(item, availability, extra);
+  };
+
+  function renderReports() {
+    var box = document.getElementById('reports-list');
+    var off = document.getElementById('reports-offline');
+    var queued = [];
+    try { queued = JSON.parse(localStorage.getItem('fuel_ufo_report_queue') || '[]'); } catch (e) {}
+    off.innerHTML = queued.length
+      ? '<div class="banner" style="display:block"><strong>Не отправлено: ' + queued.length + '</strong>Ждут интернет</div>'
+      : '';
+    fetch(window.FUEL_UFO.apiBase + '/reports/?device_id=' + encodeURIComponent(window.FUEL_UFO.deviceId), { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.report_quota) applyQuota(d.report_quota);
+        var rows = d.results || [];
+        if (!rows.length && !queued.length) {
+          box.innerHTML = '<p class="auth-note">Пока нет сообщений. Выберите АЗС в поиске и отметьте наличие один раз в сутки.</p>';
+          return;
+        }
+        box.innerHTML = rows.map(function (r) {
+          return '<article class="card"><h2>' + escapeHtml(r.azs_name) + '</h2><p class="addr">' +
+            escapeHtml(r.city || '') + ' · ' + escapeHtml(GRADE_LABEL[r.fuel_grade] || r.fuel_grade) +
+            ' · ' + escapeHtml(STATUS_RU[r.availability] || r.availability) + '</p><div class="meta-chip">' +
+            escapeHtml(r.created_at ? new Date(r.created_at).toLocaleString('ru-RU') : '') + '</div></article>';
+        }).join('');
+      }).catch(function () {
+        box.innerHTML = '<p class="auth-note">Нет сети. История появится после подключения.</p>';
+      });
+  }
+
+  function renderProfile() {
+    var box = document.getElementById('profile-box');
+    if (user) {
+      box.innerHTML =
+        '<div class="card"><h2>' + escapeHtml(user.name) + '</h2><p class="addr">' + escapeHtml(user.phone_display || user.phone) + '</p></div>' +
+        '<p class="auth-note">' + escapeHtml(
+          (state.quota && !state.quota.can_report && state.quota.detail)
+            ? state.quota.detail
+            : 'Наличие топлива отмечают один раз в сутки и только по АЗС, которую вы выбрали в поиске или «Еду сюда».'
+        ) + '</p>' +
+        '<div class="profile-links">' +
+        '<a class="btn secondary" href="' + window.FUEL_UFO.supportUrl + '">Техподдержка</a>' +
+        '<a class="btn secondary" href="' + window.FUEL_UFO.privacyUrl + '">Персональные данные</a>' +
+        '<a class="btn secondary" href="' + window.FUEL_UFO.rulesUrl + '">Правила сервиса</a></div>' +
+        '<button type="button" class="btn secondary" id="btn-logout">Выйти</button>';
+      document.getElementById('btn-logout').onclick = function () {
+        fetch(window.FUEL_UFO.apiBase + '/auth/logout/', { method: 'POST', credentials: 'same-origin' }).finally(function () {
+          user = null;
+          applyQuota({ can_report: false, reason: 'auth_required' });
+          localStorage.removeItem('fuel_ufo_user');
+          renderProfile();
+        });
+      };
+      return;
+    }
+    box.innerHTML =
+      '<p class="auth-note">Вход по телефону и ФИО. Код придёт в SMS. В демо-режиме код показывается на экране.</p>' +
+      '<div class="form-grid" id="login-form">' +
+        '<div><label>Телефон</label><input id="login-phone" type="tel" placeholder="+7 918 000-00-00" /></div>' +
+        '<div><label>ФИО</label><input id="login-name" type="text" placeholder="Иван Иванов" /></div>' +
+        '<label class="auth-note"><input id="login-pd" type="checkbox" /> Согласен(на) на <a href="' + window.FUEL_UFO.privacyUrl + '" target="_blank">обработку ПДн</a> и с <a href="' + window.FUEL_UFO.rulesUrl + '" target="_blank">правилами</a></label>' +
+        '<button type="button" class="btn primary" id="login-start">Получить код</button>' +
+      '</div>' +
+      '<div class="form-grid" id="otp-form" style="display:none">' +
+        '<div><label>Код из SMS</label><input id="login-code" inputmode="numeric" maxlength="4" placeholder="0000" /></div>' +
+        '<p class="auth-note" id="otp-hint"></p>' +
+        '<button type="button" class="btn primary" id="login-verify">Войти</button>' +
+      '</div>';
+    document.getElementById('login-start').onclick = function () {
+      fetch(window.FUEL_UFO.apiBase + '/auth/start/', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: document.getElementById('login-phone').value,
+          full_name: document.getElementById('login-name').value,
+          agree_pd: document.getElementById('login-pd').checked
+        })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok) { toast(res.j.detail || 'Не удалось отправить код'); return; }
+          document.getElementById('login-form').style.display = 'none';
+          document.getElementById('otp-form').style.display = 'grid';
+          document.getElementById('otp-hint').textContent = res.j.demo_code
+            ? ('Демо-режим: код ' + res.j.demo_code)
+            : ('Код отправлен на ' + (res.j.phone_display || ''));
+          window._ufoPhone = res.j.phone;
+        });
+    };
+    document.getElementById('login-verify').onclick = function () {
+      fetch(window.FUEL_UFO.apiBase + '/auth/verify/', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: window._ufoPhone || document.getElementById('login-phone').value, code: document.getElementById('login-code').value })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok) { toast(res.j.detail || 'Неверный код'); return; }
+          user = res.j.user;
+          if (res.j.report_quota) applyQuota(res.j.report_quota);
+          try { localStorage.setItem('fuel_ufo_user', JSON.stringify(user)); } catch (e) {}
+          toast('Вы вошли');
+          renderProfile();
+        });
+    };
+  }
+
+  function showTab(tab) {
+    document.getElementById('screen-reports').classList.toggle('open', tab === 'reports');
+    document.getElementById('screen-profile').classList.toggle('open', tab === 'profile');
+    Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+    });
+    if (tab === 'reports') renderReports();
+    if (tab === 'profile') renderProfile();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) {
+    b.addEventListener('click', function () { showTab(b.getAttribute('data-tab')); });
+  });
+  document.getElementById('btn-refresh').onclick = function () {
+    pingStatus();
+    loadAzs();
+    flushReportQueue();
+  };
+  window.addEventListener('online', function () { pingStatus(); flushReportQueue(); document.getElementById('offline-badge').classList.remove('show'); });
+  window.addEventListener('offline', function () { setOnlineUI(false); });
+  try { user = JSON.parse(localStorage.getItem('fuel_ufo_user') || 'null'); } catch (e) { user = null; }
+  loadTarget();
+  fetch(window.FUEL_UFO.apiBase + '/auth/me/', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d.ok && d.user) user = d.user;
+    if (d.report_quota) applyQuota(d.report_quota);
+  }).catch(function () {});
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/fuel/ufo/sw.js', { scope: '/fuel/ufo/' }).catch(function () {});
+  }
+  pingStatus();
+  setInterval(pingStatus, 60000);
+
+  setSheetOpen(true);
+  loadMeta().then(loadAzs).catch(function (e) {
+    el.list.innerHTML = '<div class="empty-state">Не удалось загрузить данные.<br>' + escapeHtml(String(e)) + '</div>';
+  });
+})();
+  </script>
+</body>
+</html>

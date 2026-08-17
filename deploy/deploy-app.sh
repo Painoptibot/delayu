@@ -50,6 +50,9 @@ echo "==> Миграции"
 echo "==> Топливный пропуск (Новороссийск)"
 "${VENV}/bin/python" manage.py seed_fuel_novorossiysk || true
 
+echo "==> Карта АЗС ЮФО"
+"${VENV}/bin/python" manage.py seed_fuel_ufo || true
+
 echo "==> Статика"
 "${VENV}/bin/python" manage.py collectstatic --noinput
 
@@ -63,30 +66,38 @@ sudo systemctl daemon-reload
 sudo systemctl enable delayu
 sudo systemctl restart delayu
 
-if [[ -n "${DOMAIN:-}" ]]; then
-  echo "==> Nginx (${DOMAIN})"
-  sudo cp deploy/nginx/delayu-http-domain.conf.template /tmp/delayu.nginx
-  sudo sed -i "s/__DOMAIN__/${DOMAIN}/g" /tmp/delayu.nginx
-  sudo sed -i "s|/opt/delayu|${APP_DIR}|g" /tmp/delayu.nginx
-  sudo mv /tmp/delayu.nginx /etc/nginx/sites-available/delayu
-  sudo ln -sf /etc/nginx/sites-available/delayu /etc/nginx/sites-enabled/delayu
-  sudo rm -f /etc/nginx/sites-enabled/default
-  sudo nginx -t
-  sudo systemctl reload nginx
-  echo "    HTTPS: sudo certbot --nginx -d ${DOMAIN} -d novorossiysk.${DOMAIN}"
+if [[ "${DELAYU_WRITE_NGINX:-0}" == "1" ]]; then
+  if [[ -n "${DOMAIN:-}" ]]; then
+    echo "==> Nginx (${DOMAIN})"
+    sudo cp deploy/nginx/delayu-http-domain.conf.template /tmp/delayu.nginx
+    sudo sed -i "s/__DOMAIN__/${DOMAIN}/g" /tmp/delayu.nginx
+    sudo sed -i "s|/opt/delayu|${APP_DIR}|g" /tmp/delayu.nginx
+    sudo mv /tmp/delayu.nginx /etc/nginx/sites-available/delayu
+    sudo ln -sf /etc/nginx/sites-available/delayu /etc/nginx/sites-enabled/delayu
+    sudo rm -f /etc/nginx/sites-enabled/default
+    sudo nginx -t
+    sudo systemctl reload nginx
+    echo "    HTTPS: sudo certbot --nginx -d ${DOMAIN} -d novorossiysk.${DOMAIN}"
+  else
+    echo "==> Nginx (IP / без домена)"
+    sudo cp deploy/nginx/delayu-http.conf /etc/nginx/sites-available/delayu
+    sudo sed -i "s|/opt/delayu|${APP_DIR}|g" /etc/nginx/sites-available/delayu
+    sudo ln -sf /etc/nginx/sites-available/delayu /etc/nginx/sites-enabled/delayu
+    sudo rm -f /etc/nginx/sites-enabled/default
+    sudo nginx -t && sudo systemctl reload nginx
+  fi
 else
-  echo "==> Nginx (IP / без домена)"
-  sudo cp deploy/nginx/delayu-http.conf /etc/nginx/sites-available/delayu
-  sudo sed -i "s|/opt/delayu|${APP_DIR}|g" /etc/nginx/sites-available/delayu
-  sudo ln -sf /etc/nginx/sites-available/delayu /etc/nginx/sites-enabled/delayu
-  sudo rm -f /etc/nginx/sites-enabled/default
-  sudo nginx -t && sudo systemctl reload nginx
+  echo "==> Nginx не трогаем (чтобы не сбить SSL и другие сайты). Перезаписать: DELAYU_WRITE_NGINX=1"
 fi
 
-echo "==> Cron"
-sudo cp deploy/cron/delayu /etc/cron.d/delayu
-sudo sed -i "s|/opt/delayu|${APP_DIR}|g" /etc/cron.d/delayu
-sudo chmod 644 /etc/cron.d/delayu
+if [[ "${DELAYU_WRITE_CRON:-0}" == "1" ]]; then
+  echo "==> Cron"
+  sudo cp deploy/cron/delayu /etc/cron.d/delayu
+  sudo sed -i "s|/opt/delayu|${APP_DIR}|g" /etc/cron.d/delayu
+  sudo chmod 644 /etc/cron.d/delayu
+else
+  echo "==> Cron не трогаем. Обновить: DELAYU_WRITE_CRON=1"
+fi
 
 echo ""
 echo "==> Статус"

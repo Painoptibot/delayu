@@ -3,6 +3,8 @@ from django.urls import include, path
 
 from delayu import views_fuel_azs as azs_views
 from delayu import views_fuel_public as views
+from delayu import views_fuel_ufo_api as ufo_api
+from delayu import views_fuel_ufo_web as ufo_web
 
 fuel_urlpatterns = [
     path("", views.FuelCitizenHomeView.as_view(), name="fuel-citizen-home"),
@@ -55,6 +57,27 @@ fuel_urlpatterns = [
     path("azs/sync/", azs_views.FuelAzsSyncApiView.as_view(), name="fuel-azs-sync"),
 ]
 
+ufo_api_urlpatterns = [
+    path("azs/", ufo_api.FuelUfoAzsListApi.as_view(), name="fuel-ufo-azs-list"),
+    path("azs/<int:pk>/", ufo_api.FuelUfoAzsDetailApi.as_view(), name="fuel-ufo-azs-detail"),
+    path("reports/", ufo_api.FuelUfoReportApi.as_view(), name="fuel-ufo-reports"),
+    path("meta/", ufo_api.FuelUfoMetaApi.as_view(), name="fuel-ufo-meta"),
+    path("geo-check/", ufo_api.FuelUfoGeoCheckApi.as_view(), name="fuel-ufo-geo-check"),
+    path("route/", ufo_api.FuelUfoRouteApi.as_view(), name="fuel-ufo-route"),
+    path("status/", ufo_api.FuelUfoStatusApi.as_view(), name="fuel-ufo-status"),
+    path("auth/start/", ufo_api.FuelUfoAuthStartApi.as_view(), name="fuel-ufo-auth-start"),
+    path("auth/verify/", ufo_api.FuelUfoAuthVerifyApi.as_view(), name="fuel-ufo-auth-verify"),
+    path("auth/me/", ufo_api.FuelUfoAuthMeApi.as_view(), name="fuel-ufo-auth-me"),
+    path("auth/logout/", ufo_api.FuelUfoAuthLogoutApi.as_view(), name="fuel-ufo-auth-logout"),
+]
+
 urlpatterns = [
     path("fuel/<fuelportal:subsystem_slug>/", include(fuel_urlpatterns)),
+    # Мобильное API ЮФО (без привязки к тенанту города)
+    path("fuel/api/ufo/", include(ufo_api_urlpatterns)),
+    path("fuel/ufo/app/", ufo_web.FuelUfoMobileMapView.as_view(), name="fuel-ufo-mobile-app"),
+    path("fuel/ufo/legal/privacy/", ufo_web.FuelUfoLegalPrivacyView.as_view(), name="fuel-ufo-legal-privacy"),
+    path("fuel/ufo/legal/rules/", ufo_web.FuelUfoLegalRulesView.as_view(), name="fuel-ufo-legal-rules"),
+    path("fuel/ufo/support/", ufo_web.FuelUfoSupportView.as_view(), name="fuel-ufo-support"),
+    path("fuel/ufo/sw.js", ufo_web.FuelUfoServiceWorkerView.as_view(), name="fuel-ufo-sw"),
 ]
