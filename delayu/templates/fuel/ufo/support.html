@@ -1,0 +1,10 @@
+{% extends "fuel/ufo/legal_base.html" %}
+
+{% block title %}Техподдержка · {{ page_brand }}{% endblock %}
+
+{% block content %}
+  <h1>Техподдержка</h1>
+  <p class="muted">Помощь по карте АЗС и сообщениям жителей.</p>
+  <p><a href="mailto:{{ fuel_support_email }}">{{ fuel_support_email }}</a></p>
+  <a class="back" href="{{ app_url }}">Назад в приложение</a>
+{% endblock %}

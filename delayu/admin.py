@@ -58,3 +58,4 @@ class SubsystemMembershipAdmin(admin.ModelAdmin):
 
 
 from delayu import admin_business  # noqa: F401, E402
+from delayu import admin_fuel_ufo  # noqa: F401, E402
