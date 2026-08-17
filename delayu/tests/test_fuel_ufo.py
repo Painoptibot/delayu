@@ -211,6 +211,18 @@ class FuelUfoLegalPagesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Техподдержка")
 
+    def test_android_install_page(self):
+        r = self.client.get("/fuel/ufo/android/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Скачать APK")
+        self.assertContains(r, "/fuel/ufo/android/fuel-ufo.apk")
+
+    def test_apk_download(self):
+        r = self.client.get("/fuel/ufo/android/fuel-ufo.apk")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("android.package-archive", r["Content-Type"])
+        self.assertGreater(int(r.get("Content-Length") or 0), 1000)
+
     def test_app_links_to_ufo_legal(self):
         r = self.client.get("/fuel/ufo/app/")
         self.assertEqual(r.status_code, 200)

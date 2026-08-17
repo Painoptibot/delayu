@@ -2,7 +2,10 @@
 """Веб-витрина карты ЮФО для Android WebView."""
 from __future__ import annotations
 
+from pathlib import Path
+
 from django.conf import settings
+from django.http import FileResponse, Http404
 from django.shortcuts import render
 from django.views import View
 from django.views.generic import TemplateView
@@ -16,6 +19,8 @@ def ufo_public_context():
         "support_url": "/fuel/ufo/support/",
         "privacy_url": "/fuel/ufo/legal/privacy/",
         "rules_url": "/fuel/ufo/legal/rules/",
+        "android_url": "/fuel/ufo/android/",
+        "apk_url": "/fuel/ufo/android/fuel-ufo.apk",
         "fuel_support_email": settings.FUEL_SUPPORT_EMAIL,
     }
 
@@ -46,6 +51,27 @@ class FuelUfoLegalRulesView(FuelUfoPageMixin, TemplateView):
 
 class FuelUfoSupportView(FuelUfoPageMixin, TemplateView):
     template_name = "fuel/ufo/support.html"
+
+
+class FuelUfoAndroidInstallView(FuelUfoPageMixin, TemplateView):
+    template_name = "fuel/ufo/android.html"
+
+
+class FuelUfoApkDownloadView(View):
+    """Signed sideload APK for tablets/phones (not the store listing)."""
+
+    def get(self, request):
+        path = Path(__file__).resolve().parent / "static" / "fuel" / "ufo" / "fuel-ufo.apk"
+        if not path.is_file():
+            raise Http404("APK не найден")
+        response = FileResponse(
+            path.open("rb"),
+            as_attachment=True,
+            filename="fuel-ufo.apk",
+            content_type="application/vnd.android.package-archive",
+        )
+        response["Cache-Control"] = "public, max-age=300"
+        return response
 
 
 class FuelUfoServiceWorkerView(View):

@@ -79,5 +79,7 @@ urlpatterns = [
     path("fuel/ufo/legal/privacy/", ufo_web.FuelUfoLegalPrivacyView.as_view(), name="fuel-ufo-legal-privacy"),
     path("fuel/ufo/legal/rules/", ufo_web.FuelUfoLegalRulesView.as_view(), name="fuel-ufo-legal-rules"),
     path("fuel/ufo/support/", ufo_web.FuelUfoSupportView.as_view(), name="fuel-ufo-support"),
+    path("fuel/ufo/android/", ufo_web.FuelUfoAndroidInstallView.as_view(), name="fuel-ufo-android"),
+    path("fuel/ufo/android/fuel-ufo.apk", ufo_web.FuelUfoApkDownloadView.as_view(), name="fuel-ufo-apk"),
     path("fuel/ufo/sw.js", ufo_web.FuelUfoServiceWorkerView.as_view(), name="fuel-ufo-sw"),
 ]
