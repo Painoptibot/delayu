@@ -61,11 +61,16 @@
     .pill.ghost { background: rgba(255,255,255,.92); font-weight: 600; color: var(--muted); }
     .search {
       pointer-events: auto; display: flex; gap: 8px;
+      align-self: flex-start;
+      width: calc(100vw - 24px);
     }
     .search input {
-      flex: 1; border: 0; border-radius: 14px; padding: 11px 14px;
+      width: 100%; border: 0; border-radius: 14px; padding: 11px 14px;
       font: 600 14px Manrope, system-ui, sans-serif; background: #fff; color: var(--ink);
       box-shadow: 0 4px 14px rgba(16,36,28,.12); outline: none;
+    }
+    @media (min-width: 768px) {
+      .search { width: 320px; }
     }
     .fab {
       position: absolute; right: 14px; bottom: calc(210px + var(--safe-b)); z-index: 4;
