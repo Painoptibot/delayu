@@ -336,6 +336,20 @@ class FuelUfoStatusApi(View):
         )
 
 
+class FuelUfoStatsApi(View):
+    """GET /fuel/api/ufo/stats/ — срезы АЗС для дашборда."""
+
+    def get(self, request):
+        return JsonResponse(
+            svc.dashboard_stats(
+                region=(request.GET.get("region") or "").strip(),
+                city=(request.GET.get("city") or "").strip(),
+                network=(request.GET.get("network") or "").strip(),
+                grade=(request.GET.get("grade") or "ai95").strip(),
+            )
+        )
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class FuelUfoAuthStartApi(View):
     def post(self, request):

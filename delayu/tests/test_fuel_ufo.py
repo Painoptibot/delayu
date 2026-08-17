@@ -200,6 +200,29 @@ class FuelUfoApiTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.json()["online"])
 
+    def test_stats_by_city(self):
+        FuelUfoAzsPoint.objects.create(
+            code="test-krd-1",
+            name="Тест Краснодар",
+            network="Лукойл",
+            address="Краснодар",
+            region=FuelUfoRegion.KRASNODAR,
+            city="Краснодар",
+            latitude=45.0355,
+            longitude=38.9753,
+        )
+        r = self.client.get("/fuel/api/ufo/stats/")
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertGreaterEqual(data["totals"]["azs"], 2)
+        self.assertGreaterEqual(data["totals"]["cities"], 2)
+        names = {row["name"] for row in data["cities"]}
+        self.assertIn("Новороссийск", names)
+        self.assertIn("Краснодар", names)
+        krd = self.client.get("/fuel/api/ufo/stats/", {"city": "Краснодар"})
+        self.assertEqual(krd.json()["totals"]["azs"], 1)
+        self.assertEqual(krd.json()["totals"]["cities"], 1)
+
     def test_auth_otp(self):
         r = self.client.post(
             "/fuel/api/ufo/auth/start/",
@@ -264,5 +287,14 @@ class FuelUfoLegalPagesTests(TestCase):
         self.assertContains(r, "Загружаем карту")
         self.assertContains(r, "pin-more")
         self.assertContains(r, "station-open")
+        self.assertContains(r, "/fuel/ufo/stats/")
         self.assertNotContains(r, "/fuel/novorossiysk/")
         self.assertNotContains(r, "портале жителя")
+
+    def test_stats_page(self):
+        r = self.client.get("/fuel/ufo/stats/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Сводка ЮФО")
+        self.assertContains(r, 'apiBase: "/fuel/api/ufo"')
+        self.assertContains(r, "/stats/")
+        self.assertContains(r, "Города")

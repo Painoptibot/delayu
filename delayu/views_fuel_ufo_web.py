@@ -21,6 +21,7 @@ def ufo_public_context():
         "rules_url": "/fuel/ufo/legal/rules/",
         "android_url": "/fuel/ufo/android/",
         "apk_url": "/fuel/ufo/android/fuel-ufo.apk",
+        "stats_url": "/fuel/ufo/stats/",
         "fuel_support_email": settings.FUEL_SUPPORT_EMAIL,
     }
 
@@ -55,6 +56,10 @@ class FuelUfoSupportView(FuelUfoPageMixin, TemplateView):
 
 class FuelUfoAndroidInstallView(FuelUfoPageMixin, TemplateView):
     template_name = "fuel/ufo/android.html"
+
+
+class FuelUfoStatsView(FuelUfoPageMixin, TemplateView):
+    template_name = "fuel/ufo/stats.html"
 
 
 class FuelUfoApkDownloadView(View):

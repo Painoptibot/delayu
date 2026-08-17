@@ -60,6 +60,7 @@
     }
     .pill.active { background: var(--brand); color: #fff; }
     .pill.ghost { background: rgba(255,255,255,.92); font-weight: 600; color: var(--muted); }
+    a.pill { text-decoration: none; display: inline-flex; align-items: center; }
     .search {
       pointer-events: auto; display: flex; gap: 8px;
       align-self: flex-start;
@@ -364,6 +365,7 @@
       <button type="button" class="pill" data-grade="diesel">ДТ</button>
       <button type="button" class="pill ghost" id="btn-available" aria-pressed="false">Только с топливом</button>
       <button type="button" class="pill ghost" id="btn-networks" aria-pressed="false">Сеть</button>
+      <a class="pill ghost" href="{{ stats_url }}">Сводка</a>
     </div>
     <div class="filters network-filters" id="network-filters" aria-label="Сеть АЗС"></div>
     <div class="search">
@@ -418,6 +420,7 @@
       privacyUrl: "{{ privacy_url }}",
       rulesUrl: "{{ rules_url }}",
       supportUrl: "{{ support_url }}",
+      statsUrl: "{{ stats_url }}",
       deviceId: localStorage.getItem('fuel_ufo_device') || (function(){
         var id = 'web-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
         localStorage.setItem('fuel_ufo_device', id);
@@ -1364,6 +1367,7 @@
             : 'Наличие топлива отмечают один раз в сутки и только по АЗС, которую вы выбрали в поиске или «Еду сюда».'
         ) + '</p>' +
         '<div class="profile-links">' +
+        '<a class="btn secondary" href="' + window.FUEL_UFO.statsUrl + '">Сводка по городам</a>' +
         '<a class="btn secondary" href="' + window.FUEL_UFO.supportUrl + '">Техподдержка</a>' +
         '<a class="btn secondary" href="' + window.FUEL_UFO.privacyUrl + '">Персональные данные</a>' +
         '<a class="btn secondary" href="' + window.FUEL_UFO.rulesUrl + '">Правила сервиса</a></div>' +
@@ -1380,6 +1384,7 @@
     }
     box.innerHTML =
       '<p class="auth-note">Вход по телефону и ФИО. Код придёт в SMS. В демо-режиме код показывается на экране.</p>' +
+      '<div class="profile-links"><a class="btn secondary" href="' + window.FUEL_UFO.statsUrl + '">Сводка по городам</a></div>' +
       '<div class="form-grid" id="login-form">' +
         '<div><label>Телефон</label><input id="login-phone" type="tel" placeholder="+7 918 000-00-00" /></div>' +
         '<div><label>ФИО</label><input id="login-name" type="text" placeholder="Иван Иванов" /></div>' +

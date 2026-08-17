@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f3d2e" />
+  <title>Сводка АЗС · {{ page_brand }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #10241c;
+      --muted: #5a6f65;
+      --line: #c9d8d0;
+      --brand: #0f3d2e;
+      --brand-2: #1f6b4f;
+      --gold: #c9a227;
+      --ok: #1a9a55;
+      --low: #c47a12;
+      --empty: #c43c3c;
+      --unk: #6b7c74;
+      --paper: rgba(247, 250, 248, .88);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: Manrope, system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1100px 520px at 8% -8%, rgba(31, 107, 79, .32), transparent 58%),
+        radial-gradient(800px 380px at 108% 4%, rgba(201, 162, 39, .16), transparent 52%),
+        linear-gradient(180deg, #b7c9bf 0%, #e4eee8 34%, #d5e2db 100%);
+    }
+    .hero {
+      padding: 28px 20px 18px;
+      background:
+        linear-gradient(180deg, rgba(15, 61, 46, .94) 0%, rgba(15, 61, 46, .82) 70%, transparent 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cpath d='M0 60h120M60 0v120' stroke='%23e8f5ef' stroke-opacity='.06'/%3E%3C/svg%3E");
+      color: #f3faf6;
+    }
+    .hero-inner { max-width: 1080px; margin: 0 auto; }
+    .hero .mark {
+      font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--gold); margin: 0 0 10px;
+    }
+    .hero h1 {
+      margin: 0; font-size: clamp(34px, 6vw, 64px); letter-spacing: -.04em; line-height: .95;
+      font-weight: 800;
+    }
+    .hero p { margin: 12px 0 0; max-width: 36em; font-size: 15px; font-weight: 600; opacity: .86; line-height: 1.45; }
+    .hero-nav { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .hero-nav a {
+      color: #f3faf6; text-decoration: none; font-weight: 700; font-size: 13px;
+      border: 1px solid rgba(243,250,246,.28); border-radius: 12px; padding: 9px 12px;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 8px 16px 48px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 18px; }
+    .chip {
+      border: 0; border-radius: 999px; padding: 8px 12px; cursor: pointer;
+      font: 700 12px Manrope, system-ui, sans-serif; background: #fff; color: var(--ink);
+      box-shadow: 0 4px 14px rgba(16,36,28,.08);
+    }
+    .chip.on { background: var(--brand); color: #fff; }
+    .kpis {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px;
+    }
+    .kpi b { display: block; font-size: clamp(28px, 4vw, 44px); letter-spacing: -.04em; line-height: 1; }
+    .kpi span { display: block; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
+    .story {
+      margin: 0 0 18px; font-size: 15px; font-weight: 600; color: var(--muted);
+    }
+    .story strong { color: var(--ink); }
+    .grid { display: grid; grid-template-columns: 1.4fr .9fr; gap: 22px; }
+    section h2 { margin: 0 0 6px; font-size: 18px; letter-spacing: -.02em; }
+    section .lead { margin: 0 0 12px; font-size: 13px; color: var(--muted); font-weight: 600; }
+    .find {
+      width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+      font: 600 14px Manrope, system-ui, sans-serif; margin-bottom: 10px; background: var(--paper);
+      outline: none; color: var(--ink);
+    }
+    .ranks { display: grid; gap: 7px; max-height: 62vh; overflow: auto; padding-right: 4px; }
+    .rank {
+      display: grid; grid-template-columns: minmax(92px, 28%) 1fr auto; gap: 10px; align-items: center;
+      border: 0; background: transparent; padding: 4px 2px; cursor: pointer; text-align: left;
+      font: inherit; color: inherit; width: 100%; border-radius: 10px;
+    }
+    .rank:hover, .rank.on { background: rgba(15,61,46,.06); }
+    .rank .nm { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar { height: 10px; border-radius: 99px; background: rgba(15,61,46,.1); overflow: hidden; }
+    .bar i {
+      display: block; height: 100%; width: 0; border-radius: 99px; background: var(--brand-2);
+      transform-origin: left center; animation: grow .55s ease both;
+    }
+    .rank.on .bar i { background: var(--gold); }
+    .rank .n { font-size: 13px; font-weight: 800; min-width: 2.4em; text-align: right; }
+    .mix { display: flex; height: 18px; border-radius: 99px; overflow: hidden; margin: 8px 0 14px; background: rgba(15,61,46,.1); }
+    .mix span { display: block; height: 100%; min-width: 0; }
+    .mix .ok { background: var(--ok); } .mix .low { background: var(--low); }
+    .mix .empty { background: var(--empty); } .mix .unknown { background: var(--unk); }
+    .legend { display: flex; flex-wrap: wrap; gap: 10px 14px; font-size: 12px; font-weight: 700; color: var(--muted); }
+    .legend b { color: var(--ink); font-weight: 800; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
+    .side { display: grid; gap: 28px; }
+    .reset {
+      border: 0; background: none; color: var(--brand-2); font: 700 12px Manrope, system-ui, sans-serif;
+      cursor: pointer; padding: 0;
+    }
+    @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @media (max-width: 820px) {
+      .kpis { grid-template-columns: 1fr 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .ranks { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="mark">Топливный пропуск</p>
+      <h1>Сводка ЮФО</h1>
+      <p>Сколько АЗС в каждом городе, какие сети закрывают край и где по выбранной марке ещё есть топливо. Нажимайте срезы — картина пересчитается.</p>
+      <div class="hero-nav">
+        <a href="{{ app_url }}">Карта</a>
+        <a href="{{ android_url }}">Приложение</a>
+      </div>
+    </div>
+  </header>
+  <div class="wrap">
+    <div class="filters" id="regions"></div>
+    <div class="filters" id="grades"></div>
+    <p class="story" id="story">Считаем АЗС…</p>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid">
+      <section>
+        <h2>Города</h2>
+        <p class="lead">Клик по строке оставляет один город. Повторный клик снимает фильтр.</p>
+        <input class="find" id="city-q" type="search" placeholder="Найти город" autocomplete="off" />
+        <div class="ranks" id="cities"></div>
+      </section>
+      <div class="side">
+        <section>
+          <h2>Наличие <span id="grade-name">АИ-95</span></h2>
+          <p class="lead">Доля станций с топливом, «мало», пустых и без данных.</p>
+          <div class="mix" id="mix"></div>
+          <div class="legend" id="avail"></div>
+        </section>
+        <section>
+          <h2>Сети</h2>
+          <p class="lead">Клик выбирает сеть по всему ЮФО или внутри субъекта.</p>
+          <div class="ranks" id="networks"></div>
+        </section>
+        <section>
+          <h2>Свежесть и отметки</h2>
+          <p class="lead" id="extra"></p>
+          <button type="button" class="reset" id="reset">Сбросить все срезы</button>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.FUEL_UFO = { apiBase: "{{ api_base }}" };
+  </script>
+  <script>
+  (function () {
+    var state = { region: "", city: "", network: "", grade: "ai95", q: "" };
+    var last = null;
+    var el = {
+      regions: document.getElementById("regions"),
+      grades: document.getElementById("grades"),
+      story: document.getElementById("story"),
+      kpis: document.getElementById("kpis"),
+      cities: document.getElementById("cities"),
+      networks: document.getElementById("networks"),
+      mix: document.getElementById("mix"),
+      avail: document.getElementById("avail"),
+      extra: document.getElementById("extra"),
+      gradeName: document.getElementById("grade-name"),
+      q: document.getElementById("city-q")
+    };
+
+    function esc(s) {
+      return String(s || "").replace(/[&<>"']/g, function (c) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+      });
+    }
+
+    function pct(part, whole) {
+      if (!whole) return 0;
+      return Math.round((part / whole) * 100);
+    }
+
+    function bars(rows, nameKey, selected, onPick) {
+      var max = 0;
+      rows.forEach(function (r) { if (r.count > max) max = r.count; });
+      return rows.map(function (r, i) {
+        var name = r[nameKey];
+        var on = selected && selected === name ? " on" : "";
+        var w = max ? Math.max(6, Math.round((r.count / max) * 100)) : 0;
+        return (
+          '<button type="button" class="rank' + on + '" data-i="' + i + '">' +
+            '<span class="nm">' + esc(name) + "</span>" +
+            '<span class="bar"><i style="width:' + w + "%;animation-delay:" + (i * 18) + 'ms"></i></span>' +
+            '<span class="n">' + r.count + "</span>" +
+          "</button>"
+        );
+      }).join("");
+    }
+
+    function bindRanks(box, rows, current, key, setter) {
+      Array.prototype.forEach.call(box.querySelectorAll(".rank"), function (btn, i) {
+        btn.addEventListener("click", function () {
+          var val = rows[i][key];
+          setter(current === val ? "" : val);
+        });
+      });
+    }
+
+    function render(data) {
+      last = data;
+      if (!el.regions.dataset.ready) {
+        el.regions.innerHTML =
+          '<button type="button" class="chip' + (!state.region ? " on" : "") + '" data-region="">Весь ЮФО</button>' +
+          data.all_regions.map(function (r) {
+            return '<button type="button" class="chip" data-region="' + esc(r.code) + '">' + esc(r.name) + "</button>";
+          }).join("");
+        Array.prototype.forEach.call(el.regions.querySelectorAll(".chip"), function (btn) {
+          btn.addEventListener("click", function () {
+            state.region = btn.getAttribute("data-region") || "";
+            state.city = "";
+            load();
+          });
+        });
+        el.grades.innerHTML = data.grades.map(function (g) {
+          return '<button type="button" class="chip" data-grade="' + g.code + '">' + esc(g.name) + "</button>";
+        }).join("");
+        Array.prototype.forEach.call(el.grades.querySelectorAll(".chip"), function (btn) {
+          btn.addEventListener("click", function () {
+            state.grade = btn.getAttribute("data-grade");
+            load();
+          });
+        });
+        el.regions.dataset.ready = "1";
+      }
+      Array.prototype.forEach.call(el.regions.querySelectorAll(".chip"), function (btn) {
+        btn.classList.toggle("on", (btn.getAttribute("data-region") || "") === state.region);
+      });
+      Array.prototype.forEach.call(el.grades.querySelectorAll(".chip"), function (btn) {
+        btn.classList.toggle("on", btn.getAttribute("data-grade") === state.grade);
+      });
+
+      var t = data.totals;
+      el.kpis.innerHTML =
+        '<div class="kpi"><b>' + t.azs + "</b><span>АЗС в срезе</span></div>" +
+        '<div class="kpi"><b>' + t.cities + "</b><span>городов</span></div>" +
+        '<div class="kpi"><b>' + t.networks + "</b><span>сетей</span></div>" +
+        '<div class="kpi"><b>' + t.regions + "</b><span>субъектов</span></div>";
+
+      var bits = [];
+      if (state.region) {
+        var rg = data.all_regions.find(function (r) { return r.code === state.region; });
+        bits.push(rg ? rg.name : state.region);
+      } else bits.push("весь ЮФО");
+      if (state.city) bits.push(state.city);
+      if (state.network) bits.push(state.network);
+      bits.push(data.filters.grade_label);
+      el.story.innerHTML = "Сейчас: <strong>" + esc(bits.join(" · ")) + "</strong> — " + t.azs + " станций. Нажимайте строки и чипы, чтобы сузить картину.";
+
+      var cities = data.cities;
+      var q = (state.q || "").trim().toLowerCase();
+      if (q) cities = cities.filter(function (c) { return c.name.toLowerCase().indexOf(q) !== -1; });
+      el.cities.innerHTML = cities.length
+        ? bars(cities, "name", state.city, null)
+        : '<p class="lead">Нет городов по поиску.</p>';
+      bindRanks(el.cities, cities, state.city, "name", function (v) { state.city = v; load(); });
+
+      el.networks.innerHTML = data.networks.length
+        ? bars(data.networks, "name", state.network, null)
+        : '<p class="lead">Нет сетей в срезе.</p>';
+      bindRanks(el.networks, data.networks, state.network, "name", function (v) { state.network = v; load(); });
+
+      el.gradeName.textContent = data.availability.grade_label;
+      var aItems = data.availability.items;
+      var aTotal = aItems.reduce(function (s, x) { return s + x.count; }, 0);
+      el.mix.innerHTML = aItems.map(function (x) {
+        var w = aTotal ? (x.count / aTotal) * 100 : 0;
+        return '<span class="' + x.code + '" style="width:' + w + '%" title="' + esc(x.name) + '"></span>';
+      }).join("");
+      el.avail.innerHTML = aItems.map(function (x) {
+        return '<span><i class="dot" style="background:var(--' + (x.code === "unknown" ? "unk" : x.code) + ')"></i>' +
+          esc(x.name) + " <b>" + x.count + "</b> · " + pct(x.count, aTotal) + "%</span>";
+      }).join("");
+
+      var f = data.freshness;
+      var r = data.reports;
+      el.extra.textContent =
+        "Свежих статусов за час: " + f.fresh_60m +
+        ". Без отметки: " + f.unknown +
+        ". Сообщений жителей: " + r.total +
+        (r.today ? (", сегодня " + r.today) : "") + ".";
+    }
+
+    function load() {
+      var q = new URLSearchParams();
+      if (state.region) q.set("region", state.region);
+      if (state.city) q.set("city", state.city);
+      if (state.network) q.set("network", state.network);
+      if (state.grade) q.set("grade", state.grade);
+      fetch(window.FUEL_UFO.apiBase + "/stats/?" + q.toString())
+        .then(function (r) { return r.json(); })
+        .then(render)
+        .catch(function () { el.story.textContent = "Не удалось загрузить сводку."; });
+    }
+
+    var t = null;
+    el.q.addEventListener("input", function () {
+      state.q = el.q.value || "";
+      clearTimeout(t);
+      t = setTimeout(function () { if (last) render(last); }, 80);
+    });
+    document.getElementById("reset").addEventListener("click", function () {
+      state = { region: "", city: "", network: "", grade: "ai95", q: "" };
+      el.q.value = "";
+      load();
+    });
+    load();
+  })();
+  </script>
+</body>
+</html>

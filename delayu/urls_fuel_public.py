@@ -65,6 +65,7 @@ ufo_api_urlpatterns = [
     path("geo-check/", ufo_api.FuelUfoGeoCheckApi.as_view(), name="fuel-ufo-geo-check"),
     path("route/", ufo_api.FuelUfoRouteApi.as_view(), name="fuel-ufo-route"),
     path("status/", ufo_api.FuelUfoStatusApi.as_view(), name="fuel-ufo-status"),
+    path("stats/", ufo_api.FuelUfoStatsApi.as_view(), name="fuel-ufo-stats-api"),
     path("auth/start/", ufo_api.FuelUfoAuthStartApi.as_view(), name="fuel-ufo-auth-start"),
     path("auth/verify/", ufo_api.FuelUfoAuthVerifyApi.as_view(), name="fuel-ufo-auth-verify"),
     path("auth/me/", ufo_api.FuelUfoAuthMeApi.as_view(), name="fuel-ufo-auth-me"),
@@ -80,6 +81,7 @@ urlpatterns = [
     path("fuel/ufo/legal/rules/", ufo_web.FuelUfoLegalRulesView.as_view(), name="fuel-ufo-legal-rules"),
     path("fuel/ufo/support/", ufo_web.FuelUfoSupportView.as_view(), name="fuel-ufo-support"),
     path("fuel/ufo/android/", ufo_web.FuelUfoAndroidInstallView.as_view(), name="fuel-ufo-android"),
+    path("fuel/ufo/stats/", ufo_web.FuelUfoStatsView.as_view(), name="fuel-ufo-stats"),
     path("fuel/ufo/android/fuel-ufo.apk", ufo_web.FuelUfoApkDownloadView.as_view(), name="fuel-ufo-apk"),
     path("fuel/ufo/sw.js", ufo_web.FuelUfoServiceWorkerView.as_view(), name="fuel-ufo-sw"),
 ]

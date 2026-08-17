@@ -10,13 +10,15 @@ import logging
 import urllib.error
 import urllib.request
 
-from django.db.models import Count
+from django.db.models import CharField, Count, F, Q, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from delayu.models_fuel_ufo import (
     FuelUfoAvailability,
     FuelUfoAzsPoint,
     FuelUfoDataSource,
+    FuelUfoRegion,
     FuelUfoSnapshot,
     FuelUfoSourceObservation,
     FuelUfoUserReport,
@@ -289,6 +291,122 @@ def list_networks(*, limit: int = 20) -> list[dict[str, Any]]:
         .order_by("-count", "network")[:limit]
     )
     return [{"name": r["network"], "count": r["count"]} for r in rows]
+
+
+_GRADE_FIELDS = {
+    "ai92": "snapshot__status_ai92",
+    "ai95": "snapshot__status_ai95",
+    "diesel": "snapshot__status_diesel",
+}
+_GRADE_LABELS = {"ai92": "АИ-92", "ai95": "АИ-95", "diesel": "ДТ"}
+
+
+def dashboard_stats(
+    *,
+    region: str = "",
+    city: str = "",
+    network: str = "",
+    grade: str = "ai95",
+) -> dict[str, Any]:
+    """Срезы справочника АЗС для публичного дашборда."""
+    grade = grade if grade in _GRADE_FIELDS else "ai95"
+    qs = FuelUfoAzsPoint.objects.filter(is_active=True)
+    if region and region in FuelUfoRegion.values:
+        qs = qs.filter(region=region)
+    if city:
+        qs = qs.filter(city=city)
+    if network:
+        qs = qs.filter(network=network)
+
+    total = qs.count()
+    region_labels = dict(FuelUfoRegion.choices)
+    city_rows = list(
+        qs.exclude(city="")
+        .values("city", "region")
+        .annotate(count=Count("id"))
+        .order_by("-count", "city")
+    )
+    network_rows = list(
+        qs.exclude(network="")
+        .values("network")
+        .annotate(count=Count("id"))
+        .order_by("-count", "network")
+    )
+    region_rows = list(
+        qs.values("region").annotate(count=Count("id")).order_by("-count", "region")
+    )
+    st_field = _GRADE_FIELDS[grade]
+    avail_rows = {
+        (row["st"] or FuelUfoAvailability.UNKNOWN): row["count"]
+        for row in qs.annotate(
+            st=Coalesce(F(st_field), Value(FuelUfoAvailability.UNKNOWN, output_field=CharField()))
+        )
+        .values("st")
+        .annotate(count=Count("id"))
+    }
+    now = timezone.now()
+    fresh = qs.filter(snapshot__last_reliable_at__gte=now - timedelta(hours=1)).count()
+    unknown_fresh = qs.filter(
+        Q(snapshot__isnull=True) | Q(snapshot__last_reliable_at__isnull=True)
+    ).count()
+    reports = FuelUfoUserReport.objects.filter(is_rejected=False, azs__in=qs)
+    today_start = timezone.localtime(now).replace(hour=0, minute=0, second=0, microsecond=0)
+    return {
+        "filters": {
+            "region": region,
+            "city": city,
+            "network": network,
+            "grade": grade,
+            "grade_label": _GRADE_LABELS[grade],
+        },
+        "totals": {
+            "azs": total,
+            "cities": qs.exclude(city="").values("city").distinct().count(),
+            "networks": qs.exclude(network="").values("network").distinct().count(),
+            "regions": qs.values("region").distinct().count(),
+        },
+        "cities": [
+            {
+                "name": row["city"],
+                "region": row["region"],
+                "region_label": region_labels.get(row["region"], row["region"]),
+                "count": row["count"],
+            }
+            for row in city_rows
+        ],
+        "networks": [{"name": row["network"], "count": row["count"]} for row in network_rows],
+        "regions": [
+            {
+                "code": row["region"],
+                "name": region_labels.get(row["region"], row["region"]),
+                "count": row["count"],
+            }
+            for row in region_rows
+        ],
+        "availability": {
+            "grade": grade,
+            "grade_label": _GRADE_LABELS[grade],
+            "items": [
+                {"code": code, "name": label, "count": avail_rows.get(code, 0)}
+                for code, label in FuelUfoAvailability.choices
+            ],
+        },
+        "freshness": {
+            "fresh_60m": fresh,
+            "stale": max(0, total - fresh - unknown_fresh),
+            "unknown": unknown_fresh,
+        },
+        "reports": {
+            "total": reports.count(),
+            "today": reports.filter(created_at__gte=today_start).count(),
+        },
+        "all_regions": [{"code": c, "name": n} for c, n in FuelUfoRegion.choices],
+        "grades": [
+            {"code": "ai95", "name": "АИ-95"},
+            {"code": "ai92", "name": "АИ-92"},
+            {"code": "diesel", "name": "ДТ"},
+        ],
+    }
 
 
 def serialize_azs(
