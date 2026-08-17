@@ -1,4 +1,5 @@
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 
 
 def seed_smev_info_types(apps, schema_editor):
@@ -48,37 +49,37 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investsmevrequest",
             name="audit_trail",
             field=models.JSONField(blank=True, default=list),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investsmevrequest",
             name="correlation_id",
             field=models.CharField(blank=True, db_index=True, max_length=64),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investsmevrequest",
             name="dead_lettered_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investsmevrequest",
             name="max_retries",
             field=models.PositiveSmallIntegerField(default=3),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investsmevrequest",
             name="message_id",
             field=models.CharField(blank=True, db_index=True, max_length=64),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investsmevrequest",
             name="retries",
             field=models.PositiveSmallIntegerField(default=0),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investsmevrequest",
             name="timeout_at",
             field=models.DateTimeField(blank=True, null=True),
@@ -101,7 +102,7 @@ class Migration(migrations.Migration):
                 max_length=16,
             ),
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestSmevInfoType",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),

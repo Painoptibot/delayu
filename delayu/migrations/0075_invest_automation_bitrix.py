@@ -2,6 +2,7 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 
 
 class Migration(migrations.Migration):
@@ -11,7 +12,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name='InvestAutomationConfig',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -25,7 +26,7 @@ class Migration(migrations.Migration):
                 ('subsystem', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='invest_automation_config', to='delayu.subsystem')),
             ],
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name='InvestAutomationRun',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -39,7 +40,7 @@ class Migration(migrations.Migration):
                 'ordering': ['-started_at'],
             },
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name='InvestExternalTask',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -60,7 +61,7 @@ class Migration(migrations.Migration):
                 'ordering': ['due_at', '-created_at'],
             },
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name='InvestIntegrationEvent',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

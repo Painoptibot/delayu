@@ -2,6 +2,7 @@
 
 from django.conf import settings
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 import django.db.models.deletion
 
 
@@ -13,7 +14,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestFgistpRecord",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
@@ -138,11 +139,11 @@ class Migration(migrations.Migration):
                 "ordering": ["-updated_at", "-id"],
             },
         ),
-        migrations.AddIndex(
+        AddIndexIfMissing(
             model_name="investfgistprecord",
             index=models.Index(fields=["subsystem", "status"], name="delayu_inve_subsys_fgistp_idx"),
         ),
-        migrations.AddIndex(
+        AddIndexIfMissing(
             model_name="investfgistprecord",
             index=models.Index(fields=["site", "status"], name="delayu_inve_site_fgistp_idx"),
         ),

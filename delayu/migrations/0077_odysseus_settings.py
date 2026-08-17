@@ -2,6 +2,7 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 
 
 class Migration(migrations.Migration):
@@ -11,7 +12,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name='OdysseusSettings',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

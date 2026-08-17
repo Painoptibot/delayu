@@ -1,4 +1,5 @@
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 
 
 class Migration(migrations.Migration):
@@ -8,12 +9,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investprojectsite",
             name="booked_until",
             field=models.DateTimeField(blank=True, null=True, verbose_name="Бронь до"),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investsite",
             name="restriction_zones",
             field=models.JSONField(blank=True, default=list, verbose_name="Ограничительные зоны"),

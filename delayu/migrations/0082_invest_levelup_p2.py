@@ -1,4 +1,5 @@
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 import django.db.models.deletion
 
 
@@ -9,7 +10,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestSupportTrackItem",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
@@ -35,7 +36,7 @@ class Migration(migrations.Migration):
             ],
             options={"ordering": ["due_at", "created_at"]},
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestProtocol",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
@@ -63,7 +64,7 @@ class Migration(migrations.Migration):
             ],
             options={"ordering": ["-signed_at", "-created_at"]},
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestOivApproval",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
@@ -89,7 +90,7 @@ class Migration(migrations.Migration):
             ],
             options={"ordering": ["due_at", "agency_name"]},
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestStopFactor",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),

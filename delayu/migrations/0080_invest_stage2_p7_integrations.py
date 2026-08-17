@@ -1,4 +1,5 @@
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 
 
 class Migration(migrations.Migration):
@@ -8,7 +9,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investautomationconfig",
             name="allowed_ips",
             field=models.JSONField(blank=True, default=list),

@@ -1,6 +1,7 @@
 # Local MNP tile/feature store for Krasnodar Krai
 
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 import django.db.models.deletion
 
 
@@ -11,7 +12,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestMnpScheme",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
@@ -46,7 +47,7 @@ class Migration(migrations.Migration):
                 "ordering": ["name", "uin"],
             },
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestMnpSyncRun",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
@@ -62,7 +63,7 @@ class Migration(migrations.Migration):
                 "ordering": ["-started_at"],
             },
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestMnpFeature",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
@@ -92,14 +93,14 @@ class Migration(migrations.Migration):
                 "ordering": ["id"],
             },
         ),
-        migrations.AddIndex(
+        AddIndexIfMissing(
             model_name="investmnpfeature",
             index=models.Index(
                 fields=["bbox_min_lon", "bbox_max_lon", "bbox_min_lat", "bbox_max_lat"],
                 name="delayu_inve_bbox_mi_7c8a1d_idx",
             ),
         ),
-        migrations.AddIndex(
+        AddIndexIfMissing(
             model_name="investmnpfeature",
             index=models.Index(fields=["scheme", "classid"], name="delayu_inve_scheme__mnp_cls_idx"),
         ),

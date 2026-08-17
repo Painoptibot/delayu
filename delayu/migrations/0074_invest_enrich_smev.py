@@ -3,6 +3,7 @@
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 
 
 class Migration(migrations.Migration):
@@ -13,72 +14,72 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investproject',
             name='contact_email',
             field=models.EmailField(blank=True, max_length=254, verbose_name='E-mail'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investproject',
             name='contact_person',
             field=models.CharField(blank=True, max_length=255, verbose_name='Контактное лицо'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investproject',
             name='contact_phone',
             field=models.CharField(blank=True, max_length=64, verbose_name='Телефон'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investproject',
             name='description',
             field=models.TextField(blank=True, verbose_name='Описание проекта'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investproject',
             name='municipality_notes',
             field=models.TextField(blank=True, verbose_name='Комментарий МО'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investproject',
             name='planned_end',
             field=models.DateField(blank=True, null=True, verbose_name='План ввода'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investproject',
             name='planned_start',
             field=models.DateField(blank=True, null=True, verbose_name='План старта'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investproject',
             name='support_measures',
             field=models.TextField(blank=True, verbose_name='Меры поддержки'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investsite',
             name='address',
             field=models.TextField(blank=True, verbose_name='Адрес / местоположение'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investsite',
             name='egrn_updated_at',
             field=models.DateTimeField(blank=True, null=True, verbose_name='Данные ЕГРН обновлены'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investsite',
             name='encumbrances',
             field=models.TextField(blank=True, verbose_name='Обременения / ограничения'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investsite',
             name='last_smev_at',
             field=models.DateTimeField(blank=True, null=True, verbose_name='Последний запрос СМЭВ'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investsite',
             name='right_type',
             field=models.CharField(blank=True, max_length=128, verbose_name='Вид права'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investsite',
             name='zone_info',
             field=models.TextField(blank=True, verbose_name='Зоны / пересечения (черновик)'),
@@ -113,7 +114,7 @@ class Migration(migrations.Migration):
             name='land_category',
             field=models.CharField(blank=True, max_length=128, verbose_name='Категория земель'),
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name='InvestSmevRequest',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

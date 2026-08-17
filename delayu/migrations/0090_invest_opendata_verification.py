@@ -3,6 +3,7 @@
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 
 
 class Migration(migrations.Migration):
@@ -13,7 +14,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name='InvestVerificationRun',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -31,7 +32,7 @@ class Migration(migrations.Migration):
                 'ordering': ['-created_at'],
             },
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name='InvestVerificationSourceResult',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -90,41 +91,41 @@ class Migration(migrations.Migration):
             new_name='delayu_inve_scheme__b7dea4_idx',
             old_name='delayu_inve_scheme__mnp_cls_idx',
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investverificationrun',
             name='investor',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='verification_runs', to='delayu.investinvestor'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investverificationrun',
             name='project',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='verification_runs', to='delayu.investproject'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investverificationrun',
             name='site',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='verification_runs', to='delayu.investsite'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investverificationrun',
             name='subsystem',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='invest_verification_runs', to='delayu.subsystem'),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investverificationrun',
             name='triggered_by',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name='investverificationsourceresult',
             name='run',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='source_results', to='delayu.investverificationrun'),
         ),
-        migrations.AddIndex(
+        AddIndexIfMissing(
             model_name='investverificationrun',
             index=models.Index(fields=['subsystem', 'target_type', '-created_at'], name='delayu_inve_subsyst_25ed18_idx'),
         ),
-        migrations.AddIndex(
+        AddIndexIfMissing(
             model_name='investverificationsourceresult',
             index=models.Index(fields=['run', 'source_code'], name='delayu_inve_run_id_ec0624_idx'),
         ),

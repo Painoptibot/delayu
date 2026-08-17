@@ -1,5 +1,6 @@
 import django.db.models.deletion
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 
 
 class Migration(migrations.Migration):
@@ -9,7 +10,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestInvestor",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
@@ -32,7 +33,7 @@ class Migration(migrations.Migration):
                 "indexes": [models.Index(fields=["subsystem", "inn"], name="delayu_inve_subsyst_87b18e_idx")],
             },
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investproject",
             name="investor_entity",
             field=models.ForeignKey(
@@ -44,7 +45,7 @@ class Migration(migrations.Migration):
                 verbose_name="Юрлицо инвестора",
             ),
         ),
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestPackageSnapshot",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
@@ -82,7 +83,7 @@ class Migration(migrations.Migration):
                 "ordering": ["-created_at"],
             },
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="investpackageitem",
             name="document",
             field=models.ForeignKey(

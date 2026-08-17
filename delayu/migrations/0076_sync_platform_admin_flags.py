@@ -1,4 +1,5 @@
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 
 
 class Migration(migrations.Migration):
@@ -8,7 +9,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="userprofile",
             name="is_platform_admin",
             field=models.BooleanField(
@@ -17,7 +18,7 @@ class Migration(migrations.Migration):
                 verbose_name="Администратор платформы",
             ),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="role",
             name="is_subsystem_admin",
             field=models.BooleanField(

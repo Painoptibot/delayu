@@ -1,6 +1,7 @@
 # Generated manually for InvestFgistpDocument catalog
 
 from django.db import migrations, models
+from delayu.migration_ops import AddFieldIfMissing, AddIndexIfMissing, CreateModelIfMissing
 import django.db.models.deletion
 
 
@@ -11,7 +12,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
+        CreateModelIfMissing(
             name="InvestFgistpDocument",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
@@ -67,11 +68,11 @@ class Migration(migrations.Migration):
                 "ordering": ["title"],
             },
         ),
-        migrations.AddIndex(
+        AddIndexIfMissing(
             model_name="investfgistpdocument",
             index=models.Index(fields=["subsystem", "is_active"], name="delayu_inve_subsys_fgdoc_idx"),
         ),
-        migrations.AddIndex(
+        AddIndexIfMissing(
             model_name="investfgistpdocument",
             index=models.Index(fields=["level"], name="delayu_inve_level_fgdoc_idx"),
         ),
