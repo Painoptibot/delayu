@@ -72,12 +72,41 @@ class FuelUfoApiTests(TestCase):
         self.assertGreaterEqual(data["count"], 1)
         item = data["results"][0]
         self.assertIn("last_reliable_at", item)
-        self.assertIn("sources", item)
         self.assertIn("freshness_label", item)
         self.assertIn("status_labels", item)
         self.assertEqual(item["status_labels"]["ai95"], "Есть")
+        self.assertNotIn("sources", item)
+        self.assertLessEqual(data["count"], 24)
+
+    def test_list_full_payload(self):
+        r = self.client.get("/fuel/api/ufo/azs/", {"lite": "0"})
+        self.assertEqual(r.status_code, 200)
+        item = r.json()["results"][0]
         self.assertIn("sources", item)
         self.assertIn("status_label", item["sources"].get("ai95") or {"status_label": "Есть"})
+
+    def test_list_nearby(self):
+        far = FuelUfoAzsPoint.objects.create(
+            code="test-far-1",
+            name="Далёкая АЗС",
+            network="Тест",
+            address="Ростов",
+            region=FuelUfoRegion.ROSTOV,
+            city="Ростов-на-Дону",
+            latitude=47.2357,
+            longitude=39.7015,
+        )
+        svc.ingest_partner_mock(far, FuelUfoDataSource.SBER, "ai95", FuelUfoAvailability.OK)
+        r = self.client.get(
+            "/fuel/api/ufo/azs/",
+            {"near_lat": "44.7238", "near_lon": "37.7689", "limit": "5", "grade": "ai95"},
+        )
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data["mode"], "nearby")
+        self.assertGreaterEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["id"], self.azs.id)
+        self.assertIn("distance_km", data["results"][0])
 
     def test_list_grade_available(self):
         r = self.client.get("/fuel/api/ufo/azs/", {"grade": "ai95", "available": "1"})
@@ -230,5 +259,7 @@ class FuelUfoLegalPagesTests(TestCase):
         self.assertContains(r, "/fuel/ufo/legal/rules/")
         self.assertContains(r, "network-filters")
         self.assertContains(r, "Еду сюда")
+        self.assertContains(r, "near_lat")
+        self.assertContains(r, "package.standard")
         self.assertNotContains(r, "/fuel/novorossiysk/")
         self.assertNotContains(r, "портале жителя")

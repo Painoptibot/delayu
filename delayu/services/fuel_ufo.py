@@ -291,7 +291,12 @@ def list_networks(*, limit: int = 20) -> list[dict[str, Any]]:
     return [{"name": r["network"], "count": r["count"]} for r in rows]
 
 
-def serialize_azs(azs: FuelUfoAzsPoint) -> dict[str, Any]:
+def serialize_azs(
+    azs: FuelUfoAzsPoint,
+    *,
+    lite: bool = False,
+    origin: tuple[float, float] | None = None,
+) -> dict[str, Any]:
     snap = getattr(azs, "snapshot", None)
     if snap is None:
         try:
@@ -304,11 +309,10 @@ def serialize_azs(azs: FuelUfoAzsPoint) -> dict[str, Any]:
         "ai95": snap.status_ai95,
         "diesel": snap.status_diesel,
     }
-    # «Можно ли ехать» — оценка для списка рядом
     rank = {"ok": 0, "low": 1, "unknown": 2, "empty": 3}
     best_grade = min(status.values(), key=lambda s: rank.get(s, 9))
 
-    return {
+    payload: dict[str, Any] = {
         "id": azs.id,
         "code": azs.code,
         "name": azs.name,
@@ -320,26 +324,79 @@ def serialize_azs(azs: FuelUfoAzsPoint) -> dict[str, Any]:
         "lon": float(azs.longitude),
         "status": status,
         "status_labels": {k: status_ru(v) for k, v in status.items()},
-        "primary_source": snap.primary_source,
-        "primary_source_label": _SOURCE_RU.get(snap.primary_source or "", "—"),
-        "confidence": snap.confidence,
-        "last_reliable_at": snap.last_reliable_at.isoformat() if snap.last_reliable_at else None,
         "freshness_label": freshness_label(snap.last_reliable_at),
         "freshness_minutes": (
             int((timezone.now() - snap.last_reliable_at).total_seconds() // 60)
             if snap.last_reliable_at
             else None
         ),
-        "queue_minutes": snap.queue_minutes,
-        "traffic_jams": snap.traffic_jams,
-        "traffic_fetched_at": snap.traffic_fetched_at.isoformat()
-        if snap.traffic_fetched_at
-        else None,
-        "sources": _enrich_sources(snap.sources_json or {}),
-        "updated_at": snap.updated_at.isoformat() if snap.updated_at else None,
+        "last_reliable_at": snap.last_reliable_at.isoformat() if snap.last_reliable_at else None,
         "best_availability": best_grade,
         "can_refuel": best_grade in (FuelUfoAvailability.OK, FuelUfoAvailability.LOW),
     }
+    if origin:
+        payload["distance_km"] = round(
+            haversine_m(origin[0], origin[1], float(azs.latitude), float(azs.longitude)) / 1000.0,
+            1,
+        )
+    if lite:
+        return payload
+    payload.update(
+        {
+            "primary_source": snap.primary_source,
+            "primary_source_label": _SOURCE_RU.get(snap.primary_source or "", "—"),
+            "confidence": snap.confidence,
+            "queue_minutes": snap.queue_minutes,
+            "traffic_jams": snap.traffic_jams,
+            "traffic_fetched_at": snap.traffic_fetched_at.isoformat()
+            if snap.traffic_fetched_at
+            else None,
+            "sources": _enrich_sources(snap.sources_json or {}),
+            "updated_at": snap.updated_at.isoformat() if snap.updated_at else None,
+        }
+    )
+    return payload
+
+
+def pick_nearby_azs(
+    qs,
+    *,
+    lat: float,
+    lon: float,
+    grade: str,
+    only_available: bool,
+    limit: int,
+) -> list[FuelUfoAzsPoint]:
+    """Ближайшие АЗС, приоритет у станций с топливом."""
+    grade = grade if grade in ("ai92", "ai95", "diesel") else "ai95"
+    status_field = {
+        "ai92": "snapshot__status_ai92",
+        "ai95": "snapshot__status_ai95",
+        "diesel": "snapshot__status_diesel",
+    }[grade]
+    rows = list(qs.values_list("id", "latitude", "longitude", status_field))
+    scored: list[tuple[int, float, int]] = []
+    for pk, alat, alon, st in rows:
+        try:
+            dist = haversine_m(lat, lon, float(alat), float(alon))
+        except (TypeError, ValueError):
+            continue
+        st = st or FuelUfoAvailability.UNKNOWN
+        if only_available and st not in (FuelUfoAvailability.OK, FuelUfoAvailability.LOW):
+            continue
+        has_fuel = 0 if st in (FuelUfoAvailability.OK, FuelUfoAvailability.LOW) else 1
+        scored.append((has_fuel, dist, pk))
+    scored.sort()
+    fuel_n = max(8, limit - 4) if limit >= 8 else limit
+    fuel_ids = [pk for has, _d, pk in scored if has == 0][:fuel_n]
+    chosen = list(fuel_ids)
+    for _has, _d, pk in scored:
+        if len(chosen) >= limit:
+            break
+        if pk not in chosen:
+            chosen.append(pk)
+    objs = {a.id: a for a in qs.filter(id__in=chosen).select_related("snapshot")}
+    return [objs[pk] for pk in chosen if pk in objs]
 
 
 def _enrich_sources(sources: dict[str, Any]) -> dict[str, Any]:

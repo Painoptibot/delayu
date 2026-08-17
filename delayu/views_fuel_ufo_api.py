@@ -83,17 +83,39 @@ class FuelUfoAzsListApi(View):
 
         grade = (request.GET.get("grade") or "").strip().lower()
         only_available = (request.GET.get("available") or "").strip() in ("1", "true", "yes")
+        lite = (request.GET.get("lite") or "1").strip() not in ("0", "false", "no")
+        try:
+            limit = int(request.GET.get("limit") or 24)
+        except (TypeError, ValueError):
+            limit = 24
+        limit = max(1, min(limit, 80))
+        near_lat = _opt_float(request.GET.get("near_lat") or request.GET.get("lat"))
+        near_lon = _opt_float(request.GET.get("near_lon") or request.GET.get("lon"))
+        origin = (near_lat, near_lon) if near_lat is not None and near_lon is not None else None
 
-        items = [svc.serialize_azs(a) for a in qs[:2000]]
-        if grade in ("ai92", "ai95", "diesel"):
-            if only_available:
-                items = [
-                    i
-                    for i in items
-                    if i["status"].get(grade)
+        if origin:
+            azs_rows = svc.pick_nearby_azs(
+                qs,
+                lat=origin[0],
+                lon=origin[1],
+                grade=grade,
+                only_available=only_available,
+                limit=limit,
+            )
+        else:
+            azs_rows = list(qs.select_related("snapshot")[:200])
+            if only_available and grade in ("ai92", "ai95", "diesel"):
+                key = {"ai92": "status_ai92", "ai95": "status_ai95", "diesel": "status_diesel"}[grade]
+                azs_rows = [
+                    a
+                    for a in azs_rows
+                    if getattr(getattr(a, "snapshot", None), key, "")
                     in (FuelUfoAvailability.OK, FuelUfoAvailability.LOW)
                 ]
-            # полезный порядок: есть → мало → неизвестно → нет; свежее выше
+            azs_rows = azs_rows[:limit]
+
+        items = [svc.serialize_azs(a, lite=lite, origin=origin) for a in azs_rows]
+        if not origin and grade in ("ai92", "ai95", "diesel"):
             rank = {"ok": 0, "low": 1, "unknown": 2, "empty": 3}
 
             def _key(i):
@@ -103,7 +125,14 @@ class FuelUfoAzsListApi(View):
                 return (rank.get(st, 9), fresh_key)
 
             items.sort(key=_key)
-        return JsonResponse({"scope": "ufo", "count": len(items), "results": items})
+        return JsonResponse(
+            {
+                "scope": "ufo",
+                "mode": "nearby" if origin else "priority",
+                "count": len(items),
+                "results": items,
+            }
+        )
 
 
 class FuelUfoAzsDetailApi(View):
