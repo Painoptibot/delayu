@@ -1,0 +1,714 @@
+{% extends layout_path %}
+
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-muted mb-0">Режим «только факты из карточки»: без домыслов; иначе — специалист в этом же чате.</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+    <span class="badge bg-label-primary">Только факты карточки</span>
+    <span class="badge {% if llm_live %}bg-label-success{% else %}bg-label-secondary{% endif %}" id="invest-ai-llm-badge">
+      {% if llm_live %}
+        LLM: {{ llm_models.active|default:llm_models.primary }}
+        {% if llm_models.fallback and llm_models.fallback != llm_models.primary %}
+          <span class="opacity-75">(fallback {{ llm_models.fallback }})</span>
+        {% endif %}
+      {% else %}
+        демо по контексту
+      {% endif %}
+    </span>
+    {% if llm_live %}
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="invest-ai-probe-llm">Проверить модель</button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <form method="post" id="invest-ai-chat-form" class="card mb-4">
+      {% csrf_token %}
+      <div class="card-header">Роль и контекст</div>
+      <div class="card-body">
+        <div class="mb-4">
+          <label class="form-label">Режим чата</label>
+          <div class="d-flex flex-column gap-2">
+            {% for item in demo_roles %}
+            <label class="d-flex gap-3 align-items-start border rounded-3 p-3 mb-0 {% if demo_role == item.code %}border-primary{% endif %}" style="cursor:pointer">
+              <input class="form-check-input flex-shrink-0 mt-1" type="radio" name="role" value="{{ item.code }}" {% if demo_role == item.code %}checked{% endif %}>
+              <span class="flex-grow-1 min-w-0">
+                <span class="d-block fw-semibold">{{ item.label }}</span>
+                <span class="text-muted small d-block">{{ item.hint }}</span>
+                <span class="text-primary small d-block mt-1">{{ item.example }}</span>
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+          {% if demo_role_example %}
+          <div class="alert alert-primary py-2 mt-3 mb-0 small">Сейчас: {{ demo_role_example }}</div>
+          {% endif %}
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="ai-chat-project">Проект</label>
+          <select class="form-select" id="ai-chat-project" name="project">
+            <option value="">— не выбран —</option>
+            {% for p in projects %}
+            <option value="{{ p.pk }}" {% if selected_project and selected_project.pk == p.pk %}selected{% endif %}>{{ p.code }} — {{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="form-label" for="ai-chat-site">Площадка</label>
+          <select class="form-select" id="ai-chat-site" name="site">
+            <option value="">— не выбрана —</option>
+            {% for s in sites %}
+            <option value="{{ s.pk }}" {% if selected_site and selected_site.pk == s.pk %}selected{% endif %}>{{ s.cadastral_number }} — {{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Применить контекст</button>
+      </div>
+    </form>
+
+    <div class="card mb-4">
+      <div class="card-header">Примеры вопросов</div>
+      <div class="card-body d-flex flex-column gap-2">
+        {% for item in demo_scenario %}
+        <button type="button" class="btn btn-outline-primary text-start btn-sm invest-ai-demo-q" data-question="{{ item.question|escape }}">
+          {{ item.question }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">Стартовые реплики</div>
+      <div class="card-body d-flex flex-column gap-2">
+        {% for phrase in starters %}
+        <button type="submit" form="invest-ai-chat-form" class="btn btn-outline-secondary text-start btn-sm" name="starter" value="{{ phrase }}">
+          {{ phrase }}
+        </button>
+        {% empty %}
+        <p class="text-muted mb-0 small">Нет стартеров для роли.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Очередь специалиста</span>
+        <span class="badge bg-label-warning">{{ specialist_queue|length }}</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive" style="max-height:220px">
+          <table class="table table-sm mb-0">
+            <tbody>
+              {% for t in specialist_queue %}
+              <tr>
+                <td class="small">
+                  <span class="badge bg-label-secondary">#{{ t.id }}</span>
+                  {{ t.status_label }}
+                  {% if t.project_code %}<span class="text-muted">· {{ t.project_code }}</span>{% endif %}
+                  <div class="text-muted">{{ t.question|truncatechars:70 }}</div>
+                  <div class="text-muted">{{ t.requested_by }} · {{ t.created_at|date:"d.m H:i" }}</div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td class="text-muted small p-3">Открытых заявок нет.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Журнал</div>
+      <div class="card-body p-0">
+        <div class="table-responsive" style="max-height:280px">
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Когда</th><th>Кто</th><th>Событие</th></tr></thead>
+            <tbody>
+              {% for row in chat_journal %}
+              <tr>
+                <td class="small text-nowrap">{{ row.at|date:"d.m H:i" }}</td>
+                <td class="small">{{ row.user }}</td>
+                <td class="small">
+                  {{ row.action|cut:"invest.ai_chat." }}
+                  {% if row.grounding %}<span class="badge bg-label-secondary">{{ row.grounding }}</span>{% endif %}
+                  {% if row.offer_specialist %}<span class="badge bg-label-warning">эскал.</span>{% endif %}
+                  {% if row.question %}<div class="text-muted">{{ row.question|truncatechars:60 }}</div>{% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3" class="text-muted small p-3">Пока нет событий чата.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 px-1" id="invest-ai-context-card">
+      <div class="small text-muted flex-grow-1" id="invest-ai-context-summary">
+        {% if context_card.strip %}
+        {{ context_card.strip }}
+        {% elif context_applied %}
+        Контекст применён, проект не выбран.
+        {% else %}
+        Выберите роль и проект слева, нажмите «Применить контекст».
+        {% endif %}
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="invest-ai-chat-briefing" {% if not context_applied and not chat_messages %}disabled{% endif %}>
+          Сводка
+        </button>
+        <a class="btn btn-sm btn-outline-secondary {% if not context_applied and not chat_messages %}disabled{% endif %}" id="invest-ai-export-pdf" href="{{ chat_export_pdf_url }}">PDF</a>
+        <a class="btn btn-sm btn-outline-secondary {% if not context_applied and not chat_messages %}disabled{% endif %}" id="invest-ai-export-docx" href="{{ chat_export_docx_url }}">Word</a>
+      </div>
+    </div>
+
+    <style>
+      #invest-ai-chat-panel .invest-ai-thread {
+        background:
+          radial-gradient(1200px 400px at 10% -10%, rgba(13, 110, 253, 0.08), transparent 60%),
+          radial-gradient(900px 360px at 100% 0%, rgba(25, 135, 84, 0.07), transparent 55%),
+          linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%);
+        max-height: 55vh;
+        min-height: 52vh;
+      }
+      #invest-ai-chat-panel .invest-ai-msg {
+        display: flex;
+        gap: 0.65rem;
+        margin-bottom: 1rem;
+        align-items: flex-end;
+        animation: investAiIn 0.28s ease-out;
+      }
+      #invest-ai-chat-panel .invest-ai-msg.is-user { flex-direction: row-reverse; }
+      #invest-ai-chat-panel .invest-ai-avatar {
+        width: 2rem; height: 2rem; border-radius: 999px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.65rem; font-weight: 700; letter-spacing: 0.02em;
+        flex-shrink: 0; color: #fff; background: #6c757d;
+      }
+      #invest-ai-chat-panel .invest-ai-avatar.is-user { background: #0d6efd; }
+      #invest-ai-chat-panel .invest-ai-avatar.is-ai { background: #495057; }
+      #invest-ai-chat-panel .invest-ai-avatar.is-specialist { background: #198754; }
+      #invest-ai-chat-panel .invest-ai-avatar.is-system { background: #6f42c1; }
+      #invest-ai-chat-panel .invest-ai-bubble-col { max-width: min(82%, 40rem); min-width: 0; }
+      #invest-ai-chat-panel .invest-ai-msg.is-user .invest-ai-bubble-col { text-align: right; }
+      #invest-ai-chat-panel .invest-ai-bubble {
+        display: inline-block; text-align: left; border-radius: 1.05rem;
+        padding: 0.7rem 0.95rem; white-space: pre-wrap; line-height: 1.45;
+        font-size: 0.95rem; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06); max-width: 100%;
+      }
+      #invest-ai-chat-panel .invest-ai-bubble.is-user {
+        background: #0d6efd; color: #fff; border-bottom-right-radius: 0.35rem;
+      }
+      #invest-ai-chat-panel .invest-ai-bubble.is-ai {
+        background: #fff; color: #212529; border: 1px solid rgba(16, 24, 40, 0.06);
+        border-bottom-left-radius: 0.35rem;
+      }
+      #invest-ai-chat-panel .invest-ai-bubble.is-specialist {
+        background: #e8f6ee; color: #146c43; border: 1px solid rgba(25, 135, 84, 0.18);
+        border-bottom-left-radius: 0.35rem;
+      }
+      #invest-ai-chat-panel .invest-ai-bubble.is-system {
+        background: #f3eefc; color: #4a2f7a; border: 1px solid rgba(111, 66, 193, 0.15);
+      }
+      #invest-ai-chat-panel .invest-ai-meta {
+        display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-bottom: 0.35rem;
+      }
+      #invest-ai-chat-panel .invest-ai-msg.is-user .invest-ai-meta { justify-content: flex-end; }
+      #invest-ai-chat-panel .invest-ai-time {
+        display: block; margin-top: 0.25rem; font-size: 0.72rem; color: #6c757d;
+      }
+      #invest-ai-chat-panel .invest-ai-msg.is-user .invest-ai-time { text-align: right; }
+      #invest-ai-chat-panel .invest-ai-sources {
+        display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.45rem;
+      }
+      #invest-ai-chat-panel .invest-ai-msg.is-user .invest-ai-sources { justify-content: flex-end; }
+      #invest-ai-chat-panel .invest-ai-chip {
+        display: inline-flex; align-items: center;
+        border: 1px solid rgba(13, 110, 253, 0.25);
+        background: rgba(13, 110, 253, 0.06);
+        color: #0b5ed7; border-radius: 999px; padding: 0.15rem 0.55rem;
+        font-size: 0.72rem; line-height: 1.3; max-width: 100%;
+      }
+      #invest-ai-chat-panel .invest-ai-empty { text-align: center; padding: 2.5rem 1rem; }
+      #invest-ai-chat-panel .invest-ai-empty-icon {
+        width: 3.5rem; height: 3.5rem; margin: 0 auto 1rem; border-radius: 1rem;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(13, 110, 253, 0.1); color: #0d6efd; font-size: 1.35rem;
+      }
+      #invest-ai-chat-panel .invest-ai-quick {
+        display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1rem;
+      }
+      #invest-ai-chat-panel .invest-ai-typing {
+        display: none; align-items: center; gap: 0.55rem; margin-bottom: 0.75rem;
+      }
+      #invest-ai-chat-panel .invest-ai-typing.is-on {
+        display: flex; animation: investAiIn 0.2s ease-out;
+      }
+      #invest-ai-chat-panel .invest-ai-typing-dots span {
+        display: inline-block; width: 0.35rem; height: 0.35rem; margin-right: 0.2rem;
+        border-radius: 50%; background: #6c757d; animation: investAiDot 1s infinite ease-in-out;
+      }
+      #invest-ai-chat-panel .invest-ai-typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+      #invest-ai-chat-panel .invest-ai-typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+      @keyframes investAiIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes investAiDot {
+        0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+        40% { opacity: 1; transform: translateY(-2px); }
+      }
+    </style>
+
+    <div class="card" id="invest-ai-chat-panel">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Чат</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="invest-ai-chat-clear">Очистить</button>
+      </div>
+      <div class="card-body d-flex flex-column p-0" style="min-height:60vh">
+        <div id="invest-ai-chat-thread" class="invest-ai-thread flex-grow-1 overflow-auto p-3">
+          {% for m in chat_messages %}
+          <div class="invest-ai-msg {% if m.role == 'user' %}is-user{% endif %}" data-role="{{ m.role }}">
+            <div class="invest-ai-avatar {% if m.role == 'user' %}is-user{% elif m.role == 'specialist' %}is-specialist{% elif m.role == 'system' %}is-system{% else %}is-ai{% endif %}">
+              {% if m.role == 'user' %}Вы{% elif m.role == 'specialist' %}Спец{% elif m.role == 'system' %}Сис{% else %}ИИ{% endif %}
+            </div>
+            <div class="invest-ai-bubble-col">
+              {% if m.role != 'user' and m.provenance_label %}
+              <div class="invest-ai-meta">
+                <span class="badge {% if m.grounding == 'refuse' or m.grounding == 'escalation' %}bg-label-warning{% elif m.grounding == 'specialist' %}bg-label-success{% else %}bg-label-primary{% endif %}">{{ m.provenance_label }}</span>
+              </div>
+              {% endif %}
+              <div class="invest-ai-bubble {% if m.role == 'user' %}is-user{% elif m.role == 'specialist' %}is-specialist{% elif m.role == 'system' %}is-system{% else %}is-ai{% endif %}">{{ m.content }}</div>
+              {% if m.sources %}
+              <div class="invest-ai-sources">
+                {% for s in m.sources %}
+                <span class="invest-ai-chip" title="{{ s.label }}">{{ s.label }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+              {% if m.time %}<span class="invest-ai-time">{{ m.time }}</span>{% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="invest-ai-empty" id="invest-ai-chat-empty">
+            <div class="invest-ai-empty-icon" aria-hidden="true"><i class="ri-chat-3-line"></i></div>
+            <div class="fw-semibold mb-1">Начните диалог по проекту</div>
+            <p class="text-muted small mb-0">Выберите роль и контекст слева — или нажмите быстрый вопрос ниже.</p>
+            <div class="invest-ai-quick">
+              {% for item in demo_scenario|slice:":3" %}
+              <button type="button" class="btn btn-sm btn-outline-primary invest-ai-demo-q" data-question="{{ item.question|escape }}" {% if not context_applied and not chat_messages %}disabled{% endif %}>{{ item.question|truncatechars:48 }}</button>
+              {% endfor %}
+              <button type="button" class="btn btn-sm btn-primary" id="invest-ai-empty-briefing" {% if not context_applied and not chat_messages %}disabled{% endif %}>Сводка</button>
+            </div>
+          </div>
+          {% endfor %}
+          <div class="invest-ai-typing" id="invest-ai-typing" aria-live="polite">
+            <div class="invest-ai-avatar is-ai">ИИ</div>
+            <div class="invest-ai-bubble is-ai">
+              <span class="invest-ai-typing-dots"><span></span><span></span><span></span></span>
+              <span class="small text-muted ms-1">печатает…</span>
+            </div>
+          </div>
+        </div>
+        <div class="border-top p-3 bg-white">
+          <div id="invest-ai-chat-escalate-box" class="alert alert-warning py-2 mb-3 {% if not chat_escalation %}d-none{% endif %}" {% if chat_escalation %}data-status="{{ chat_escalation.status }}"{% endif %}>
+            {% if chat_escalation %}
+            <div class="fw-semibold small mb-1">Специалист · статус: {{ chat_escalation.status }}
+              {% if chat_escalation.sla_remaining_minutes != None %}
+              · SLA {{ chat_escalation.sla_minutes }} мин
+              ({% if chat_escalation.sla_overdue %}просрочен{% else %}осталось ~{{ chat_escalation.sla_remaining_minutes }} мин{% endif %})
+              {% endif %}
+            </div>
+            <ol class="small mb-2 ps-3">
+              {% for step in chat_escalation.timeline %}
+              <li>{{ step.at }} — {{ step.label }}{% if step.by %} ({{ step.by }}){% endif %}</li>
+              {% endfor %}
+            </ol>
+            {% if can_manage_escalation and chat_escalation.status == 'requested' %}
+            <button type="button" class="btn btn-sm btn-warning" id="invest-ai-chat-accept">Принять заявку</button>
+            {% endif %}
+            {% if can_manage_escalation %}
+              {% if chat_escalation.status == 'accepted' or chat_escalation.status == 'joined' %}
+            <div class="d-flex gap-2 mt-2">
+              <input type="text" class="form-control form-control-sm" id="invest-ai-specialist-input" placeholder="Ответ специалиста…">
+              <button type="button" class="btn btn-sm btn-success" id="invest-ai-chat-specialist-send">В чат</button>
+            </div>
+              {% endif %}
+            {% endif %}
+            {% else %}
+            <div class="d-flex flex-column flex-md-row gap-2 align-items-md-center justify-content-between">
+              <div class="small mb-0">Нет уверенных данных в карточке — можно подключить специалиста Агентства.</div>
+              <button type="button" class="btn btn-sm btn-warning text-nowrap" id="invest-ai-chat-escalate">Подключить специалиста</button>
+            </div>
+            {% endif %}
+          </div>
+          <form id="invest-ai-chat-send" class="d-flex gap-2">
+            <input type="text" class="form-control" id="invest-ai-chat-input" placeholder="Напишите сообщение…" autocomplete="off" {% if not context_applied and not chat_messages %}disabled{% endif %}>
+            <button type="submit" class="btn btn-primary" id="invest-ai-chat-submit" {% if not context_applied and not chat_messages %}disabled{% endif %}>Отправить</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var thread = document.getElementById("invest-ai-chat-thread");
+  var form = document.getElementById("invest-ai-chat-send");
+  var input = document.getElementById("invest-ai-chat-input");
+  var submitBtn = document.getElementById("invest-ai-chat-submit");
+  var clearBtn = document.getElementById("invest-ai-chat-clear");
+  var briefingBtn = document.getElementById("invest-ai-chat-briefing");
+  var emptyBriefing = document.getElementById("invest-ai-empty-briefing");
+  var escalateBox = document.getElementById("invest-ai-chat-escalate-box");
+  var escalateBtn = document.getElementById("invest-ai-chat-escalate");
+  var acceptBtn = document.getElementById("invest-ai-chat-accept");
+  var specialistInput = document.getElementById("invest-ai-specialist-input");
+  var specialistSend = document.getElementById("invest-ai-chat-specialist-send");
+  var typing = document.getElementById("invest-ai-typing");
+  var url = "{{ chat_message_url|escapejs }}";
+  var csrf = "{{ csrf_token|escapejs }}";
+  var lastUserText = "";
+  var canManage = {{ can_manage_escalation|yesno:"true,false" }};
+
+  function scrollBottom() {
+    if (thread) thread.scrollTop = thread.scrollHeight;
+  }
+  scrollBottom();
+
+  function nowTime() {
+    var d = new Date();
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  function avatarLabel(role) {
+    if (role === "user") return "Вы";
+    if (role === "specialist") return "Спец";
+    if (role === "system") return "Сис";
+    return "ИИ";
+  }
+
+  function avatarClass(role) {
+    if (role === "user") return "is-user";
+    if (role === "specialist") return "is-specialist";
+    if (role === "system") return "is-system";
+    return "is-ai";
+  }
+
+  function stripSources(content) {
+    var marker = "\n\nИсточники:";
+    var idx = (content || "").indexOf(marker);
+    return idx >= 0 ? content.slice(0, idx).replace(/\s+$/, "") : content;
+  }
+
+  function bubble(role, content, meta) {
+    meta = meta || {};
+    var empty = document.getElementById("invest-ai-chat-empty");
+    if (empty) empty.remove();
+    var wrap = document.createElement("div");
+    wrap.className = "invest-ai-msg" + (role === "user" ? " is-user" : "");
+    wrap.setAttribute("data-role", role);
+
+    var avatar = document.createElement("div");
+    avatar.className = "invest-ai-avatar " + avatarClass(role);
+    avatar.textContent = avatarLabel(role);
+    wrap.appendChild(avatar);
+
+    var col = document.createElement("div");
+    col.className = "invest-ai-bubble-col";
+
+    if (role !== "user" && meta.provenance_label) {
+      var metaRow = document.createElement("div");
+      metaRow.className = "invest-ai-meta";
+      var badge = document.createElement("span");
+      var g = meta.grounding || "";
+      badge.className = "badge " + (g === "refuse" || g === "escalation" ? "bg-label-warning" : g === "specialist" ? "bg-label-success" : "bg-label-primary");
+      badge.textContent = meta.provenance_label;
+      metaRow.appendChild(badge);
+      col.appendChild(metaRow);
+    }
+
+    var inner = document.createElement("div");
+    inner.className = "invest-ai-bubble " + avatarClass(role === "assistant" ? "ai" : role);
+    if (role === "assistant") inner.className = "invest-ai-bubble is-ai";
+    inner.textContent = stripSources(content || "");
+    col.appendChild(inner);
+
+    var sources = meta.sources || [];
+    if (sources.length) {
+      var chips = document.createElement("div");
+      chips.className = "invest-ai-sources";
+      sources.forEach(function (s) {
+        var chip = document.createElement("span");
+        chip.className = "invest-ai-chip";
+        chip.title = s.label || s.kind || "";
+        chip.textContent = s.label || s.kind || "источник";
+        chips.appendChild(chip);
+      });
+      col.appendChild(chips);
+    }
+
+    var time = document.createElement("span");
+    time.className = "invest-ai-time";
+    time.textContent = meta.time || nowTime();
+    col.appendChild(time);
+
+    wrap.appendChild(col);
+    if (typing && typing.parentNode === thread) {
+      thread.insertBefore(wrap, typing);
+    } else {
+      thread.appendChild(wrap);
+    }
+    scrollBottom();
+  }
+
+  function setTyping(on) {
+    if (!typing) return;
+    typing.classList.toggle("is-on", !!on);
+    if (on) scrollBottom();
+  }
+
+  function setBusy(busy) {
+    input.disabled = busy;
+    submitBtn.disabled = busy;
+    if (briefingBtn) briefingBtn.disabled = busy;
+    if (emptyBriefing) emptyBriefing.disabled = busy;
+    if (escalateBtn) escalateBtn.disabled = busy;
+    if (acceptBtn) acceptBtn.disabled = busy;
+    if (specialistSend) specialistSend.disabled = busy;
+    setTyping(busy);
+  }
+
+  function renderEscalation(esc, offer) {
+    if (!escalateBox) return;
+    if (!esc && !offer) {
+      escalateBox.classList.add("d-none");
+      escalateBox.removeAttribute("data-status");
+      return;
+    }
+    escalateBox.classList.remove("d-none");
+    if (!esc) {
+      escalateBox.removeAttribute("data-status");
+      escalateBox.innerHTML =
+        '<div class="d-flex flex-column flex-md-row gap-2 align-items-md-center justify-content-between">' +
+        '<div class="small mb-0">Нет уверенных данных в карточке — можно подключить специалиста Агентства.</div>' +
+        '<button type="button" class="btn btn-sm btn-warning text-nowrap" id="invest-ai-chat-escalate">Подключить специалиста</button>' +
+        "</div>";
+      escalateBtn = document.getElementById("invest-ai-chat-escalate");
+      if (escalateBtn) escalateBtn.addEventListener("click", onEscalate);
+      acceptBtn = null;
+      specialistInput = null;
+      specialistSend = null;
+      return;
+    }
+    escalateBox.setAttribute("data-status", esc.status || "");
+    var sla = "";
+    if (esc.sla_remaining_minutes !== undefined && esc.sla_remaining_minutes !== null) {
+      sla = " · SLA " + (esc.sla_minutes || 15) + " мин (" + (esc.sla_overdue ? "просрочен" : "осталось ~" + esc.sla_remaining_minutes + " мин") + ")";
+    }
+    var html = '<div class="fw-semibold small mb-1">Специалист · статус: ' + (esc.status || "") + sla + "</div>";
+    html += '<ol class="small mb-2 ps-3">';
+    (esc.timeline || []).forEach(function (step) {
+      html += "<li>" + (step.at || "") + " — " + (step.label || "") + (step.by ? " (" + step.by + ")" : "") + "</li>";
+    });
+    html += "</ol>";
+    if (canManage && esc.status === "requested") {
+      html += '<button type="button" class="btn btn-sm btn-warning" id="invest-ai-chat-accept">Принять заявку</button>';
+    }
+    if (canManage && (esc.status === "accepted" || esc.status === "joined")) {
+      html += '<div class="d-flex gap-2 mt-2"><input type="text" class="form-control form-control-sm" id="invest-ai-specialist-input" placeholder="Ответ специалиста…">' +
+        '<button type="button" class="btn btn-sm btn-success" id="invest-ai-chat-specialist-send">В чат</button></div>';
+    }
+    escalateBox.innerHTML = html;
+    escalateBtn = document.getElementById("invest-ai-chat-escalate");
+    acceptBtn = document.getElementById("invest-ai-chat-accept");
+    specialistInput = document.getElementById("invest-ai-specialist-input");
+    specialistSend = document.getElementById("invest-ai-chat-specialist-send");
+    if (acceptBtn) acceptBtn.addEventListener("click", onAccept);
+    if (specialistSend) specialistSend.addEventListener("click", onSpecialistSend);
+  }
+
+  function applyResult(data) {
+    if (!data) return;
+    var role = data.grounding === "specialist" ? "specialist" : "assistant";
+    bubble(role, data.reply, {
+      grounding: data.grounding,
+      provenance_label: data.provenance_label,
+      sources: data.sources || [],
+      time: (data.messages && data.messages.length) ? (data.messages[data.messages.length - 1].time || nowTime()) : nowTime()
+    });
+    if (data.escalation) {
+      renderEscalation(data.escalation, false);
+    } else {
+      renderEscalation(null, !!data.offer_specialist);
+    }
+    if (data.context_card) {
+      var el = document.getElementById("invest-ai-context-summary");
+      if (el) {
+        var c = data.context_card;
+        el.textContent = c.strip || (
+          (c.demo_role_label || "") +
+          (c.project_code ? " · " + c.project_code + " «" + (c.project_name || "") + "»" : "") +
+          (c.stage ? " · стадия " + c.stage : "") +
+          (c.package_ready ? " · пакет " + c.package_ready : "") +
+          " · просрочки " + (c.overdue_roadmap_count || 0) +
+          (c.handoff_status_label ? " · handoff: " + c.handoff_status_label : "") +
+          (c.cadastral_number ? " · площадка " + c.cadastral_number : "")
+        );
+      }
+    }
+    if (data.llm) {
+      var badge = document.getElementById("invest-ai-llm-badge");
+      if (badge) {
+        badge.textContent = "LLM: " + (data.llm.active || data.llm.primary || "");
+        if (data.llm.fallback && data.llm.fallback !== data.llm.primary) {
+          badge.textContent += " (fallback " + data.llm.fallback + ")";
+        }
+      }
+    }
+  }
+
+  function postAction(body) {
+    return fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); });
+  }
+
+  function onEscalate() {
+    setBusy(true);
+    postAction({ action: "escalate", question: lastUserText })
+      .then(function (res) {
+        if (!res.ok || !res.data.ok) {
+          bubble("assistant", (res.data && res.data.error) || "Не удалось создать заявку");
+          return;
+        }
+        applyResult(res.data);
+      })
+      .catch(function () { bubble("assistant", "Ошибка сети при заявке специалисту."); })
+      .finally(function () { setBusy(false); input.focus(); });
+  }
+
+  function onAccept() {
+    setBusy(true);
+    postAction({ action: "escalation_accept" })
+      .then(function (res) {
+        if (!res.ok || !res.data.ok) {
+          bubble("assistant", (res.data && res.data.error) || "Не удалось принять заявку");
+          return;
+        }
+        applyResult(res.data);
+      })
+      .catch(function () { bubble("assistant", "Ошибка сети."); })
+      .finally(function () { setBusy(false); });
+  }
+
+  function onSpecialistSend() {
+    var text = (specialistInput && specialistInput.value || "").trim();
+    if (!text) return;
+    setBusy(true);
+    postAction({ action: "specialist_reply", message: text })
+      .then(function (res) {
+        if (!res.ok || !res.data.ok) {
+          bubble("assistant", (res.data && res.data.error) || "Не удалось отправить");
+          return;
+        }
+        if (specialistInput) specialistInput.value = "";
+        applyResult(res.data);
+      })
+      .catch(function () { bubble("assistant", "Ошибка сети."); })
+      .finally(function () { setBusy(false); });
+  }
+
+  function runBriefing() {
+    setBusy(true);
+    postAction({ action: "briefing" })
+      .then(function (res) {
+        if (!res.ok || !res.data.ok) {
+          bubble("assistant", (res.data && res.data.error) || "Не удалось собрать сводку");
+          return;
+        }
+        applyResult(res.data);
+      })
+      .catch(function () { bubble("assistant", "Ошибка сети."); })
+      .finally(function () { setBusy(false); });
+  }
+
+  if (escalateBtn) escalateBtn.addEventListener("click", onEscalate);
+  if (acceptBtn) acceptBtn.addEventListener("click", onAccept);
+  if (specialistSend) specialistSend.addEventListener("click", onSpecialistSend);
+  if (briefingBtn) briefingBtn.addEventListener("click", runBriefing);
+  if (emptyBriefing) emptyBriefing.addEventListener("click", runBriefing);
+
+  var probeBtn = document.getElementById("invest-ai-probe-llm");
+  if (probeBtn) {
+    probeBtn.addEventListener("click", function () {
+      probeBtn.disabled = true;
+      postAction({ action: "probe_llm" })
+        .then(function (res) {
+          var llm = (res.data && res.data.llm) || {};
+          var badge = document.getElementById("invest-ai-llm-badge");
+          if (badge) {
+            badge.textContent = llm.reachable
+              ? ("LLM: " + (llm.active || llm.primary) + " · доступна")
+              : ("LLM: " + (llm.primary || "") + " · недоступна, fallback " + (llm.fallback || ""));
+          }
+        })
+        .finally(function () { probeBtn.disabled = false; });
+    });
+  }
+
+  document.querySelectorAll(".invest-ai-demo-q").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var q = btn.getAttribute("data-question") || "";
+      if (!q || input.disabled) return;
+      input.value = q;
+      form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+    });
+  });
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = (input.value || "").trim();
+    if (!text) return;
+    lastUserText = text;
+    bubble("user", text, { time: nowTime() });
+    input.value = "";
+    setBusy(true);
+    postAction({ message: text })
+      .then(function (res) {
+        if (!res.ok || !res.data.ok) {
+          bubble("assistant", (res.data && res.data.error) || "Не удалось получить ответ");
+          return;
+        }
+        applyResult(res.data);
+      })
+      .catch(function () { bubble("assistant", "Ошибка сети. Попробуйте ещё раз."); })
+      .finally(function () { setBusy(false); input.focus(); });
+  });
+
+  clearBtn.addEventListener("click", function () {
+    postAction({ message: "Начнём диалог заново по текущему контексту.", reset: true })
+      .then(function (res) {
+        var data = res.data || {};
+        thread.querySelectorAll(".invest-ai-msg, #invest-ai-chat-empty").forEach(function (n) { n.remove(); });
+        (data.messages || []).forEach(function (m) { bubble(m.role, m.content, m); });
+        renderEscalation(null, false);
+      });
+  });
+})();
+</script>
+{% endblock %}

@@ -107,12 +107,27 @@ def test_allowlisted_role_gets_project_cta_and_open_redirect(client, invest_odys
 
 @pytest.mark.django_db
 def test_agency_without_allowlist_does_not_get_cta(client, invest_odysseus_ctx):
+    invest_odysseus_ctx["cfg"].role_allowlist = ["invest_admin", "invest_dept"]
+    invest_odysseus_ctx["cfg"].save(update_fields=["role_allowlist"])
     client.force_login(invest_odysseus_ctx["users"]["invest_agency"])
 
     response = client.get(reverse("invest-hub"))
 
     assert response.status_code == 200
     assert "Открыть в Odysseus" not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_agency_with_default_allowlist_gets_cta(client, invest_odysseus_ctx):
+    # ensure_odysseus_settings default now includes invest_agency
+    invest_odysseus_ctx["cfg"].role_allowlist = ["invest_admin", "invest_dept", "invest_agency"]
+    invest_odysseus_ctx["cfg"].save(update_fields=["role_allowlist"])
+    client.force_login(invest_odysseus_ctx["users"]["invest_agency"])
+
+    response = client.get(reverse("invest-hub"))
+
+    assert response.status_code == 200
+    assert "Открыть в Odysseus" in response.content.decode()
 
 
 @pytest.mark.django_db

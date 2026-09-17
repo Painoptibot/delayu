@@ -182,6 +182,13 @@ MENU_SECTIONS = [
             {"url_name": "invest-bookings", "codes": ["M22"], "icon": "ri-calendar-check-line", "label": "Брони"},
             {"url_name": "invest-handoffs", "codes": ["M22"], "icon": "ri-exchange-box-line", "label": "Передачи"},
             {"url_name": "invest-imports", "codes": ["M22"], "icon": "ri-upload-cloud-2-line", "label": "Импорт"},
+            {
+                "url_name": "invest-ai-chat",
+                "codes": ["M22"],
+                "icon": "ri-robot-2-line",
+                "label": "ИИ-чат инвестора",
+                "role_codes": ["invest_agency", "invest_dept", "invest_admin"],
+            },
             {"url_name": "invest-dashboard", "codes": ["M15"], "icon": "ri-dashboard-3-line", "label": "Дашборд"},
             {
                 "url_name": "invest-automation",

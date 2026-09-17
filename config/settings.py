@@ -332,6 +332,15 @@ DELAYU_ROSPATENT_NUMBER = os.getenv("DELAYU_ROSPATENT_NUMBER", "")
 # #6 — глобальный read-only демо-режим (дополняет PiiMaskingPolicy.demo_mode на подсистему)
 DELAYU_DEMO_MODE = os.getenv("DELAYU_DEMO_MODE", "false").lower() in ("1", "true", "yes")
 
+# Invest AI-chat: OpenAI-compatible LLM (optional). Without key — offline demo replies.
+DELAYU_LLM_API_KEY = os.getenv("DELAYU_LLM_API_KEY", "") or os.getenv("OPENAI_API_KEY", "")
+DELAYU_LLM_BASE_URL = (
+    os.getenv("DELAYU_LLM_BASE_URL", "") or os.getenv("OPENAI_BASE_URL", "") or "https://api.openai.com/v1"
+).rstrip("/")
+DELAYU_LLM_MODEL = os.getenv("DELAYU_LLM_MODEL", "gpt-4o-mini")
+# Preferred stronger model for demos; falls back to DELAYU_LLM_MODEL on failure.
+DELAYU_LLM_MODEL_DEMO = os.getenv("DELAYU_LLM_MODEL_DEMO", "") or DELAYU_LLM_MODEL
+
 # Production (DEBUG=false): HTTPS за reverse-proxy
 if not DEBUG:
     if not CSRF_TRUSTED_ORIGINS:

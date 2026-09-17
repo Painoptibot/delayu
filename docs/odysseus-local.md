@@ -45,6 +45,18 @@ python manage.py odysseus_update --rollback
 
 Apply/rollback also available to platform admins in settings UI when P2 is shipped. Never auto-pull without confirmation.
 
+## Invest AI-chat demo
+
+Before a meeting demo of **ИИ-чат инвестора** (`/invest/ai-chat/`):
+
+1. Start Delayu as usual (`http://127.0.0.1:8000/`).
+2. Start Odysseus (same compose as above) so `http://127.0.0.1:7000` answers.
+3. Seed invest contour if needed: `python manage.py seed_invest_kk` (enables M87, OdysseusSettings, agency/dept/admin allowlist).
+4. Sign in as `invest_agency` / `invest_agency` → menu **ИИ-чат инвестора**.
+5. Pick a project, mode «Специалист Агентства (ответы инвестору)» or «Помощник сотрудника / руководителя», apply context → chat on the same page.
+
+If Odysseus is down, the page still loads with an empty-state (no 500); raise the container and re-apply context.
+
 ## Security
 
 - Keep compose ports on `127.0.0.1` only (see `deploy/odysseus/compose.delayu.yml`).

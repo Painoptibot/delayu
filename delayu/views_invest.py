@@ -3,6 +3,7 @@ from io import BytesIO
 import json
 import os
 import re
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
@@ -129,7 +130,41 @@ from delayu.services.invest_smev import (
     request_smev_fill,
     user_can_apply_live,
 )
-from delayu.services.odysseus_invest import get_invest_odysseus_open_url, prepare_odysseus_open
+from delayu.services.invest_ai_chat import (
+    accept_specialist,
+    append_chat_message,
+    build_context_card,
+    build_meeting_briefing,
+    chat_journal,
+    clear_chat_messages,
+    clear_escalation,
+    demo_scenario_items,
+    export_briefing_docx,
+    export_briefing_pdf,
+    get_chat_messages,
+    get_escalation,
+    llm_configured,
+    llm_runtime_status,
+    open_specialist_tickets,
+    reply_to_user_message,
+    request_specialist,
+    specialist_reply,
+)
+from delayu.services.odysseus_invest import (
+    ROLE_AGENCY_SPECIALIST,
+    ROLE_EXAMPLES,
+    ROLE_HINTS,
+    ROLE_INTERNAL_ASSISTANT,
+    ROLE_LABELS,
+    SESSION_KEY as ODYSSEUS_INVEST_SESSION_KEY,
+    demo_starters_for_role,
+    get_invest_odysseus_open_url,
+    normalize_demo_role,
+    prepare_odysseus_open,
+    user_can_access_invest_ai_chat,
+    user_can_open_invest_odysseus,
+)
+from delayu.services.odysseus_settings import ensure_odysseus_settings
 from delayu.services.scope import is_platform_admin
 from delayu.services.yandex_maps import YandexGeocodeError, geocode_address
 
@@ -1227,6 +1262,8 @@ class InvestOdysseusOpenView(InvestSubsystemMixin, ModulePermissionMixin, View):
                     membership=membership,
                     project=project,
                     site=site,
+                    role=request.GET.get("role"),
+                    starter=request.GET.get("starter"),
                 )
             )
         except PermissionError as exc:
@@ -1234,6 +1271,300 @@ class InvestOdysseusOpenView(InvestSubsystemMixin, ModulePermissionMixin, View):
 
     def post(self, request, *args, **kwargs):
         return self.get(request, *args, **kwargs)
+
+
+class InvestAiChatView(InvestSubsystemMixin, ModulePermissionMixin, TemplateView):
+    """Dual-role demo chat on the invest page (in-page messages)."""
+
+    template_name = "invest/ai_chat.html"
+    page_title = "ИИ-чат инвестора"
+    allowed_role_codes = {"invest_agency", "invest_dept", "invest_admin"}
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        membership = get_membership_or_403(request)
+        if (
+            membership.subsystem.industry_template != "invest"
+            or membership.subsystem.status != Subsystem.Status.ACTIVE
+        ):
+            messages.error(request, "Раздел доступен только в активном инвестконтуре. Переключите контур.")
+            return redirect("platform-home")
+        self._invest_membership = membership
+        if not user_can_access_invest_ai_chat(request.user, membership):
+            return HttpResponseForbidden("ИИ-чат доступен ролям Агентства, Департамента и администратора")
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        role = normalize_demo_role(request.POST.get("role"))
+        project = self._resolve_project(membership, request.POST.get("project"))
+        site = self._resolve_site(membership, request.POST.get("site"))
+        starter = (request.POST.get("starter") or "").strip() or None
+        params = {"role": role, "applied": "1"}
+        if project:
+            params["project"] = project.pk
+        if site:
+            params["site"] = site.pk
+
+        # Always store role context in session for the in-page chat.
+        from delayu.services.odysseus_invest import build_invest_odysseus_context
+
+        ctx = build_invest_odysseus_context(
+            subsystem=membership.subsystem,
+            project=project,
+            site=site,
+            role=role,
+        )
+        if starter:
+            allowed = set(demo_starters_for_role(role))
+            if starter in allowed:
+                ctx["suggested_starter"] = starter
+        request.session[ODYSSEUS_INVEST_SESSION_KEY] = ctx
+        clear_chat_messages(request.session)
+        clear_escalation(request.session)
+        if starter:
+            try:
+                reply_to_user_message(
+                    request=request,
+                    membership=membership,
+                    user_text=starter,
+                )
+            except Exception:  # noqa: BLE001
+                append_chat_message(request.session, role="user", content=starter)
+                append_chat_message(
+                    request.session,
+                    role="assistant",
+                    content="Не удалось сформировать ответ. Попробуйте ещё раз в поле чата.",
+                )
+        else:
+            append_chat_message(
+                request.session,
+                role="assistant",
+                content=(
+                    f"Контекст готов: {ctx.get('demo_role_label')}. "
+                    "Задайте вопрос в чате или выберите стартовую реплику слева."
+                ),
+            )
+
+        cfg = ensure_odysseus_settings(membership.subsystem)
+        if user_can_open_invest_odysseus(request.user, membership, cfg):
+            try:
+                prepare_odysseus_open(
+                    request,
+                    membership=membership,
+                    project=project,
+                    site=site,
+                    role=role,
+                    starter=starter,
+                )
+            except PermissionError:
+                pass
+        return redirect(f"{reverse('invest-ai-chat')}?{urlencode(params)}")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        membership = self.get_membership()
+        role = normalize_demo_role(self.request.GET.get("role"))
+        project = self._resolve_project(membership, self.request.GET.get("project"))
+        site = self._resolve_site(membership, self.request.GET.get("site"))
+        starter = (self.request.GET.get("starter") or "").strip()
+        invest_context = self.request.session.get(ODYSSEUS_INVEST_SESSION_KEY)
+        applied = self.request.GET.get("applied") == "1"
+        if applied and not invest_context:
+            from delayu.services.odysseus_invest import build_invest_odysseus_context
+
+            invest_context = build_invest_odysseus_context(
+                subsystem=membership.subsystem,
+                project=project,
+                site=site,
+                role=role,
+            )
+            self.request.session[ODYSSEUS_INVEST_SESSION_KEY] = invest_context
+            self.request.session.modified = True
+
+        ctx.update(
+            {
+                "page_title": self.page_title,
+                "demo_role": role,
+                "demo_roles": [
+                    {
+                        "code": ROLE_AGENCY_SPECIALIST,
+                        "label": ROLE_LABELS[ROLE_AGENCY_SPECIALIST],
+                        "hint": ROLE_HINTS[ROLE_AGENCY_SPECIALIST],
+                        "example": ROLE_EXAMPLES[ROLE_AGENCY_SPECIALIST],
+                    },
+                    {
+                        "code": ROLE_INTERNAL_ASSISTANT,
+                        "label": ROLE_LABELS[ROLE_INTERNAL_ASSISTANT],
+                        "hint": ROLE_HINTS[ROLE_INTERNAL_ASSISTANT],
+                        "example": ROLE_EXAMPLES[ROLE_INTERNAL_ASSISTANT],
+                    },
+                ],
+                "demo_role_hint": ROLE_HINTS.get(role, ""),
+                "demo_role_example": ROLE_EXAMPLES.get(role, ""),
+                "selected_project": project,
+                "selected_site": site,
+                "projects": list(projects_for_membership(membership).order_by("name")[:200]),
+                "sites": list(sites_for_membership(membership).order_by("name")[:200]),
+                "starters": demo_starters_for_role(role),
+                "selected_starter": starter,
+                "invest_context": invest_context,
+                "context_applied": bool(invest_context) and applied,
+                "context_card": build_context_card(invest_context or {}),
+                "chat_messages": get_chat_messages(self.request.session),
+                "chat_message_url": reverse("invest-ai-chat-message"),
+                "chat_export_pdf_url": reverse("invest-ai-chat-export-pdf"),
+                "chat_export_docx_url": reverse("invest-ai-chat-export-docx"),
+                "llm_live": llm_configured(),
+                "llm_models": llm_runtime_status(probe=False) if llm_configured() else None,
+                "chat_escalation": get_escalation(self.request.session),
+                "demo_scenario": demo_scenario_items(),
+                "chat_journal": chat_journal(subsystem=membership.subsystem, limit=30),
+                "specialist_queue": open_specialist_tickets(subsystem=membership.subsystem, limit=15),
+                "can_manage_escalation": membership.role.code
+                in {"invest_agency", "invest_dept", "invest_admin"},
+            }
+        )
+        return ctx
+
+    def _resolve_project(self, membership, raw_pk):
+        if not raw_pk:
+            return None
+        return get_object_or_404(projects_for_membership(membership), pk=raw_pk)
+
+    def _resolve_site(self, membership, raw_pk):
+        if not raw_pk:
+            return None
+        return get_object_or_404(sites_for_membership(membership), pk=raw_pk)
+
+
+class InvestAiChatMessageView(InvestSubsystemMixin, ModulePermissionMixin, View):
+    """JSON endpoint for in-page invest demo chat messages."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        membership = get_membership_or_403(request)
+        if (
+            membership.subsystem.industry_template != "invest"
+            or membership.subsystem.status != Subsystem.Status.ACTIVE
+        ):
+            return HttpResponseForbidden("Только активный инвестконтур")
+        self._invest_membership = membership
+        if not user_can_access_invest_ai_chat(request.user, membership):
+            return HttpResponseForbidden("ИИ-чат доступен ролям Агентства, Департамента и администратора")
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        membership = self.get_membership()
+        try:
+            payload = json.loads(request.body.decode() or "{}")
+        except json.JSONDecodeError:
+            payload = request.POST
+        action = (payload.get("action") or "").strip()
+        if action == "escalate":
+            try:
+                result = request_specialist(
+                    request=request,
+                    membership=membership,
+                    question=(payload.get("question") or payload.get("message") or "").strip(),
+                )
+            except Exception as exc:  # noqa: BLE001
+                return JsonResponse({"ok": False, "error": str(exc)[:300]}, status=502)
+            return JsonResponse({"ok": True, **result})
+        if action == "escalation_accept":
+            try:
+                result = accept_specialist(request=request, membership=membership)
+            except ValueError as exc:
+                return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:  # noqa: BLE001
+                return JsonResponse({"ok": False, "error": str(exc)[:300]}, status=502)
+            return JsonResponse({"ok": True, **result})
+        if action == "specialist_reply":
+            try:
+                result = specialist_reply(
+                    request=request,
+                    membership=membership,
+                    message=(payload.get("message") or "").strip(),
+                )
+            except ValueError as exc:
+                return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:  # noqa: BLE001
+                return JsonResponse({"ok": False, "error": str(exc)[:300]}, status=502)
+            return JsonResponse({"ok": True, **result})
+        if action == "briefing":
+            try:
+                result = build_meeting_briefing(request=request, membership=membership)
+            except Exception as exc:  # noqa: BLE001
+                return JsonResponse({"ok": False, "error": str(exc)[:300]}, status=502)
+            return JsonResponse({"ok": True, **result})
+        if action == "probe_llm":
+            status = llm_runtime_status(probe=True)
+            return JsonResponse({"ok": True, "llm": status})
+
+        message = (payload.get("message") or "").strip()
+        reset = bool(payload.get("reset"))
+        if not message:
+            return JsonResponse({"ok": False, "error": "Пустое сообщение"}, status=400)
+        try:
+            result = reply_to_user_message(
+                request=request,
+                membership=membership,
+                user_text=message,
+                reset=reset,
+            )
+        except ValueError as exc:
+            return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+        except Exception as exc:  # noqa: BLE001
+            return JsonResponse({"ok": False, "error": str(exc)[:300]}, status=502)
+        return JsonResponse({"ok": True, **result})
+
+
+class InvestAiChatExportMixin:
+    """Shared access checks for AI-chat briefing exports."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        membership = get_membership_or_403(request)
+        if (
+            membership.subsystem.industry_template != "invest"
+            or membership.subsystem.status != Subsystem.Status.ACTIVE
+        ):
+            return HttpResponseForbidden("Только активный инвестконтур")
+        self._invest_membership = membership
+        if not user_can_access_invest_ai_chat(request.user, membership):
+            return HttpResponseForbidden("ИИ-чат доступен ролям Агентства, Департамента и администратора")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_membership(self):
+        return self._invest_membership
+
+
+class InvestAiChatExportPdfView(InvestAiChatExportMixin, InvestSubsystemMixin, View):
+    def get(self, request, *args, **kwargs):
+        from delayu.services.odysseus_invest import SESSION_KEY as ODYSSEUS_INVEST_SESSION_KEY
+
+        ctx = request.session.get(ODYSSEUS_INVEST_SESSION_KEY) or {}
+        data = export_briefing_pdf(ctx)
+        response = HttpResponse(data, content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="invest-ai-chat-brief.pdf"'
+        return response
+
+
+class InvestAiChatExportDocxView(InvestAiChatExportMixin, InvestSubsystemMixin, View):
+    def get(self, request, *args, **kwargs):
+        from delayu.services.odysseus_invest import SESSION_KEY as ODYSSEUS_INVEST_SESSION_KEY
+
+        ctx = request.session.get(ODYSSEUS_INVEST_SESSION_KEY) or {}
+        data = export_briefing_docx(ctx)
+        response = HttpResponse(
+            data,
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+        response["Content-Disposition"] = 'attachment; filename="invest-ai-chat-brief.docx"'
+        return response
 
 
 class InvestHandoffListView(InvestSubsystemMixin, ModulePermissionMixin, ListView):

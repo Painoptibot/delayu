@@ -67,6 +67,7 @@ class Command(BaseCommand):
         from delayu.services.invest_flags import ensure_automation_config
 
         ensure_automation_config(subsystem)
+        self._seed_odysseus(subsystem, roles)
 
         self.stdout.write(self.style.SUCCESS("Инвестконтур Кубани развёрнут (code=invest-kk)"))
         self.stdout.write(
@@ -98,6 +99,47 @@ class Command(BaseCommand):
             return apps.get_model("delayu", "LicenseEntitlement")
         except LookupError:
             return None
+
+    def _seed_odysseus(self, subsystem, roles):
+        """Enable M87 + Odysseus settings for invest AI-chat demo."""
+        from delayu.models_odysseus import OdysseusSettings
+        from delayu.services.odysseus_settings import ensure_odysseus_settings
+
+        mod = ModuleCatalog.objects.filter(code="M87").first()
+        if mod is None:
+            self.stdout.write(self.style.WARNING("M87 нет в каталоге — Odysseus для демо пропущен"))
+            return
+
+        SubsystemModule.objects.update_or_create(
+            subsystem=subsystem,
+            module=mod,
+            defaults={"enabled": True},
+        )
+        for role_code in ("invest_admin", "invest_dept", "invest_agency"):
+            role = roles.get(role_code)
+            if not role:
+                continue
+            RoleModulePermission.objects.update_or_create(
+                role=role,
+                module=mod,
+                defaults={
+                    "can_view": True,
+                    "can_create": role_code == "invest_admin",
+                    "can_change": role_code == "invest_admin",
+                    "can_delete": False,
+                },
+            )
+
+        cfg = ensure_odysseus_settings(subsystem)
+        cfg.enabled = True
+        cfg.base_url = "http://127.0.0.1:7000"
+        cfg.role_allowlist = ["invest_admin", "invest_dept", "invest_agency"]
+        if not cfg.embed_mode:
+            cfg.embed_mode = OdysseusSettings.EmbedMode.PROXY_SHELL
+        cfg.save(
+            update_fields=["enabled", "base_url", "role_allowlist", "embed_mode", "updated_at"]
+        )
+        self.stdout.write("  Odysseus (M87): enabled, allowlist agency/dept/admin, base_url=127.0.0.1:7000")
 
     def _seed_orgs(self, subsystem):
         specs = (

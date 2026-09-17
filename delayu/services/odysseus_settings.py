@@ -17,7 +17,7 @@ def ensure_odysseus_settings(subsystem) -> OdysseusSettings:
             "vendor_path": "vendor/odysseus",
             "auth_mode": OdysseusSettings.AuthMode.NONE_DEV,
             "allowed_path_prefixes": ["/", "/api/", "/assets/", "/static/"],
-            "role_allowlist": ["invest_admin", "invest_dept"],
+            "role_allowlist": ["invest_admin", "invest_dept", "invest_agency"],
             "timeout_s": 30,
             "options": {},
         },

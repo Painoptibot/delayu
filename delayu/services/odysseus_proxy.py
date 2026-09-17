@@ -21,6 +21,14 @@ HOP_BY_HOP = {
     "content-length",
 }
 
+# Odysseus sends X-Frame-Options: DENY + CSP frame-ancestors 'none'.
+# Drop them so Delayu shell/iframe can embed the proxied UI.
+STRIP_RESPONSE_HEADERS = HOP_BY_HOP | {
+    "content-type",
+    "x-frame-options",
+    "content-security-policy",
+}
+
 
 def path_allowed(cfg: OdysseusSettings, path: str) -> bool:
     normalized = "/" + (path or "").lstrip("/")
@@ -72,7 +80,7 @@ def proxy_request(request, *, cfg: OdysseusSettings, path: str):
     with httpx.Client(timeout=timeout, follow_redirects=True) as client:
         upstream_resp = client.request(method, upstream, headers=headers, content=body)
 
-    excluded = {h for h in HOP_BY_HOP} | {"content-type"}
+    excluded = {h.lower() for h in STRIP_RESPONSE_HEADERS}
     response_headers = {
         k: v for k, v in upstream_resp.headers.items() if k.lower() not in excluded
     }

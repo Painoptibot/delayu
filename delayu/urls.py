@@ -1018,6 +1018,22 @@ urlpatterns = [
     path("invest/inbox/", views_invest.InvestInboxView.as_view(), name="invest-inbox"),
     path("invest/onboarding/", views_invest.InvestOnboardingView.as_view(), name="invest-onboarding"),
     path("invest/odysseus/open/", views_invest.InvestOdysseusOpenView.as_view(), name="invest-odysseus-open"),
+    path("invest/ai-chat/", views_invest.InvestAiChatView.as_view(), name="invest-ai-chat"),
+    path(
+        "invest/ai-chat/message/",
+        views_invest.InvestAiChatMessageView.as_view(),
+        name="invest-ai-chat-message",
+    ),
+    path(
+        "invest/ai-chat/export/pdf/",
+        views_invest.InvestAiChatExportPdfView.as_view(),
+        name="invest-ai-chat-export-pdf",
+    ),
+    path(
+        "invest/ai-chat/export/docx/",
+        views_invest.InvestAiChatExportDocxView.as_view(),
+        name="invest-ai-chat-export-docx",
+    ),
     path("invest/cockpit/", views_invest.InvestCockpitView.as_view(), name="invest-cockpit"),
     path("invest/dashboard/", views_invest.InvestDashboardView.as_view(), name="invest-dashboard"),
     path("invest/dashboard/export/", views_invest.InvestDashboardExportView.as_view(), name="invest-dashboard-export"),

@@ -653,6 +653,56 @@ class InvestProjectComment(models.Model):
         return f"{self.project.code}: {self.body[:40]}"
 
 
+class InvestAiChatTicket(models.Model):
+    """Очередь эскалаций ИИ-чата к живому специалисту Агентства."""
+
+    class Status(models.TextChoices):
+        REQUESTED = "requested", "Запрошена"
+        ACCEPTED = "accepted", "Принята"
+        JOINED = "joined", "В чате"
+        CLOSED = "closed", "Закрыта"
+
+    subsystem = models.ForeignKey("Subsystem", on_delete=models.CASCADE, related_name="invest_ai_chat_tickets")
+    project = models.ForeignKey(
+        InvestProject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="ai_chat_tickets",
+    )
+    question = models.TextField("Вопрос", blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.REQUESTED, db_index=True)
+    demo_role = models.CharField(max_length=64, blank=True)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="invest_ai_tickets_requested"
+    )
+    accepted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="invest_ai_tickets_accepted",
+    )
+    sla_minutes = models.PositiveSmallIntegerField(default=15)
+    timeline = models.JSONField(default=list, blank=True)
+    session_key = models.CharField(max_length=64, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    joined_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Заявка ИИ-чата специалисту"
+        verbose_name_plural = "Заявки ИИ-чата специалисту"
+        indexes = [
+            models.Index(fields=["subsystem", "status", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"#{self.pk} {self.status}: {self.question[:40]}"
+
+
 class InvestExtract(models.Model):
     """Выкопировка / ситуационный план по инвестплощадке."""
 
