@@ -18,12 +18,13 @@ jobs:
       - name: Pull and deploy on server
         run: |
           set -euo pipefail
-          # Runner user is delayu; sudo -u delayu is blocked by sudoers.
+          # Runner = delayu. sudoers allows only webhook-run.sh / run-deploy.sh (NOPASSWD).
           cd /opt/delayu
           git config --global --add safe.directory /opt/delayu || true
           git fetch origin main
           git checkout -B main origin/main
-          sudo bash /opt/delayu/deploy/update-prod.sh
-          sudo systemctl is-active delayu
+          chmod +x deploy/webhook-run.sh deploy/run-deploy.sh deploy/update-prod.sh deploy/deploy-app.sh || true
+          sudo /opt/delayu/deploy/run-deploy.sh
           git rev-parse --short HEAD
           git log -1 --oneline
+          tail -40 /opt/delayu/logs/deploy-webhook.log 2>/dev/null || true
