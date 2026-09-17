@@ -18,5 +18,17 @@ jobs:
       - name: Pull and deploy on server
         run: |
           set -euo pipefail
-          sudo /opt/delayu/deploy/webhook-run.sh
-          tail -30 /opt/delayu/logs/deploy-webhook.log
+          # Older /opt/delayu trees may lack webhook-run.sh — always sync main first.
+          cd /opt/delayu
+          sudo -u delayu git config --global --add safe.directory /opt/delayu || true
+          sudo -u delayu git fetch origin main
+          sudo -u delayu git checkout -B main origin/main
+          if [[ -f /opt/delayu/deploy/update-prod.sh ]]; then
+            sudo bash /opt/delayu/deploy/update-prod.sh
+          else
+            sudo -u delayu bash /opt/delayu/deploy/deploy-app.sh
+            sudo -u delayu bash -c "cd /opt/delayu && .venv/bin/python manage.py link_superusers" || true
+          fi
+          systemctl is-active delayu
+          sudo -u delayu git -C /opt/delayu rev-parse --short HEAD
+          sudo -u delayu git -C /opt/delayu log -1 --oneline
