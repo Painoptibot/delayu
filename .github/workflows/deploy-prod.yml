@@ -21,13 +21,10 @@ jobs:
           # Runner = delayu. sudoers allows only webhook-run.sh / run-deploy.sh (NOPASSWD).
           cd /opt/delayu
           git config --global --add safe.directory /opt/delayu || true
-          echo '--- listeners ---'
-          ss -ltn || true
-          echo '--- nginx sites ---'
-          ls -l /etc/nginx/sites-enabled 2>/dev/null || true
-          echo '--- nginx T listen ---'
-          sudo -n nginx -T 2>/dev/null | awk '/server_name|listen |ssl_certificate /' || echo 'nginx -T denied'
-          echo '--- ufw ---'
-          sudo -n ufw status 2>/dev/null || echo 'ufw denied'
-          echo '--- iptables 443 ---'
-          sudo -n iptables -L INPUT -n 2>/dev/null | head -40 || echo 'iptables denied'
+          echo '--- site ---'
+          sed -n '1,200p' /etc/nginx/sites-available/delayu || true
+          echo '--- available ---'
+          ls -l /etc/nginx/sites-available || true
+          echo '--- certs ---'
+          ls -l /etc/letsencrypt/live 2>&1 || true
+          ls -l /etc/letsencrypt/live/delau.tech 2>&1 || true
