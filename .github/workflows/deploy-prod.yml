@@ -21,9 +21,13 @@ jobs:
           # Runner = delayu. sudoers allows only webhook-run.sh / run-deploy.sh (NOPASSWD).
           cd /opt/delayu
           git config --global --add safe.directory /opt/delayu || true
-          git fetch origin main
-          git checkout -B main origin/main
-          chmod +x deploy/webhook-run.sh deploy/run-deploy.sh deploy/update-prod.sh deploy/deploy-app.sh || true
-          sudo /opt/delayu/deploy/run-deploy.sh
-          git rev-parse --short HEAD
-          git log -1 --oneline
+          echo '--- active ---'
+          systemctl is-active delayu || true
+          echo '--- local ---'
+          curl -sS -m 8 -o /dev/null -w 'local %{http_code}\n' http://127.0.0.1:8000/auth/login/ || true
+          echo '--- public ---'
+          curl -skS -m 8 -o /dev/null -w 'public %{http_code}\n' https://127.0.0.1/auth/login/ -H 'Host: delau.tech' || true
+          echo '--- error ---'
+          tail -60 /opt/delayu/logs/gunicorn-error.log || true
+          echo '--- access ---'
+          tail -15 /opt/delayu/logs/gunicorn-access.log || true
