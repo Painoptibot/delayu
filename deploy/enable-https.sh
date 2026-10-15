@@ -4,6 +4,18 @@ set -uo pipefail
 
 echo "--- nginx procs ---"
 ps -eo lstart,cmd | grep nginx | grep -v grep || true
+echo "--- firewall before ---"
+iptables -S INPUT 2>/dev/null | head -50 || true
+ufw status verbose 2>/dev/null || true
+iptables -I INPUT -p tcp --dport 443 -j ACCEPT || true
+iptables -I INPUT -p tcp --dport 80 -j ACCEPT || true
+if command -v ufw >/dev/null; then
+  ufw allow 80/tcp || true
+  ufw allow 443/tcp || true
+fi
+echo "--- firewall after ---"
+iptables -S INPUT 2>/dev/null | head -20 || true
+ufw status 2>/dev/null || true
 echo "--- certs ---"
 find /etc/letsencrypt -name 'fullchain.pem' 2>/dev/null || true
 
