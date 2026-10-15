@@ -47,30 +47,22 @@
 }
 
 .home-queue-tab .nav-link {
-  width: 4.75rem;
-  min-height: 4.5rem;
-  padding: 0.5rem 0.35rem !important;
-  overflow: hidden;
+  width: auto;
+  min-width: 5.75rem;
+  max-width: 8.5rem;
+  min-height: 5.25rem;
+  padding: 0.5rem 0.7rem !important;
+  overflow: visible;
+  white-space: normal;
 }
 
 .home-queue-tab__label {
   display: block;
   width: 100%;
-  max-width: 100%;
-  font-size: 0.625rem;
-  line-height: 1.15;
+  max-width: 7.4rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
   text-align: center;
-  word-wrap: break-word;
-  overflow-wrap: anywhere;
-  hyphens: auto;
-}
-
-@media (min-width: 1200px) {
-  .home-queue-tab .nav-link {
-    width: 5.25rem;
-  }
-
-  .home-queue-tab__label {
-    font-size: 0.6875rem;
-  }
+  white-space: normal;
+  overflow: visible;
 }

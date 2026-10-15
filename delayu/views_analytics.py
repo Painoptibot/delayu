@@ -290,6 +290,20 @@ class OverdueMonitorView(ModulePermissionMixin, TemplateView):
     module_code = "M20"
     template_name = "platform/analytics/overdue.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        # У ролей УЖВ модуль M20 мог ещё не быть выдан, а регламент сроков (M35) уже есть.
+        if request.user.is_authenticated and not user_can(request.user, "M20", "view"):
+            from delayu.menu import get_active_membership
+
+            membership = get_active_membership(request.user)
+            if (
+                membership
+                and membership.subsystem.industry_template == "uzhv"
+                and user_can(request.user, "M35", "view")
+            ):
+                self.module_code = "M35"
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         m = _ctx_membership(self)

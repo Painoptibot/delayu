@@ -143,9 +143,10 @@ class HomeView(LoginRequiredMixin, PlatformLayoutMixin, TemplateView):
             ctx["quality"] = {}
             ctx["retention_alerts"] = []
             ctx["retention_expired_count"] = 0
-            from delayu.welcome_scene import welcome_scene_ready
+            from delayu.welcome_scene import welcome_figure_for_role, welcome_scene_ready
 
             ctx["welcome_scene_ready"] = welcome_scene_ready()
+            ctx["welcome_figure"] = welcome_figure_for_role("")
             return ctx
         from delayu.services.analytics import (
             department_analytics,
@@ -201,7 +202,8 @@ class HomeView(LoginRequiredMixin, PlatformLayoutMixin, TemplateView):
         ctx["quality"] = quality_metrics(sub)
         ctx["retention_alerts"] = retention_alerts(sub)
         ctx["retention_expired_count"] = retention_expired(sub)
-        from delayu.welcome_scene import welcome_scene_ready
+        from delayu.welcome_scene import welcome_figure_for_role, welcome_scene_ready
 
         ctx["welcome_scene_ready"] = welcome_scene_ready()
+        ctx["welcome_figure"] = welcome_figure_for_role(getattr(m.role, "code", ""))
         return ctx

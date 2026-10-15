@@ -1,7 +1,8 @@
 """Пересчитать RoleModulePermission для ролей АИС УЖВ по матрице uzhv_roles."""
 from django.core.management.base import BaseCommand
 
-from delayu.models import ModuleCatalog, Role, RoleModulePermission, Subsystem
+from delayu.models import ModuleCatalog, Role, RoleModulePermission, Subsystem, SubsystemModule
+from delayu.services.scope import UZHV_MODULE_CODES
 from delayu.services.uzhv_roles import perm_for_role
 
 
@@ -13,6 +14,13 @@ class Command(BaseCommand):
         if not subsystem:
             self.stderr.write("Подсистема uzhv не найдена. Сначала: python manage.py seed_uzhv")
             return
+        enabled = set(UZHV_MODULE_CODES)
+        for mod in ModuleCatalog.objects.filter(code__in=enabled):
+            SubsystemModule.objects.update_or_create(
+                subsystem=subsystem,
+                module=mod,
+                defaults={"enabled": True},
+            )
         roles = Role.objects.filter(subsystem=subsystem)
         modules = list(ModuleCatalog.objects.all())
         count = 0
