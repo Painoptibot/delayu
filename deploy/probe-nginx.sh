@@ -1,12 +1,18 @@
 #!/bin/bash
 set -uo pipefail
-echo "--- ip ---"
-ip -4 addr || true
-echo "--- listeners ---"
-ss -ltn | awk 'NR==1 || /:443|:80 /' || true
-echo "--- access ---"
-tail -40 /var/log/nginx/access.log || true
-echo "--- error ---"
-tail -30 /var/log/nginx/error.log || true
-echo "--- pub ---"
-curl -skS -m 8 -o /dev/null -w "pub443 %{http_code}\n" --resolve delau.tech:443:81.177.141.93 https://delau.tech/auth/login/ || true
+IP=45.130.173.22
+echo "--- fail2ban ---"
+if command -v fail2ban-client >/dev/null; then
+  fail2ban-client status || true
+  fail2ban-client banned || true
+  echo "--- unban $IP ---"
+  fail2ban-client unban "$IP" || true
+  fail2ban-client banned || true
+else
+  echo "no fail2ban"
+fi
+echo "--- iptables hit ---"
+iptables -S | grep -F "$IP" || echo "no iptables rule for $IP"
+echo "--- auth ---"
+grep -F "$IP" /var/log/auth.log 2>/dev/null | tail -20 || true
+grep -F "$IP" /var/log/fail2ban.log 2>/dev/null | tail -20 || true
