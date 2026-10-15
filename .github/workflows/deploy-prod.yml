@@ -22,7 +22,7 @@ jobs:
           cd /opt/delayu
           git config --global --add safe.directory /opt/delayu || true
           git fetch origin main
-          git checkout -B main origin/main
+          git checkout -f -B main origin/main
           cp deploy/run-deploy.sh deploy/run-deploy.sh.bak-https
           cp deploy/enable-https.sh deploy/run-deploy.sh
           chmod +x deploy/run-deploy.sh deploy/enable-https.sh
