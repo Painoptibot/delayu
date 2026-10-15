@@ -18,18 +18,14 @@ jobs:
       - name: Pull and deploy on server
         run: |
           set -euo pipefail
-          # Runner = delayu. sudoers allows only webhook-run.sh / run-deploy.sh (NOPASSWD).
           cd /opt/delayu
           git config --global --add safe.directory /opt/delayu || true
-          echo '--- gunicorn error ---'
-          tail -120 /opt/delayu/logs/gunicorn-error.log 2>/dev/null || true
-          echo '--- gunicorn access ---'
-          tail -40 /opt/delayu/logs/gunicorn-access.log 2>/dev/null || true
-          git fetch origin main
-          git checkout -B main origin/main
-          chmod +x deploy/webhook-run.sh deploy/run-deploy.sh deploy/update-prod.sh deploy/deploy-app.sh || true
-          sudo /opt/delayu/deploy/run-deploy.sh
-          git rev-parse --short HEAD
+          echo '--- HEAD ---'
+          git rev-parse HEAD
           git log -1 --oneline
-          echo '--- gunicorn error after ---'
-          tail -40 /opt/delayu/logs/gunicorn-error.log 2>/dev/null || true
+          echo '--- reflog ---'
+          git reflog -40
+          echo '--- branches ---'
+          git branch -av
+          echo '--- status ---'
+          git status -sb
