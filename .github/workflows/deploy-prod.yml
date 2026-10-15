@@ -21,13 +21,11 @@ jobs:
           # Runner = delayu. sudoers allows only webhook-run.sh / run-deploy.sh (NOPASSWD).
           cd /opt/delayu
           git config --global --add safe.directory /opt/delayu || true
-          echo '--- active ---'
-          systemctl is-active delayu || true
-          echo '--- local ---'
-          curl -sS -m 8 -o /dev/null -w 'local %{http_code}\n' http://127.0.0.1:8000/auth/login/ || true
-          echo '--- public ---'
-          curl -skS -m 8 -o /dev/null -w 'public %{http_code}\n' https://127.0.0.1/auth/login/ -H 'Host: delau.tech' || true
-          echo '--- error ---'
-          tail -60 /opt/delayu/logs/gunicorn-error.log || true
-          echo '--- access ---'
-          tail -15 /opt/delayu/logs/gunicorn-access.log || true
+          echo '--- listen ---'
+          ss -ltn | awk 'NR==1 || /:443|:80|:8000/' || true
+          echo '--- nginx ---'
+          systemctl is-active nginx || true
+          echo '--- public ip ---'
+          curl -skS -m 10 -o /dev/null -w 'ip %{http_code}\n' --resolve delau.tech:443:81.177.141.93 https://delau.tech/auth/login/ || true
+          echo '--- http ---'
+          curl -sS -m 8 -o /dev/null -w 'http %{http_code}\n' --resolve delau.tech:80:81.177.141.93 http://delau.tech/auth/login/ || true
