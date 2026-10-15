@@ -23,8 +23,15 @@ jobs:
           git config --global --add safe.directory /opt/delayu || true
           git fetch origin main
           git checkout -f -B main origin/main
-          cp deploy/run-deploy.sh deploy/run-deploy.sh.bak-probe
-          cp deploy/probe-nginx.sh deploy/run-deploy.sh
-          chmod +x deploy/run-deploy.sh
-          sudo /opt/delayu/deploy/run-deploy.sh || true
-          cp deploy/run-deploy.sh.bak-probe deploy/run-deploy.sh
+          chmod +x deploy/webhook-run.sh deploy/run-deploy.sh deploy/update-prod.sh deploy/deploy-app.sh deploy/enable-https.sh || true
+          sudo /opt/delayu/deploy/run-deploy.sh
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            code="$(curl -sS -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/auth/login/ || true)"
+            echo "health ${i} ${code}"
+            if [ "${code}" = "200" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "app did not answer"
+          exit 1
