@@ -18,11 +18,12 @@ jobs:
       - name: Pull and deploy on server
         run: |
           set -euo pipefail
+          # Runner = delayu. sudoers allows only webhook-run.sh / run-deploy.sh (NOPASSWD).
           cd /opt/delayu
           git config --global --add safe.directory /opt/delayu || true
-          echo '--- service ---'
-          systemctl is-active delayu || true
-          echo '--- home render ---'
-          .venv/bin/python manage.py shell -c "from django.contrib.auth import get_user_model; from django.test import Client; u=get_user_model().objects.get(username='uzhv_spec'); c=Client(HTTP_HOST='delau.tech'); c.force_login(u); r=c.get('/'); print('status', r.status_code, 'len', len(r.content)); b=r.content.decode('utf-8','replace'); print('spec', 'welcome-spec' in b, 'icon', 'icon-base ri ri-' in b); print(b[:500] if r.status_code>=400 else 'ok')"
-          echo '--- nginx ---'
-          tail -30 /var/log/nginx/error.log 2>/dev/null || true
+          git fetch origin main
+          git checkout -B main origin/main
+          chmod +x deploy/webhook-run.sh deploy/run-deploy.sh deploy/update-prod.sh deploy/deploy-app.sh || true
+          sudo /opt/delayu/deploy/run-deploy.sh
+          git rev-parse --short HEAD
+          git log -1 --oneline

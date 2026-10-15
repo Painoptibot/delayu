@@ -27,7 +27,7 @@
 .delayu-welcome-card .delayu-welcome-scene-host {
   max-height: 168px;
   min-height: 168px;
-  overflow: visible;
+  overflow: hidden;
   display: flex;
   justify-content: flex-end;
 }
@@ -37,7 +37,7 @@
   max-width: 240px;
   width: 100%;
   margin-inline: 0 0 0 auto;
-  overflow: visible;
+  overflow: hidden;
 }
 
 /* Очереди по модулям — длинные подписи вкладок */
