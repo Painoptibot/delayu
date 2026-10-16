@@ -70,6 +70,18 @@ else
   RUN_NAME="delayu-uzhv"
 fi
 
+if ! command -v zstd >/dev/null 2>&1; then
+  say "ставлю zstd"
+  if command -v apt-get >/dev/null 2>&1; then
+    apt-get update -qq && apt-get install -y zstd || { say "не удалось поставить zstd"; exit 0; }
+  elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y zstd || { say "не удалось поставить zstd"; exit 0; }
+  else
+    say "нет пакетного менеджера для zstd"
+    exit 0
+  fi
+fi
+
 if ! command -v ollama >/dev/null 2>&1; then
   say "устанавливаю Ollama"
   curl -fsSL https://ollama.com/install.sh | sh || { say "установка Ollama не удалась"; exit 0; }
