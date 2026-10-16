@@ -111,6 +111,11 @@ class HousingQueueCaseForm(BootstrapFormMixin, forms.ModelForm):
 
     def __init__(self, *args, subsystem=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["citizen"].label = "Гражданин"
+        self.fields["category"].label = "Категория"
+        self.fields["status"].label = "Статус"
+        self.fields["assignee"].label = "Исполнитель"
+        self.fields["notes"].label = "Примечание"
         if subsystem:
             self.fields["citizen"].queryset = HousingCitizen.objects.filter(
                 subsystem=subsystem

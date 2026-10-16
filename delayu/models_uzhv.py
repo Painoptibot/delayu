@@ -35,6 +35,9 @@ class HousingCitizen(models.Model):
         parts = [self.last_name, self.first_name, self.middle_name]
         return " ".join(p for p in parts if p)
 
+    def __str__(self):
+        return self.full_name or f"Гражданин #{self.pk}"
+
 
 class HousingQueueCase(models.Model):
     """Учётное дело — нуждающийся в жилом помещении."""
@@ -65,14 +68,14 @@ class HousingQueueCase(models.Model):
         "Subsystem", on_delete=models.CASCADE, related_name="housing_cases"
     )
     citizen = models.ForeignKey(
-        HousingCitizen, on_delete=models.PROTECT, related_name="cases"
+        HousingCitizen, on_delete=models.PROTECT, related_name="cases", verbose_name="Гражданин"
     )
     case_number = models.CharField("Номер дела", max_length=64, db_index=True)
     category = models.CharField(
-        max_length=32, choices=Category.choices, default=Category.GENERAL
+        "Категория", max_length=32, choices=Category.choices, default=Category.GENERAL
     )
     status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.DRAFT
+        "Статус", max_length=20, choices=Status.choices, default=Status.DRAFT
     )
     registered_at = models.DateField("Дата постановки на учёт", default=timezone.now)
     queue_position = models.PositiveIntegerField("Очерёдность", null=True, blank=True)
@@ -84,8 +87,9 @@ class HousingQueueCase(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="housing_cases_assigned",
+        verbose_name="Исполнитель",
     )
-    notes = models.TextField(blank=True)
+    notes = models.TextField("Примечание", blank=True)
     household_size = models.PositiveSmallIntegerField(
         "Число членов семьи", null=True, blank=True
     )

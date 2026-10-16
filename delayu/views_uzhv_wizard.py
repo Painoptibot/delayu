@@ -51,7 +51,7 @@ class UzhvCreateHubView(UzhvSubsystemMixin, ModulePermissionMixin, TemplateView)
                     },
                     {
                         "title": "Гражданин",
-                        "desc": "ФИО, документы, контакты (DaData)",
+                        "desc": "ФИО, документы, контакты",
                         "icon": "ri-user-add-line",
                         "url": reverse("uzhv-citizen-create"),
                     },
@@ -73,7 +73,7 @@ class UzhvCreateHubView(UzhvSubsystemMixin, ModulePermissionMixin, TemplateView)
             cards.append(
                 {
                     "title": "Обращение",
-                    "desc": "Регистрация с SLA 30 дней и M24",
+                    "desc": "Регистрация обращения, срок ответа 30 дней",
                     "icon": "ri-mail-add-line",
                     "url": reverse("uzhv-appeal-create"),
                 }
