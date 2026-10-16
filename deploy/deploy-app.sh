@@ -50,6 +50,9 @@ echo "==> Миграции"
 echo "==> Топливный пропуск (Новороссийск)"
 "${VENV}/bin/python" manage.py seed_fuel_novorossiysk || true
 
+echo "==> Права ролей УЖВ"
+"${VENV}/bin/python" manage.py sync_uzhv_role_permissions || true
+
 echo "==> Карта АЗС ЮФО"
 "${VENV}/bin/python" manage.py seed_fuel_ufo || true
 

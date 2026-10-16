@@ -1,0 +1,84 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<style>
+  .uzhv-support { display: grid; grid-template-columns: 260px 1fr; gap: 1rem; min-height: 28rem; }
+  .uzhv-support-list { border-right: 1px solid #eadfce; padding-right: .75rem; }
+  .uzhv-support-list a { display: block; padding: .55rem .4rem; border-radius: .4rem; color: inherit; text-decoration: none; }
+  .uzhv-support-list a.active, .uzhv-support-list a:hover { background: #f6f1e8; }
+  .uzhv-support-log { display: flex; flex-direction: column; gap: .65rem; max-height: 28rem; overflow: auto; padding-right: .25rem; }
+  .uzhv-bubble { max-width: 42rem; padding: .7rem .85rem; border-radius: .75rem; white-space: pre-wrap; }
+  .uzhv-bubble.user { background: #1e4540; color: #fff; margin-left: auto; }
+  .uzhv-bubble.assistant { background: #f6f1e8; border: 1px solid #eadfce; }
+  .uzhv-bubble.specialist { background: #fff; border: 1px solid #a46b45; }
+  .uzhv-bubble.system { background: transparent; color: #78716c; font-size: .9rem; }
+  .uzhv-bubble .who { display: block; font-size: .75rem; opacity: .75; margin-bottom: .2rem; }
+  @media (max-width: 800px) { .uzhv-support { grid-template-columns: 1fr; } .uzhv-support-list { border-right: 0; border-bottom: 1px solid #eadfce; padding-bottom: .75rem; } }
+</style>
+<div class="uzhv-support">
+  <aside class="uzhv-support-list">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <strong>Обращения</strong>
+      <a href="{% url 'uzhv-support' %}" class="btn btn-sm btn-outline-primary">Новое</a>
+    </div>
+    {% for item in threads %}
+    <a href="{% url 'uzhv-support-thread' item.pk %}" class="{% if thread.pk == item.pk %}active{% endif %}">
+      <div>{{ item.subject|truncatechars:42 }}</div>
+      <small class="text-muted">{{ item.get_status_display }}</small>
+    </a>
+    {% empty %}
+    <p class="text-muted mb-0">Пока нет обращений. Напишите вопрос — ответит Odysseus, при необходимости обращение уйдёт специалисту ТП.</p>
+    {% endfor %}
+  </aside>
+  <section>
+    {% if thread %}
+    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+      <div>
+        <h6 class="mb-1">{{ thread.subject }}</h6>
+        <span class="badge bg-light text-dark">{{ thread.get_status_display }}</span>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="escalate">
+        <button class="btn btn-sm btn-outline-primary" type="submit">Передать специалисту ТП</button>
+      </form>
+    </div>
+    <div class="uzhv-support-log mb-3">
+      {% for msg in chat_messages %}
+      <div class="uzhv-bubble {{ msg.role }}">
+        <span class="who">
+          {% if msg.role == "user" %}{{ msg.author.get_full_name|default:msg.author.username }}
+          {% elif msg.role == "assistant" %}Odysseus
+          {% elif msg.role == "specialist" %}Специалист ТП{% if msg.author %} · {{ msg.author.get_full_name|default:msg.author.username }}{% endif %}
+          {% else %}Система{% endif %}
+        </span>
+        {{ msg.body }}
+      </div>
+      {% endfor %}
+    </div>
+    {% if thread.status != "closed" %}
+    <form method="post" class="d-flex flex-column gap-2">
+      {% csrf_token %}
+      <textarea name="body" class="form-control" rows="3" maxlength="4000" required placeholder="Опишите, что не получается, или на каком экране вы остановились"></textarea>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit" name="action" value="message">Спросить Odysseus</button>
+        {% if is_support_staff %}
+        <button class="btn btn-outline-primary" type="submit" name="action" value="specialist">Ответить как ТП</button>
+        {% endif %}
+        <button class="btn btn-link" type="submit" name="action" value="close">Закрыть</button>
+      </div>
+    </form>
+    {% endif %}
+    {% else %}
+    <h6>Новый вопрос в техподдержку</h6>
+    <p class="text-muted">Сообщение увидит Odysseus. Если ответ ИИ не подойдёт, передайте обращение специалисту. Раздел доступен всем ролям контура УЖВ.</p>
+    <form method="post" class="d-flex flex-column gap-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="new">
+      <input name="subject" class="form-control" maxlength="200" placeholder="Тема, например: не открывается дело">
+      <textarea name="body" class="form-control" rows="5" maxlength="4000" required placeholder="Вопрос"></textarea>
+      <button class="btn btn-primary align-self-start" type="submit">Отправить</button>
+    </form>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

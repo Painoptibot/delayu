@@ -18,6 +18,7 @@ from . import (
     views_uzhv_wizard,
     views_welcome,
 )
+from delayu.uzhv.support import UzhvSupportChatView
 
 urlpatterns = [
     path("internal/deploy/", views_deploy.deploy_webhook, name="deploy-webhook"),
@@ -1314,6 +1315,8 @@ urlpatterns = [
     ),
     path("uzhv/cases/<int:pk>/package.zip", views.UzhvCaseZipView.as_view(), name="uzhv-case-zip"),
     path("uzhv/reports/", views.UzhvReportsHubView.as_view(), name="uzhv-reports"),
+    path("uzhv/support/", UzhvSupportChatView.as_view(), name="uzhv-support"),
+    path("uzhv/support/<int:pk>/", UzhvSupportChatView.as_view(), name="uzhv-support-thread"),
     path("uzhv/reports/<slug:code>/export.csv", views.UzhvReportExportView.as_view(), {"fmt": "csv"}, name="uzhv-report-export"),
     path("uzhv/reports/<slug:code>/export.xlsx", views.UzhvReportExportView.as_view(), {"fmt": "xlsx"}, name="uzhv-report-export-xlsx"),
     path("uzhv/reports/<slug:code>/export.pdf", views.UzhvReportExportView.as_view(), {"fmt": "pdf"}, name="uzhv-report-export-pdf"),

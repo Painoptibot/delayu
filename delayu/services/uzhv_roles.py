@@ -106,10 +106,25 @@ ROLE_SPECS: dict[str, dict] = {
 }
 
 
+SUPPORT_STAFF_ROLES = frozenset(
+    {"uzhv_admin", "uzhv_head", "uzhv_deputy", "uzhv_manager"}
+)
+
+
 def perm_for_role(role_code: str, mod_code: str) -> dict:
     spec = ROLE_SPECS.get(role_code, ROLE_SPECS["uzhv_viewer"])
     deny = spec.get("deny") or set()
     if mod_code in deny:
+        return {"can_view": False, "can_create": False, "can_change": False, "can_delete": False}
+    if mod_code == "U04":
+        if spec.get("all_modules") or mod_code in (spec.get("modules") or ()):
+            staff = role_code in SUPPORT_STAFF_ROLES or bool(spec.get("all_modules"))
+            return {
+                "can_view": True,
+                "can_create": True,
+                "can_change": staff,
+                "can_delete": False,
+            }
         return {"can_view": False, "can_create": False, "can_change": False, "can_delete": False}
 
     if spec.get("all_modules"):

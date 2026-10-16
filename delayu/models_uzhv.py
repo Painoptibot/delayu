@@ -1267,3 +1267,62 @@ class HousingAdminProtocol(models.Model):
 
     def __str__(self):
         return f"{self.protocol_number} — {self.violator_name}"
+
+
+class UzhvSupportThread(models.Model):
+    """Обращение в техподдержку контура УЖВ."""
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Диалог с Odysseus"
+        ESCALATED = "escalated", "У специалиста ТП"
+        ANSWERED = "answered", "Есть ответ ТП"
+        CLOSED = "closed", "Закрыто"
+
+    subsystem = models.ForeignKey(
+        "Subsystem", on_delete=models.CASCADE, related_name="uzhv_support_threads"
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="uzhv_support_threads",
+    )
+    subject = models.CharField("Тема", max_length=200)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Обращение в ТП УЖВ"
+        verbose_name_plural = "Обращения в ТП УЖВ"
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return self.subject
+
+
+class UzhvSupportMessage(models.Model):
+    class Role(models.TextChoices):
+        USER = "user", "Пользователь"
+        ASSISTANT = "assistant", "Odysseus"
+        SPECIALIST = "specialist", "Специалист ТП"
+        SYSTEM = "system", "Система"
+
+    thread = models.ForeignKey(
+        UzhvSupportThread, on_delete=models.CASCADE, related_name="messages"
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="uzhv_support_messages",
+    )
+    role = models.CharField(max_length=16, choices=Role.choices)
+    body = models.TextField()
+    engine = models.CharField(max_length=64, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
