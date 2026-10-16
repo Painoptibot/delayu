@@ -3,7 +3,7 @@
 {% block content %}
 <div class="mb-4">
   <h4 class="mb-1">{{ page_title }}</h4>
-  <p class="text-muted mb-0">Пошаговые мастера с подсказками DaData и проверкой полей на каждом шаге.</p>
+  <p class="text-muted mb-0">Пошаговые мастера с проверкой полей на каждом шаге.</p>
 </div>
 <div class="row g-3">
   {% for card in create_cards %}
@@ -29,6 +29,6 @@
   {% endfor %}
 </div>
 <p class="small text-muted mt-4 mb-0">
-  Классические одностраничные формы: гражданин и дело доступны через «Отмена» в мастере или прямые URL <code>/edit/</code>.
+  Карточку гражданина или дела можно открыть из соответствующего списка.
 </p>
 {% endblock %}

@@ -50,6 +50,7 @@ class PlatformLayoutMixin:
                 cfg = dict(context.get("TEMPLATE_CONFIG") or {})
                 cfg["primary_color"] = membership.subsystem.primary_color
                 context["TEMPLATE_CONFIG"] = cfg
+        context.setdefault("page_title", getattr(self, "page_title", "") or "Раздел")
         return TemplateLayout.init(self, context)
 
 
