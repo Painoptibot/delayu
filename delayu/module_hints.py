@@ -127,6 +127,13 @@ _MODULE_DETAILS: dict[str, dict] = {
         "body": "Конструктор дашбордов руководителя: виджеты KPI, таблицы, графики. Раскладки по ролям настраиваются в Студии.",
         "tips": ["Виджеты берут данные из аналитики M15", "Обновление показателей — по расписанию"],
     },
+    "U04": {
+        "body": "Чат с технической поддержкой контура УЖВ. Сначала отвечает Odysseus, затем вопрос можно передать специалисту.",
+        "tips": [
+            "Раздел открыт всем ролям контура",
+            "Кнопка «Передать специалисту ТП» оставляет вопрос человеку",
+        ],
+    },
 }
 
 _GROUP_FALLBACK: dict[str, dict] = {
@@ -235,7 +242,7 @@ def get_module_hint(module_code: str) -> dict:
         if db:
             if db.get("name"):
                 hint["title"] = f"{db['name']} ({code})"
-            if (db.get("description") or "").strip():
+            if code not in _MODULE_DETAILS and (db.get("description") or "").strip():
                 hint["body"] = db["description"].strip()
     except Exception:
         pass
