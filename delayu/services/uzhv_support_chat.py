@@ -5,15 +5,13 @@ import httpx
 from django.conf import settings
 
 from delayu.services.invest_ai_chat import llm_configured, llm_model_info
+from delayu.services.uzhv_support_knowledge import answer_from_knowledge, handbook_for_prompt
 
 SYSTEM_PROMPT = (
     "Ты Odysseus, помощник технической поддержки контура АИС УЖВ в системе ДелаЮ. "
-    "Отвечай по-русски, коротко и по шагам: как открыть раздел, что нажать, какой логин "
-    "какой контур видит. Разделы: обзор, учёт нуждающихся, молодые семьи, дети-сироты, "
-    "жилфонд, договоры, жилконтроль, расселение, обращения, отчёты, сроки. "
+    "Отвечай по-русски, коротко и по шагам, только по материалам ниже. "
     "Не выдумывай персональные данные, номера дел и суммы. "
-    "Если вопрос про сбой, доступ, ошибку экрана или то, чего нет в интерфейсе, "
-    "прямо предложи передать обращение специалисту техподдержки."
+    "Если в материалах нет ответа, так и скажи и предложи кнопку «Передать специалисту ТП»."
 )
 
 
@@ -30,33 +28,43 @@ def offline_reply(question: str) -> str:
 
 
 def ask_odysseus(*, subsystem, history: list[dict]) -> tuple[str, str]:
-    """Вернуть текст ответа и имя движка: odysseus, llm или offline."""
-    text = _ask_odysseus_service(subsystem, history)
+    """Вернуть текст ответа и имя движка: odysseus или llm:<модель>."""
+    question = _last_user_text(history)
+    grounded = answer_from_knowledge(question)
+    text = _ask_odysseus_service(subsystem, history, question)
     if text:
         return text, "odysseus"
     if llm_configured():
         try:
-            answer, model = _ask_platform_llm(history)
+            answer, model = _ask_platform_llm(history, question)
             if answer:
                 return answer, f"llm:{model}"
         except Exception:
             pass
-    last_user = ""
+    return grounded, "odysseus"
+
+
+def _last_user_text(history: list[dict]) -> str:
     for item in reversed(history):
         if item.get("role") == "user":
-            last_user = item.get("content") or ""
-            break
-    return offline_reply(last_user), "offline"
+            return item.get("content") or ""
+    return ""
 
 
-def _ask_odysseus_service(subsystem, history: list[dict]) -> str:
+def _prompt(question: str) -> str:
+    return f"{SYSTEM_PROMPT}\n\nМатериалы:\n{handbook_for_prompt(question)}"
+
+
+def _ask_odysseus_service(subsystem, history: list[dict], question: str) -> str:
+    if subsystem is None:
+        return ""
     from delayu.services.odysseus_settings import ensure_odysseus_settings
 
     cfg = ensure_odysseus_settings(subsystem)
     if not cfg.enabled or not (cfg.base_url or "").strip():
         return ""
     base = cfg.base_url.rstrip("/")
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": _prompt(question)}]
     for item in history[-12:]:
         role = item.get("role")
         if role == "specialist":
@@ -79,7 +87,7 @@ def _ask_odysseus_service(subsystem, history: list[dict]) -> str:
         return ""
 
 
-def _ask_platform_llm(history: list[dict]) -> tuple[str, str]:
+def _ask_platform_llm(history: list[dict], question: str) -> tuple[str, str]:
     api_key = (
         getattr(settings, "DELAYU_LLM_API_KEY", "")
         or getattr(settings, "OPENAI_API_KEY", "")
@@ -94,7 +102,7 @@ def _ask_platform_llm(history: list[dict]) -> tuple[str, str]:
     models = [info["primary"]]
     if info["fallback"] and info["fallback"] not in models:
         models.append(info["fallback"])
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": _prompt(question)}]
     for item in history[-12:]:
         role = item.get("role")
         if role == "specialist":
