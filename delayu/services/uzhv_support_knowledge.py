@@ -243,6 +243,8 @@ def answer_from_knowledge(question: str) -> str:
 
 
 def handbook_for_prompt(question: str) -> str:
-    articles = retrieve_articles(question, limit=3)
-    blocks = [f"{article['title']}\n{article['answer']}" for article in articles]
-    return "\n\n".join(blocks)
+    """Полная инструкция: модель отвечает на вопрос, а не на ближайшее слово."""
+    asked = (question or "").strip().replace("\n", " ")[:500]
+    blocks = [f"{article['title']}\n{article['answer'].strip()}" for article in ARTICLES]
+    blocks.append(f"{_GENERAL['title']}\n{_GENERAL['answer'].strip()}")
+    return f"Вопрос пользователя: {asked}\n\nМатериалы по системе:\n" + "\n\n".join(blocks)

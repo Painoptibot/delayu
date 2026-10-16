@@ -61,6 +61,9 @@ echo "==> Статика"
 
 mkdir -p media logs
 
+echo "==> Модель чата поддержки"
+bash "${APP_DIR}/deploy/enable-support-llm.sh" || echo "support-llm: пропуск, чат останется на инструкции"
+
 echo "==> systemd gunicorn"
 sudo cp deploy/systemd/delayu.service /etc/systemd/system/delayu.service
 sudo sed -i "s|/opt/delayu|${APP_DIR}|g" /etc/systemd/system/delayu.service

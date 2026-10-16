@@ -9,8 +9,10 @@ from delayu.services.uzhv_support_knowledge import answer_from_knowledge, handbo
 
 SYSTEM_PROMPT = (
     "Ты Odysseus, помощник технической поддержки контура АИС УЖВ в системе ДелаЮ. "
-    "Отвечай по-русски, коротко и по шагам, только по материалам ниже. "
-    "Не выдумывай персональные данные, номера дел и суммы. "
+    "Отвечай по-русски, коротко и по шагам, только на заданный вопрос и только по материалам ниже. "
+    "Не перечисляй соседние разделы, о которых не спросили. "
+    "Логины, роли и адреса из материалов называй прямо. "
+    "Не выдумывай других логинов, персональные данные, номера дел и суммы. "
     "Если в материалах нет ответа, так и скажи и предложи кнопку «Передать специалисту ТП»."
 )
 
@@ -110,7 +112,7 @@ def _ask_platform_llm(history: list[dict], question: str) -> tuple[str, str]:
         if role in {"user", "assistant"} and (item.get("content") or "").strip():
             messages.append({"role": role, "content": item["content"][:4000]})
     last_error: Exception | None = None
-    with httpx.Client(timeout=45.0) as client:
+    with httpx.Client(timeout=100.0) as client:
         for model in models:
             try:
                 resp = client.post(

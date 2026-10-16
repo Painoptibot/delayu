@@ -44,7 +44,7 @@
     </div>
     <div class="uzhv-support-log mb-3">
       {% for msg in chat_messages %}
-      <div class="uzhv-bubble {{ msg.role }}">
+      <div class="uzhv-bubble {{ msg.role }}" data-engine="{{ msg.engine }}">
         <span class="who">
           {% if msg.role == "user" %}{{ msg.author.get_full_name|default:msg.author.username }}
           {% elif msg.role == "assistant" %}Odysseus
