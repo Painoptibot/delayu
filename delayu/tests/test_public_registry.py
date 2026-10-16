@@ -8,6 +8,19 @@ from delayu.services.sso import login_page_esia_providers
 User = get_user_model()
 
 
+def test_demo_guide_has_a_user_for_each_contour():
+    from delayu.services.registry_platform import build_registry_demo_guide
+
+    guide = build_registry_demo_guide(None)
+    codes = [row["code"] for row in guide["contours"]]
+    assert codes == ["uzhv", "invest", "fuel"]
+    logins = {row["login"] for row in guide["credentials"]}
+    assert {"uzhv_mgr", "uzhv_spec", "uzhv_orphan", "uzhv_contract", "uzhv_admin"} <= logins
+    assert {"invest_admin", "invest_agency", "invest_dept", "invest_mo", "invest_viewer"} <= logins
+    assert "fuel_nvr" in logins
+    assert all(row["password"] == row["login"] for row in guide["credentials"])
+
+
 @pytest.mark.django_db
 def test_public_registry_docs_without_auth():
     client = Client(HTTP_HOST="127.0.0.1")

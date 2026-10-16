@@ -183,6 +183,52 @@ def export_ai_module_pdf(subsystem: Subsystem | None) -> HttpResponse:
     return resp
 
 
+def demo_contour_accounts(url) -> list[dict]:
+    """Отдельная учётная запись на каждый отраслевой контур. Пароль совпадает с логином."""
+    return [
+        {
+            "code": "uzhv",
+            "title": "АИС УЖВ",
+            "summary": "Жилищный учёт: очередь, молодые семьи, дети-сироты, жилфонд, договоры, контроль и обращения. В меню есть «Поддержка».",
+            "users": [
+                {"person": "Пётр Руководителев", "role": "Начальник", "login": "uzhv_mgr", "password": "uzhv_mgr", "start": url("/uzhv/"), "about": "Обзор, сроки, отчёты"},
+                {"person": "Елена Специалистова", "role": "Специалист по учёту", "login": "uzhv_spec", "password": "uzhv_spec", "start": url("/uzhv/cases/"), "about": "Дела, в том числе УЖВ-2026-001 и УЖВ-2026-002"},
+                {"person": "Ольга Сироткина", "role": "Дети-сироты", "login": "uzhv_orphan", "password": "uzhv_orphan", "start": url("/uzhv/orphans/"), "about": "Учёт детей-сирот, дело УЖВ-2026-004"},
+                {"person": "Сергей Договоров", "role": "Договоры и жилфонд", "login": "uzhv_contract", "password": "uzhv_contract", "start": url("/uzhv/contracts/"), "about": "Договоры, затем жилфонд"},
+                {"person": "Администратор УЖВ", "role": "Администратор контура", "login": "uzhv_admin", "password": "uzhv_admin", "start": url("/uzhv/"), "about": "Полный обход и ответы в поддержке"},
+            ],
+        },
+        {
+            "code": "invest",
+            "title": "Инвестконтур",
+            "summary": "Проекты, площадки и сопровождение инвестиций. Вход открывает только этот контур.",
+            "users": [
+                {"person": "Администратор Инвестконтур", "role": "Администратор", "login": "invest_admin", "password": "invest_admin", "start": url("/invest/"), "about": "Настройки и полный обход"},
+                {"person": "Анна Агентская", "role": "Агентство", "login": "invest_agency", "password": "invest_agency", "start": url("/invest/"), "about": "Проекты агентства"},
+                {"person": "Дмитрий Департаментский", "role": "Департамент", "login": "invest_dept", "password": "invest_dept", "start": url("/invest/"), "about": "Сопровождение департамента"},
+                {"person": "Мария Муниципальная", "role": "Муниципалитет", "login": "invest_mo", "password": "invest_mo", "start": url("/invest/"), "about": "Проекты муниципалитета"},
+                {"person": "Виктор Наблюдатель", "role": "Просмотр", "login": "invest_viewer", "password": "invest_viewer", "start": url("/invest/"), "about": "Только просмотр"},
+            ],
+        },
+        {
+            "code": "fuel",
+            "title": "Топливный пропуск",
+            "summary": "Штаб пропуска Новороссийска: заявки, АЗС и журнал. Вход открывает только этот контур.",
+            "users": [
+                {"person": "Оператор Штаба", "role": "Оператор штаба", "login": "fuel_nvr", "password": "fuel_nvr", "start": url("/fuel/"), "about": "Обзор штаба и заявки"},
+            ],
+        },
+    ]
+
+
+def flatten_demo_credentials(contours: list[dict]) -> list[dict]:
+    rows = []
+    for contour in contours:
+        for user in contour["users"]:
+            rows.append({**user, "contour": contour["title"]})
+    return rows
+
+
 def build_registry_demo_guide(subsystem: Subsystem | None = None) -> dict:
     """Пошаговый сценарий для экспертизы реестра (DEMO-P0-02, REG-P0-02)."""
     from django.conf import settings
@@ -203,6 +249,7 @@ def build_registry_demo_guide(subsystem: Subsystem | None = None) -> dict:
     demo_case_path = (
         f"/uzhv/cases/{demo_case.pk}/low-income/" if demo_case else "/uzhv/cases/"
     )
+    contours = demo_contour_accounts(url)
 
     return {
         "product_name": "ДелаЮ",
@@ -211,10 +258,8 @@ def build_registry_demo_guide(subsystem: Subsystem | None = None) -> dict:
         "base_url": base_url or "https://<ваш-демо-стенд>",
         "demo_case_number": demo_case.case_number if demo_case else "УЖВ-DEMO-REG",
         "demo_case_id": demo_case.pk if demo_case else None,
-        "credentials": [
-            {"role": "Специалист УЖВ", "login": "uzhv_spec", "password": "uzhv_spec"},
-            {"role": "Администратор", "login": "uzhv_admin", "password": "uzhv_admin"},
-        ],
+        "contours": contours,
+        "credentials": flatten_demo_credentials(contours),
         "admin_notes": [
             "Развёртывание: Python 3.12+, PostgreSQL 14+, `pip install -r requirements.txt`.",
             "Миграции: `python manage.py migrate`.",
@@ -690,9 +735,12 @@ def export_demo_guide_pdf(subsystem: Subsystem | None) -> HttpResponse:
         action = step["title"] + (f". {hint}" if hint else "")
         rows.append([str(step["n"]), action, step["path"]])
     rows.append(["", "", ""])
-    rows.append(["Логин", "Пароль", "Роль"])
+    rows.append(["Контур", "Кто", "Логин", "Пароль"])
     for c in data["credentials"]:
-        rows.append([c["login"], c["password"], c["role"]])
+        who = c.get("person") or c["role"]
+        if c.get("person"):
+            who = f"{c['person']} — {c['role']}"
+        rows.append([c.get("contour", ""), who, c["login"], c["password"]])
     title = f"Демо-сценарий {data['product_name']} v{data['version']}"
     content = rows_to_pdf_bytes(title, rows)
     resp = HttpResponse(content, content_type="application/pdf")

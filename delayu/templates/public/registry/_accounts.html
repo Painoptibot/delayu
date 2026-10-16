@@ -1,0 +1,32 @@
+{% for contour in guide.contours %}
+<div class="card mb-4">
+  <div class="card-header">
+    <h6 class="mb-1">{{ contour.title }}</h6>
+    <div class="text-muted small">{{ contour.summary }}</div>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Кто</th>
+          <th>Роль</th>
+          <th>Логин</th>
+          <th>Пароль</th>
+          <th>С чего начать</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in contour.users %}
+        <tr>
+          <td>{{ user.person }}<div class="text-muted small">{{ user.about }}</div></td>
+          <td>{{ user.role }}</td>
+          <td><code>{{ user.login }}</code></td>
+          <td><code>{{ user.password }}</code></td>
+          <td class="small"><a href="{{ user.start }}"><code>{{ user.start }}</code></a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
