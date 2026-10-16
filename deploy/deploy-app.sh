@@ -63,6 +63,9 @@ mkdir -p media logs
 
 echo "==> Модель чата поддержки"
 bash "${APP_DIR}/deploy/enable-support-llm.sh" || echo "support-llm: пропуск, чат останется на инструкции"
+if [[ -f "${APP_DIR}/.support-llm-workers" ]]; then
+  GUNICORN_WORKERS="$(tr -d '[:space:]' < "${APP_DIR}/.support-llm-workers")"
+fi
 
 echo "==> systemd gunicorn"
 sudo cp deploy/systemd/delayu.service /etc/systemd/system/delayu.service
@@ -71,6 +74,7 @@ sudo sed -i "s/--workers 4/--workers ${GUNICORN_WORKERS}/" /etc/systemd/system/d
 sudo systemctl daemon-reload
 sudo systemctl enable delayu
 sudo systemctl restart delayu
+bash "${APP_DIR}/deploy/enable-support-llm.sh" --warmup || true
 
 if [[ "${DELAYU_WRITE_NGINX:-0}" == "1" ]]; then
   if [[ -n "${DOMAIN:-}" ]]; then

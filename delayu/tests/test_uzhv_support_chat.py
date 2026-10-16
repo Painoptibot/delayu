@@ -24,6 +24,21 @@ def test_odysseus_names_contour_logins():
     assert "uzhv_mgr" in answer
 
 
+def test_invented_password_is_replaced_by_the_handbook(monkeypatch):
+    monkeypatch.setattr("delayu.services.uzhv_support_chat.llm_configured", lambda: True)
+    monkeypatch.setattr(
+        "delayu.services.uzhv_support_chat._ask_platform_llm",
+        lambda *args, **kwargs: ("Пароль начальника — управление.", "delayu-uzhv"),
+    )
+    answer, engine = ask_odysseus(
+        subsystem=None,
+        history=[{"role": "user", "content": "Как открыть учёт нуждающихся?"}],
+    )
+    assert engine == "odysseus"
+    assert "/uzhv/cases/" in answer
+    assert "управление" not in answer
+
+
 def test_odysseus_answers_when_the_model_is_off(monkeypatch):
     monkeypatch.setattr("delayu.services.uzhv_support_chat.llm_configured", lambda: False)
     monkeypatch.setattr(

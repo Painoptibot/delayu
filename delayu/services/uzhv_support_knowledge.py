@@ -242,9 +242,35 @@ def answer_from_knowledge(question: str) -> str:
     return text
 
 
-def handbook_for_prompt(question: str) -> str:
-    """Полная инструкция: модель отвечает на вопрос, а не на ближайшее слово."""
+COMPACT_MAP = (
+    "Вход: https://delau.tech/auth/login/. Пароль совпадает с логином.\n"
+    "АИС УЖВ: uzhv_mgr — начальник, /uzhv/; uzhv_spec — учёт нуждающихся, /uzhv/cases/; "
+    "uzhv_orphan — дети-сироты, /uzhv/orphans/; uzhv_contract — договоры и жилфонд, /uzhv/contracts/; "
+    "uzhv_admin — весь контур.\n"
+    "Инвестконтур: invest_admin, invest_agency, invest_dept, invest_mo, invest_viewer, старт /invest/.\n"
+    "Топливный пропуск: fuel_nvr, старт /fuel/.\n"
+    "Меню «УЖВ»: Обзор /uzhv/; Учёт нуждающихся /uzhv/cases/; Молодые семьи /uzhv/young-families/; "
+    "Дети-сироты /uzhv/orphans/; Граждане /uzhv/citizens/; Жилфонд /uzhv/fund/; "
+    "Договоры /uzhv/contracts/; Жилконтроль /uzhv/inspections/; Расселение /uzhv/resettlement/; "
+    "Обращения /uzhv/appeals/; Отчёты /uzhv/reports/; Сроки /uzhv/deadlines/; Поддержка /uzhv/support/.\n"
+    "Главная /: вкладки Дела, Корреспонденция, Задачи, БПМ.\n"
+    "Если страница не открылась — обновить, проверить контур АИС «УЖВ», пункт искать в меню «УЖВ», "
+    "иначе кнопка «Передать специалисту ТП». Учебные дела: УЖВ-2026-001, УЖВ-2026-002, УЖВ-2026-004."
+)
+
+
+def handbook_for_prompt(question: str, *, compact: bool = False) -> str:
+    """Инструкция для модели. На тесном сервере — короткая карта и 1–2 раздела."""
     asked = (question or "").strip().replace("\n", " ")[:500]
+    if compact:
+        details = "\n\n".join(
+            f"{article['title']}\n{article['answer'].strip()}"
+            for article in retrieve_articles(question, limit=2)
+        )
+        return (
+            f"Вопрос пользователя: {asked}\n\nКарта системы:\n{COMPACT_MAP}\n\n"
+            f"Подробности по вопросу:\n{details}"
+        )
     blocks = [f"{article['title']}\n{article['answer'].strip()}" for article in ARTICLES]
     blocks.append(f"{_GENERAL['title']}\n{_GENERAL['answer'].strip()}")
     return f"Вопрос пользователя: {asked}\n\nМатериалы по системе:\n" + "\n\n".join(blocks)

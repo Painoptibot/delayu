@@ -1,6 +1,8 @@
 """Ответ Odysseus в чате техподдержки контура УЖВ."""
 from __future__ import annotations
 
+import re
+
 import httpx
 from django.conf import settings
 
@@ -39,11 +41,41 @@ def ask_odysseus(*, subsystem, history: list[dict]) -> tuple[str, str]:
     if llm_configured():
         try:
             answer, model = _ask_platform_llm(history, question)
-            if answer:
+            if answer and _model_answer_is_safe(answer):
                 return answer, f"llm:{model}"
         except Exception:
             pass
     return grounded, "odysseus"
+
+
+_KNOWN_LOGINS = (
+    "uzhv_mgr",
+    "uzhv_spec",
+    "uzhv_orphan",
+    "uzhv_contract",
+    "uzhv_admin",
+    "invest_admin",
+    "invest_agency",
+    "invest_dept",
+    "invest_mo",
+    "invest_viewer",
+    "fuel_nvr",
+)
+
+
+def _model_answer_is_safe(answer: str) -> bool:
+    """Маленькая модель иногда выдумывает пароль. Такой ответ в чат не отдаём."""
+    text = (answer or "").lower().replace("ё", "е")
+    if not text.strip() or "не отвечает" in text:
+        return False
+    for match in re.finditer(r"парол\w*.{0,48}", text):
+        window = match.group(0)
+        if "совпада" in window:
+            continue
+        if any(login in window for login in _KNOWN_LOGINS):
+            continue
+        return False
+    return True
 
 
 def _last_user_text(history: list[dict]) -> str:
@@ -53,8 +85,23 @@ def _last_user_text(history: list[dict]) -> str:
     return ""
 
 
-def _prompt(question: str) -> str:
-    return f"{SYSTEM_PROMPT}\n\nМатериалы:\n{handbook_for_prompt(question)}"
+def _prompt(question: str, *, compact: bool = False) -> str:
+    return f"{SYSTEM_PROMPT}\n\nМатериалы:\n{handbook_for_prompt(question, compact=compact)}"
+
+
+def _small_model(name: str) -> bool:
+    return "0.5" in (name or "") or (name or "").startswith("delayu-uzhv")
+
+
+def _messages(history: list[dict], question: str, *, compact: bool = False) -> list[dict]:
+    messages = [{"role": "system", "content": _prompt(question, compact=compact)}]
+    for item in history[-12:]:
+        role = item.get("role")
+        if role == "specialist":
+            role = "assistant"
+        if role in {"user", "assistant"} and (item.get("content") or "").strip():
+            messages.append({"role": role, "content": item["content"][:4000]})
+    return messages
 
 
 def _ask_odysseus_service(subsystem, history: list[dict], question: str) -> str:
@@ -66,13 +113,7 @@ def _ask_odysseus_service(subsystem, history: list[dict], question: str) -> str:
     if not cfg.enabled or not (cfg.base_url or "").strip():
         return ""
     base = cfg.base_url.rstrip("/")
-    messages = [{"role": "system", "content": _prompt(question)}]
-    for item in history[-12:]:
-        role = item.get("role")
-        if role == "specialist":
-            role = "assistant"
-        if role in {"user", "assistant"} and (item.get("content") or "").strip():
-            messages.append({"role": role, "content": item["content"][:4000]})
+    messages = _messages(history, question)
     try:
         with httpx.Client(timeout=12.0) as client:
             resp = client.post(
@@ -104,16 +145,10 @@ def _ask_platform_llm(history: list[dict], question: str) -> tuple[str, str]:
     models = [info["primary"]]
     if info["fallback"] and info["fallback"] not in models:
         models.append(info["fallback"])
-    messages = [{"role": "system", "content": _prompt(question)}]
-    for item in history[-12:]:
-        role = item.get("role")
-        if role == "specialist":
-            role = "assistant"
-        if role in {"user", "assistant"} and (item.get("content") or "").strip():
-            messages.append({"role": role, "content": item["content"][:4000]})
     last_error: Exception | None = None
     with httpx.Client(timeout=100.0) as client:
         for model in models:
+            messages = _messages(history, question, compact=_small_model(model))
             try:
                 resp = client.post(
                     f"{base}/chat/completions",
@@ -121,7 +156,12 @@ def _ask_platform_llm(history: list[dict], question: str) -> tuple[str, str]:
                         "Authorization": f"Bearer {api_key}",
                         "Content-Type": "application/json",
                     },
-                    json={"model": model, "messages": messages, "temperature": 0.2},
+                    json={
+                        "model": model,
+                        "messages": messages,
+                        "temperature": 0.2,
+                        "max_tokens": 400,
+                    },
                 )
                 resp.raise_for_status()
                 data = resp.json()
