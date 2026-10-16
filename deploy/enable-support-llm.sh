@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Локальная модель для чата поддержки УЖВ. На стенде 1.5 ГБ ОЗУ, поэтому
-# ставится маленькая модель с коротким контекстом и двумя воркерами gunicorn.
+# Локальная модель для чата поддержки УЖВ.
+# На сервере меньше 2,5 ГБ модель останавливается: иначе сайт зависает.
 # Не печатает секреты. Сбой не должен ронять деплой.
 set -u
 
@@ -16,7 +16,55 @@ WORKERS_FILE="${APP_DIR}/.support-llm-workers"
 
 say() { echo "support-llm: $*"; }
 
+# На стенде 1,5 ГБ модель забирает память и держит воркеры gunicorn до двух минут.
+release_local_model() {
+  say "останавливаю локальную модель, чтобы сайт не зависал"
+  systemctl stop ollama >/dev/null 2>&1 || true
+  systemctl disable ollama >/dev/null 2>&1 || true
+  pkill -x ollama >/dev/null 2>&1 || true
+  rm -f "${WORKERS_FILE}"
+  if [[ -x "${APP_DIR}/.venv/bin/python" && -f "${ENV_FILE}" ]]; then
+    "${APP_DIR}/.venv/bin/python" - "${ENV_FILE}" <<'PY'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+rows = path.read_text(encoding="utf-8").splitlines()
+values = {}
+for line in rows:
+    if not line or line.lstrip().startswith("#") or "=" not in line:
+        continue
+    key, value = line.split("=", 1)
+    values[key.strip()] = value.strip().strip('"').strip("'")
+base = values.get("DELAYU_LLM_BASE_URL", "")
+if "11434" not in base and "127.0.0.1" not in base and "localhost" not in base:
+    sys.exit(0)
+drop = {
+    "DELAYU_LLM_BASE_URL",
+    "DELAYU_LLM_API_KEY",
+    "DELAYU_LLM_MODEL",
+    "DELAYU_LLM_MODEL_DEMO",
+}
+kept = []
+for line in rows:
+    name = line.split("=", 1)[0].strip() if "=" in line and not line.lstrip().startswith("#") else ""
+    if name in drop:
+        continue
+    kept.append(line)
+path.write_text("\n".join(kept).rstrip() + "\n", encoding="utf-8")
+PY
+  fi
+  say "модель выключена, чат отвечает по инструкции"
+  exit 0
+}
+
 warmup() {
+  mem_kb="$(awk '/MemTotal/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
+  if [[ "${mem_kb}" -lt 2500000 ]]; then
+    systemctl stop ollama >/dev/null 2>&1 || true
+    pkill -x ollama >/dev/null 2>&1 || true
+    exit 0
+  fi
   if [[ ! -f "${ENV_FILE}" ]]; then
     exit 0
   fi
@@ -66,8 +114,7 @@ elif [[ "${mem_kb}" -ge 4500000 && "${free_kb}" -ge 3000000 ]]; then
 elif [[ "${mem_kb}" -ge 2500000 && "${free_kb}" -ge 1800000 ]]; then
   BASE_MODEL="qwen2.5:1.5b"
 else
-  BASE_MODEL="qwen2.5:0.5b"
-  RUN_NAME="delayu-uzhv"
+  release_local_model
 fi
 
 if ! command -v zstd >/dev/null 2>&1; then

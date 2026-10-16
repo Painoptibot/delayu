@@ -146,7 +146,7 @@ def _ask_platform_llm(history: list[dict], question: str) -> tuple[str, str]:
     if info["fallback"] and info["fallback"] not in models:
         models.append(info["fallback"])
     last_error: Exception | None = None
-    with httpx.Client(timeout=100.0) as client:
+    with httpx.Client(timeout=20.0) as client:
         for model in models:
             messages = _messages(history, question, compact=_small_model(model))
             try:
