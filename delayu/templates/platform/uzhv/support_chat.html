@@ -1,18 +1,22 @@
 {% extends "platform/_page.html" %}
 {% block card_body %}
 <style>
-  .uzhv-support { display: grid; grid-template-columns: 260px 1fr; gap: 1rem; min-height: 28rem; }
-  .uzhv-support-list { border-right: 1px solid #eadfce; padding-right: .75rem; }
-  .uzhv-support-list a { display: block; padding: .55rem .4rem; border-radius: .4rem; color: inherit; text-decoration: none; }
+  .uzhv-support { display: grid; grid-template-columns: 220px 1fr; gap: 1rem; align-items: start; }
+  .uzhv-support-list { border-right: 1px solid #eadfce; padding-right: .65rem; }
+  .uzhv-support-list a { display: block; padding: .35rem .4rem; border-radius: .4rem; color: inherit; text-decoration: none; font-size: .875rem; line-height: 1.3; }
   .uzhv-support-list a.active, .uzhv-support-list a:hover { background: #f6f1e8; }
-  .uzhv-support-log { display: flex; flex-direction: column; gap: .65rem; max-height: 28rem; overflow: auto; padding-right: .25rem; }
-  .uzhv-bubble { max-width: 42rem; padding: .7rem .85rem; border-radius: .75rem; white-space: pre-wrap; }
-  .uzhv-bubble.user { background: #1e4540; color: #fff; margin-left: auto; }
-  .uzhv-bubble.assistant { background: #f6f1e8; border: 1px solid #eadfce; }
-  .uzhv-bubble.specialist { background: #fff; border: 1px solid #a46b45; }
-  .uzhv-bubble.system { background: transparent; color: #78716c; font-size: .9rem; }
-  .uzhv-bubble .who { display: block; font-size: .75rem; opacity: .75; margin-bottom: .2rem; }
-  @media (max-width: 800px) { .uzhv-support { grid-template-columns: 1fr; } .uzhv-support-list { border-right: 0; border-bottom: 1px solid #eadfce; padding-bottom: .75rem; } }
+  .uzhv-support-log { display: flex; flex-direction: column; align-items: flex-start; gap: .55rem; max-height: 26rem; overflow: auto; padding: .25rem .15rem .25rem 0; }
+  .uzhv-msg { display: flex; flex-direction: column; align-items: flex-start; max-width: min(28rem, 86%); }
+  .uzhv-msg.user { align-self: flex-end; align-items: flex-end; max-width: min(22rem, 78%); }
+  .uzhv-msg.system { align-self: center; max-width: 100%; }
+  .uzhv-msg .who { font-size: .7rem; line-height: 1; color: #78716c; margin: 0 0 .2rem .15rem; }
+  .uzhv-msg.user .who { margin-right: .15rem; }
+  .uzhv-bubble { width: fit-content; max-width: 100%; padding: .4rem .65rem; border-radius: .7rem; white-space: pre-wrap; font-size: .875rem; line-height: 1.35; }
+  .uzhv-bubble.user { background: #1e4540; color: #fff; border-bottom-right-radius: .2rem; }
+  .uzhv-bubble.assistant { background: #f6f1e8; border-bottom-left-radius: .2rem; }
+  .uzhv-bubble.specialist { background: #fff; border: 1px solid #e4d3c4; border-bottom-left-radius: .2rem; }
+  .uzhv-bubble.system { background: transparent; color: #78716c; font-size: .8rem; padding: 0; text-align: center; }
+  @media (max-width: 800px) { .uzhv-support { grid-template-columns: 1fr; } .uzhv-support-list { border-right: 0; border-bottom: 1px solid #eadfce; padding-bottom: .65rem; } }
 </style>
 <div class="uzhv-support">
   <aside class="uzhv-support-list">
@@ -26,7 +30,7 @@
       <small class="text-muted">{{ item.get_status_display }}</small>
     </a>
     {% empty %}
-    <p class="text-muted mb-0">Пока нет обращений. Напишите вопрос — ответит Odysseus, при необходимости обращение уйдёт специалисту ТП.</p>
+    <p class="text-muted small mb-0">Пока нет обращений. Напишите вопрос — ответит ИИ-агент, при необходимости обращение уйдёт специалисту ТП.</p>
     {% endfor %}
   </aside>
   <section>
@@ -34,7 +38,7 @@
     <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
       <div>
         <h6 class="mb-1">{{ thread.subject }}</h6>
-        <span class="badge bg-light text-dark">{{ thread.get_status_display }}</span>
+        <span class="badge bg-light text-dark">{% if thread.status == "open" %}Открыто{% else %}{{ thread.get_status_display }}{% endif %}</span>
       </div>
       <form method="post">
         {% csrf_token %}
@@ -44,39 +48,41 @@
     </div>
     <div class="uzhv-support-log mb-3">
       {% for msg in chat_messages %}
-      <div class="uzhv-bubble {{ msg.role }}" data-engine="{{ msg.engine }}">
+      <div class="uzhv-msg {{ msg.role }}">
+        {% if msg.role != "system" %}
         <span class="who">
           {% if msg.role == "user" %}{{ msg.author.get_full_name|default:msg.author.username }}
-          {% elif msg.role == "assistant" %}Odysseus
-          {% elif msg.role == "specialist" %}Специалист ТП{% if msg.author %} · {{ msg.author.get_full_name|default:msg.author.username }}{% endif %}
-          {% else %}Система{% endif %}
+          {% elif msg.role == "assistant" %}ИИ-агент
+          {% else %}Специалист ТП{% if msg.author %} · {{ msg.author.get_full_name|default:msg.author.username }}{% endif %}
+          {% endif %}
         </span>
-        {{ msg.body }}
+        {% endif %}
+        <div class="uzhv-bubble {{ msg.role }}" data-engine="{{ msg.engine }}">{{ msg.body }}</div>
       </div>
       {% endfor %}
     </div>
     {% if thread.status != "closed" %}
     <form method="post" class="d-flex flex-column gap-2">
       {% csrf_token %}
-      <textarea name="body" class="form-control" rows="3" maxlength="4000" required placeholder="Опишите, что не получается, или на каком экране вы остановились"></textarea>
-      <div class="d-flex gap-2">
-        <button class="btn btn-primary" type="submit" name="action" value="message">Спросить Odysseus</button>
+      <textarea name="body" class="form-control form-control-sm" rows="2" maxlength="4000" required placeholder="Вопрос"></textarea>
+      <div class="d-flex gap-2 align-items-center">
+        <button class="btn btn-sm btn-primary" type="submit" name="action" value="message">Спросить</button>
         {% if is_support_staff %}
-        <button class="btn btn-outline-primary" type="submit" name="action" value="specialist">Ответить как ТП</button>
+        <button class="btn btn-sm btn-outline-primary" type="submit" name="action" value="specialist">Ответить как ТП</button>
         {% endif %}
         <button class="btn btn-link" type="submit" name="action" value="close">Закрыть</button>
       </div>
     </form>
     {% endif %}
     {% else %}
-    <h6>Новый вопрос в техподдержку</h6>
-    <p class="text-muted">Сообщение увидит Odysseus. Если ответ ИИ не подойдёт, передайте обращение специалисту. Раздел доступен всем ролям контура УЖВ.</p>
+    <h6 class="mb-1">Новый вопрос</h6>
+    <p class="text-muted small">Ответит ИИ-агент. Если ответа будет мало, передайте обращение специалисту ТП.</p>
     <form method="post" class="d-flex flex-column gap-2">
       {% csrf_token %}
       <input type="hidden" name="action" value="new">
-      <input name="subject" class="form-control" maxlength="200" placeholder="Тема, например: не открывается дело">
-      <textarea name="body" class="form-control" rows="5" maxlength="4000" required placeholder="Вопрос"></textarea>
-      <button class="btn btn-primary align-self-start" type="submit">Отправить</button>
+      <input name="subject" class="form-control form-control-sm" maxlength="200" placeholder="Тема, например: не открывается дело">
+      <textarea name="body" class="form-control form-control-sm" rows="3" maxlength="4000" required placeholder="Вопрос"></textarea>
+      <button class="btn btn-sm btn-primary align-self-start" type="submit">Отправить</button>
     </form>
     {% endif %}
   </section>
