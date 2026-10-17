@@ -127,9 +127,16 @@ class UzhvSubsystemMixin:
         url_name = getattr(match, "url_name", "") or ""
         from delayu.services.uzhv_roles import url_in_department
 
-        if url_name and not url_in_department(getattr(mem.role, "code", "") or "", url_name):
+        role_code = getattr(mem.role, "code", "") or ""
+        if url_name and not url_in_department(role_code, url_name):
             from django.core.exceptions import PermissionDenied
+            from django.shortcuts import redirect
 
+            from delayu.services.uzhv_roles import department_home
+
+            home = department_home(role_code)
+            if url_name == "uzhv-hub" and home:
+                return redirect(home)
             raise PermissionDenied("Раздел другого отдела")
         return super().dispatch(request, *args, **kwargs)
 

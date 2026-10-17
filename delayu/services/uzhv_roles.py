@@ -215,6 +215,22 @@ def department_prefixes(role_code: str) -> tuple[str, ...] | None:
     return DEPARTMENT_PREFIXES.get(role_code)
 
 
+DEPARTMENT_HOME = {
+    "uzhv_queue_spec": "uzhv-cases",
+    "uzhv_specialist": "uzhv-cases",
+    "uzhv_orphan_spec": "uzhv-orphans",
+    "uzhv_contract_spec": "uzhv-contracts",
+    "uzhv_fund_spec": "uzhv-fund",
+    "uzhv_inspector": "uzhv-inspections",
+    "uzhv_appeals_spec": "uzhv-appeals",
+    "uzhv_report_spec": "uzhv-reports",
+}
+
+
+def department_home(role_code: str) -> str | None:
+    return DEPARTMENT_HOME.get(role_code)
+
+
 def url_in_department(role_code: str, url_name: str) -> bool:
     prefixes = department_prefixes(role_code)
     if not prefixes:

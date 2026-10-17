@@ -164,7 +164,7 @@ MENU_SECTIONS = [
             {"url_name": "uzhv-contracts", "codes": ["M22"], "icon": "ri-file-paper-2-line", "label": "Договоры"},
             {"url_name": "uzhv-appeals", "codes": ["M24"], "icon": "ri-customer-service-2-line", "label": "Обращения"},
             {"url_name": "uzhv-reports", "codes": ["M15"], "icon": "ri-file-chart-line", "label": "Отчёты"},
-            {"url_name": "uzhv-support", "codes": ["U04"], "icon": "ri-customer-service-2-line", "label": "Поддержка"},
+            {"url_name": "uzhv-support", "codes": ["U04", "M22"], "icon": "ri-customer-service-2-line", "label": "Поддержка"},
         ],
     },
     {

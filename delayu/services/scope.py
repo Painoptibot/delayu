@@ -124,7 +124,9 @@ def _uzhv_menu_entry_visible(user, url_name: str) -> bool:
     if not membership or membership.subsystem.industry_template != "uzhv":
         return True
     role_code = getattr(membership.role, "code", "") or ""
-    if role_code != "uzhv_admin" and url_name in PLATFORM_SHELL_URLS:
+    if role_code != "uzhv_admin" and (
+        url_name in PLATFORM_SHELL_URLS or url_name.startswith("platform-")
+    ):
         return False
     return url_in_department(role_code, url_name)
 
