@@ -39,6 +39,22 @@ def test_invented_password_is_replaced_by_the_handbook(monkeypatch):
     assert "управление" not in answer
 
 
+def test_handbook_cites_the_current_housing_law():
+    queue = _ask("По какому закону ставят на учёт нуждающихся?")
+    assert "1655-КЗ" in queue
+    assert "статье 51" in queue or "статьи 49, 51" in queue
+    poor = _ask("Какой закон регулирует признание малоимущими?")
+    assert "1890-КЗ" in poor
+    assert "30 рабочих дней" in poor
+    orphans = _ask("Какой закон про жильё детей-сирот?")
+    assert "159-ФЗ" in orphans
+    appeals = _ask("Какой срок ответа на обращение по 59-ФЗ?")
+    assert "59-ФЗ" in appeals
+    base = _ask("Какая законодательная база у АИС УЖВ?")
+    assert "1655-КЗ" in base
+    assert "1890-КЗ" in base
+
+
 def test_handbook_covers_fields_and_neighbouring_screens():
     low = _ask("Как заполнить заключение о малоимущих?")
     assert "Доход проверен" in low
