@@ -59,9 +59,12 @@ if (typeof TemplateCustomizer !== 'undefined') {
   translateOptions(TemplateCustomizer.DIRECTIONS);
 
   document.addEventListener('DOMContentLoaded', function () {
-    var reset = document.querySelector('.template-customizer-reset-btn');
-    if (!reset) return;
-    reset.setAttribute('title', 'Сбросить оформление');
-    reset.setAttribute('data-bs-original-title', 'Сбросить оформление');
+    window.setTimeout(function () {
+      var reset = document.querySelector('.template-customizer-reset-btn');
+      if (!reset) return;
+      reset.setAttribute('title', 'Сбросить оформление');
+      reset.setAttribute('aria-label', 'Сбросить оформление');
+      reset.setAttribute('data-bs-original-title', 'Сбросить оформление');
+    }, 0);
   });
 }
