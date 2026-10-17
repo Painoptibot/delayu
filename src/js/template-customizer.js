@@ -1060,27 +1060,27 @@ class TemplateCustomizer {
 TemplateCustomizer.COLORS = [
   {
     name: 'primary',
-    title: 'Primary',
+    title: 'Основной',
     color: rootStyles.getPropertyValue('--bs-primary').trim()
   },
   {
     name: 'success',
-    title: 'Success',
+    title: 'Зелёный',
     color: '#0D9394'
   },
   {
     name: 'warning',
-    title: 'Warning',
+    title: 'Жёлтый',
     color: '#FFAB1D'
   },
   {
     name: 'danger',
-    title: 'Danger',
+    title: 'Красный',
     color: '#EB3D63'
   },
   {
     name: 'info',
-    title: 'Info',
+    title: 'Синий',
     color: '#2092EC'
   }
 ]
@@ -1089,17 +1089,17 @@ TemplateCustomizer.COLORS = [
 TemplateCustomizer.THEMES = [
   {
     name: 'light',
-    title: 'Light',
+    title: 'Светлая',
     image: '<i class="ri ri-sun-line icon-base mb-0"></i>'
   },
   {
     name: 'dark',
-    title: 'Dark',
+    title: 'Тёмная',
     image: '<i class="ri ri-moon-clear-line icon-base mb-0"></i>'
   },
   {
     name: 'system',
-    title: 'System',
+    title: 'Системная',
     image: '<i class="ri ri-computer-line icon-base mb-0"></i>'
   }
 ]
@@ -1108,12 +1108,12 @@ TemplateCustomizer.THEMES = [
 TemplateCustomizer.SKINS = [
   {
     name: 'default',
-    title: 'Default',
+    title: 'Обычное',
     image: 'skin-default.svg'
   },
   {
     name: 'bordered',
-    title: 'Bordered',
+    title: 'С рамкой',
     image: 'skin-border.svg'
   }
 ]
@@ -1122,12 +1122,12 @@ TemplateCustomizer.SKINS = [
 TemplateCustomizer.LAYOUTS = [
   {
     name: 'expanded',
-    title: 'Expanded',
+    title: 'Развёрнуто',
     image: 'layouts-expanded.svg'
   },
   {
     name: 'collapsed',
-    title: 'Collapsed',
+    title: 'Свёрнуто',
     image: 'layouts-collapsed.svg'
   }
 ]
@@ -1136,17 +1136,17 @@ TemplateCustomizer.LAYOUTS = [
 TemplateCustomizer.NAVBAR_OPTIONS = [
   {
     name: 'sticky',
-    title: 'Sticky',
+    title: 'Закреплена',
     image: 'navbar-sticky.svg'
   },
   {
     name: 'static',
-    title: 'Static',
+    title: 'Статичная',
     image: 'navbar-static.svg'
   },
   {
     name: 'hidden',
-    title: 'Hidden',
+    title: 'Скрыта',
     image: 'navbar-hidden.svg'
   }
 ]
@@ -1155,12 +1155,12 @@ TemplateCustomizer.NAVBAR_OPTIONS = [
 TemplateCustomizer.HEADER_TYPES = [
   {
     name: 'fixed',
-    title: 'Fixed',
+    title: 'Фиксированная',
     image: 'horizontal-fixed.svg'
   },
   {
     name: 'static',
-    title: 'Static',
+    title: 'Статичная',
     image: 'horizontal-static.svg'
   }
 ]
@@ -1169,12 +1169,12 @@ TemplateCustomizer.HEADER_TYPES = [
 TemplateCustomizer.CONTENT = [
   {
     name: 'compact',
-    title: 'Compact',
+    title: 'Компактный',
     image: 'content-compact.svg'
   },
   {
     name: 'wide',
-    title: 'Wide',
+    title: 'Широкий',
     image: 'content-wide.svg'
   }
 ]
@@ -1183,12 +1183,12 @@ TemplateCustomizer.CONTENT = [
 TemplateCustomizer.DIRECTIONS = [
   {
     name: 'ltr',
-    title: 'Left to Right (En)',
+    title: 'Слева направо',
     image: 'direction-ltr.svg'
   },
   {
     name: 'rtl',
-    title: 'Right to Left (Ar)',
+    title: 'Справа налево',
     image: 'direction-rtl.svg'
   }
 ]
