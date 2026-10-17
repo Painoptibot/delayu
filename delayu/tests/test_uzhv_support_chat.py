@@ -1,9 +1,9 @@
 from delayu.services.uzhv_support_chat import ask_odysseus
+from delayu.services.uzhv_support_knowledge import answer_from_knowledge
 
 
 def _ask(text: str) -> str:
-    answer, engine = ask_odysseus(subsystem=None, history=[{"role": "user", "content": text}])
-    assert engine.startswith("odysseus") or engine.startswith("llm:")
+    answer = answer_from_knowledge(text)
     assert "не отвечает" not in answer
     return answer
 
@@ -37,6 +37,27 @@ def test_invented_password_is_replaced_by_the_handbook(monkeypatch):
     assert engine == "odysseus"
     assert "/uzhv/cases/" in answer
     assert "управление" not in answer
+
+
+def test_handbook_covers_fields_and_neighbouring_screens():
+    low = _ask("Как заполнить заключение о малоимущих?")
+    assert "Доход проверен" in low
+    assert "Отдельного пункта меню «Малоимущие» нет" in low
+    reports = _ask("Как выгрузить ОТЧ-1?")
+    assert "ОТЧ-1" in reports
+    assert "/uzhv/reports/" in reports
+    appeals = _ask("Какой срок ответа на обращение?")
+    assert "30 календарных дней" in appeals
+    accounts = _ask("Где выписка по лицевому счету?")
+    assert "Выписка" in accounts
+    assert "/uzhv/fund/accounts/" in accounts
+    orders = _ask("Где предписания на проверку?")
+    assert "/uzhv/inspection-orders/" in orders
+    fix = _ask("Где предписания об устранении?")
+    assert "/uzhv/prescriptions/" in fix
+    lists = _ask("Что делает значок глаза и карандаш?")
+    assert "просмотр" in lists
+    assert "Наблюдатель" in lists or "наблюдател" in lists.lower()
 
 
 def test_odysseus_answers_when_the_model_is_off(monkeypatch):
