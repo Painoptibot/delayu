@@ -76,6 +76,29 @@ def test_handbook_covers_fields_and_neighbouring_screens():
     assert "Наблюдатель" in lists or "наблюдател" in lists.lower()
 
 
+def test_handbook_answers_queue_deadlines_and_limits():
+    order = _ask("Как считается очерёдность?")
+    assert "дети-сироты" in order
+    assert "Черновик" in order
+    assert "Отдельная категория" in order
+    waits = _ask("Сколько ждать и чем 30 рабочих дней отличаются от календарных?")
+    assert "30 рабочих дней" in waits
+    assert "30 календарных дней" in waits
+    assert "59-ФЗ" in waits
+    family = _ask("Молодая семья это социальный найм?")
+    assert "социальная выплата" in family
+    assert "не договор социального найма" in family
+    provided = _ask("Статус обеспечен создаёт договор?")
+    assert "Договоры" in provided
+    assert "не создаёт" in provided
+    cert = _ask("Где жилищные сертификаты?")
+    assert "не ведутся" in cert
+    moved = _ask("Что делать, если человек выехал в другой город?")
+    assert "56" in moved
+    pencil = _ask("Почему нет карандаша?")
+    assert "наблюдател" in pencil.lower()
+
+
 def test_odysseus_answers_when_the_model_is_off(monkeypatch):
     monkeypatch.setattr("delayu.services.uzhv_support_chat.llm_configured", lambda: False)
     monkeypatch.setattr(
