@@ -113,6 +113,22 @@ def path_requires_platform_admin(path: str) -> bool:
     return any(path.startswith(p) for p in PLATFORM_ONLY_PATH_PREFIXES)
 
 
+def _uzhv_menu_entry_visible(user, url_name: str) -> bool:
+    """Администратор контура видит платформу. Остальные роли УЖВ — только свой отдел или весь контур."""
+    if not url_name or not getattr(user, "is_authenticated", False):
+        return True
+    from delayu.menu import _lookup_membership
+    from delayu.services.uzhv_roles import PLATFORM_SHELL_URLS, url_in_department
+
+    membership = _lookup_membership(user)
+    if not membership or membership.subsystem.industry_template != "uzhv":
+        return True
+    role_code = getattr(membership.role, "code", "") or ""
+    if role_code != "uzhv_admin" and url_name in PLATFORM_SHELL_URLS:
+        return False
+    return url_in_department(role_code, url_name)
+
+
 def filter_menu_for_user(menu: list, user) -> list:
     if is_platform_admin(user):
         return menu
@@ -121,7 +137,8 @@ def filter_menu_for_user(menu: list, user) -> list:
         if "menu_header" in entry:
             out.append(entry)
             continue
-        if menu_item_allowed(user, entry.get("url", "")):
+        url_name = entry.get("url", "")
+        if menu_item_allowed(user, url_name) and _uzhv_menu_entry_visible(user, url_name):
             out.append(entry)
     # убрать пустые секции
     cleaned = []

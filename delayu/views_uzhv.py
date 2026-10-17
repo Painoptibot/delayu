@@ -123,6 +123,14 @@ class UzhvSubsystemMixin:
             from django.core.exceptions import PermissionDenied
 
             raise PermissionDenied("Раздел доступен только в контуре АИС УЖВ")
+        match = getattr(request, "resolver_match", None)
+        url_name = getattr(match, "url_name", "") or ""
+        from delayu.services.uzhv_roles import url_in_department
+
+        if url_name and not url_in_department(getattr(mem.role, "code", "") or "", url_name):
+            from django.core.exceptions import PermissionDenied
+
+            raise PermissionDenied("Раздел другого отдела")
         return super().dispatch(request, *args, **kwargs)
 
 

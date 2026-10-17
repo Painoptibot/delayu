@@ -39,6 +39,31 @@ def test_support_reply_is_for_staff_only():
     assert perm_for_role("uzhv_admin", "U04")["can_change"] is True
 
 
+def test_department_roles_keep_their_own_sections():
+    from delayu.services.uzhv_roles import url_in_department
+
+    assert url_in_department("uzhv_orphan_spec", "uzhv-orphans")
+    assert url_in_department("uzhv_orphan_spec", "uzhv-orphan-edit")
+    assert not url_in_department("uzhv_orphan_spec", "uzhv-contracts")
+    assert not url_in_department("uzhv_orphan_spec", "uzhv-cases")
+    assert url_in_department("uzhv_contract_spec", "uzhv-contracts")
+    assert url_in_department("uzhv_contract_spec", "uzhv-personal-accounts")
+    assert not url_in_department("uzhv_contract_spec", "uzhv-orphans")
+    assert url_in_department("uzhv_queue_spec", "uzhv-cases")
+    assert not url_in_department("uzhv_queue_spec", "uzhv-inspections")
+    assert url_in_department("uzhv_head", "uzhv-contracts")
+    assert url_in_department("uzhv_admin", "platform-users")
+
+
+def test_specialist_does_not_see_platform_modules():
+    assert perm_for_role("uzhv_queue_spec", "M10")["can_view"] is False
+    assert perm_for_role("uzhv_orphan_spec", "M05")["can_view"] is False
+    assert perm_for_role("uzhv_orphan_spec", "M22")["can_view"] is True
+    assert perm_for_role("uzhv_head", "M07")["can_view"] is False
+    assert perm_for_role("uzhv_admin", "M07")["can_view"] is True
+    assert perm_for_role("uzhv_viewer", "M01")["can_view"] is False
+
+
 def test_uzhv_admin_denied_integrations():
     p = perm_for_role("uzhv_admin", "M42")
     assert p["can_view"] is False
