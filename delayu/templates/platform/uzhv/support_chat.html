@@ -13,7 +13,7 @@
   .uzhv-msg.user .who { margin-right: .15rem; }
   .uzhv-bubble { width: fit-content; max-width: 100%; padding: .4rem .65rem; border-radius: .7rem; white-space: pre-wrap; font-size: .875rem; line-height: 1.35; }
   .uzhv-bubble.user { background: #1e4540; color: #fff; border-bottom-right-radius: .2rem; }
-  .uzhv-bubble.assistant { background: #f6f1e8; border-bottom-left-radius: .2rem; }
+  .uzhv-bubble.assistant { background: transparent; padding: .1rem 0; }
   .uzhv-bubble.specialist { background: #fff; border: 1px solid #e4d3c4; border-bottom-left-radius: .2rem; }
   .uzhv-bubble.system { background: transparent; color: #78716c; font-size: .8rem; padding: 0; text-align: center; }
   @media (max-width: 800px) { .uzhv-support { grid-template-columns: 1fr; } .uzhv-support-list { border-right: 0; border-bottom: 1px solid #eadfce; padding-bottom: .65rem; } }
@@ -27,7 +27,7 @@
     {% for item in threads %}
     <a href="{% url 'uzhv-support-thread' item.pk %}" class="{% if thread.pk == item.pk %}active{% endif %}">
       <div>{{ item.subject|truncatechars:42 }}</div>
-      <small class="text-muted">{{ item.get_status_display }}</small>
+      <small class="text-muted">{% if item.status == "open" %}Открыто{% else %}{{ item.get_status_display }}{% endif %}</small>
     </a>
     {% empty %}
     <p class="text-muted small mb-0">Пока нет обращений. Напишите вопрос — ответит ИИ-агент, при необходимости обращение уйдёт специалисту ТП.</p>
