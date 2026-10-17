@@ -99,6 +99,39 @@ def test_handbook_answers_queue_deadlines_and_limits():
     assert "наблюдател" in pencil.lower()
 
 
+def test_handbook_answers_case_number_family_and_term():
+    number = _ask("Откуда берётся номер дела УЖВ-2026?")
+    assert "УЖВ" in number
+    assert "Черновик" in number
+    assert "Удалить" in number or "удалить" in number.lower()
+    mine = _ask("Что показывает фильтр Мои?")
+    assert "исполнитель" in mine.lower()
+    search = _ask("Ищет ли поиск по СНИЛС?")
+    assert "СНИЛС" in search
+    assert "не ищет" in search
+    family = _ask("Где состав семьи и сканы?")
+    assert "Малоимущие" in family
+    assert "ZIP" in family
+    term = _ask("Что писать в действует до при социальном найме?")
+    assert "пустым" in term
+    assert "60" in term
+    close = _ask("Что делает кнопка закрыть договоры?")
+    assert "действующ" in close
+    colors = _ask("Что значит красный и жёлтый значок?")
+    assert "3 дней" in colors
+    late = _ask("Срок обращения прошёл, а статус всё ещё зарегистрировано")
+    assert "не перескакивает" in late
+    link = _ask("Как связать обращение с учётным делом?")
+    assert "Учётное дело" in link
+    password = _ask("Забыл пароль, кто заводит логин новому сотруднику?")
+    assert "Пользователи" in password
+    assert "Забыли пароль" in password
+    house = _ask("Можно ли создать помещение без дома?")
+    assert "без самого дома не создаётся" in house
+    coords = _ask("Что будет, если координаты дома не нашлись?")
+    assert "широту" in coords
+
+
 def test_odysseus_answers_when_the_model_is_off(monkeypatch):
     monkeypatch.setattr("delayu.services.uzhv_support_chat.llm_configured", lambda: False)
     monkeypatch.setattr(
