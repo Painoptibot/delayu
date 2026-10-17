@@ -131,9 +131,36 @@ def _uzhv_menu_entry_visible(user, url_name: str) -> bool:
     return url_in_department(role_code, url_name)
 
 
+def _with_support_item(menu: list, user) -> list:
+    """Сохранённая раскладка меню могла быть собрана до появления чата поддержки."""
+    if any(entry.get("url") == "uzhv-support" for entry in menu):
+        return menu
+    if not _uzhv_menu_entry_visible(user, "uzhv-support"):
+        return menu
+    from django.urls import reverse
+
+    item = {
+        "url": "uzhv-support",
+        "url_href": reverse("uzhv-support"),
+        "icon": "menu-icon icon-base ri ri-customer-service-2-line",
+        "name": "Поддержка",
+        "slug": "uzhv-support",
+    }
+    for index, entry in enumerate(menu):
+        header = entry.get("menu_header") or ""
+        if "УЖВ" not in header:
+            continue
+        insert_at = index + 1
+        while insert_at < len(menu) and "menu_header" not in menu[insert_at]:
+            insert_at += 1
+        return menu[:insert_at] + [item] + menu[insert_at:]
+    return menu + [item]
+
+
 def filter_menu_for_user(menu: list, user) -> list:
     if is_platform_admin(user):
         return menu
+    menu = _with_support_item(menu, user)
     out = []
     for entry in menu:
         if "menu_header" in entry:
