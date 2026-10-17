@@ -37,6 +37,9 @@ body.delayu-module-hints-disabled .delayu-module-hint {
 }
 
 .delayu-module-hint-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   color: var(--bs-body-color) !important;
   background-color: transparent !important;
@@ -44,12 +47,18 @@ body.delayu-module-hints-disabled .delayu-module-hint {
   width: 2rem;
   height: 2rem;
   padding: 0;
+  line-height: 1;
   border-radius: 0.375rem;
 }
 
 .delayu-module-hint-close i {
+  display: block;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
   color: var(--bs-body-color) !important;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
+  line-height: 1;
 }
 
 .delayu-module-hint-close:hover {
