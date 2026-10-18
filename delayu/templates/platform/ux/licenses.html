@@ -1,9 +1,86 @@
 {% extends layout_path %}
+{% load static %}
 {% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/delayu-license.css' %}" />
+{% endblock %}
 {% block content %}
 {% include "platform/ux/_nav.html" %}
-<h4 class="mb-4">{{ page_title }}</h4>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  {% if can_create %}
+  <a href="{% url 'platform-license-create' %}" class="btn btn-primary">Выдать лицензию</a>
+  {% endif %}
+</div>
+
+{% if issued %}
+<div class="lic-board mb-4">
+  {% for row in issued %}
+  <a class="lic-cert-link" href="{% url 'platform-license-detail' row.license.pk %}">
+    {% include "platform/ux/_license_card.html" with license=row.license used=row.used visual=row.visual compact=True %}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if can_change %}
+<div class="card mb-4 no-print">
+  <div class="card-header"><h6 class="mb-0">Выпуск платформы</h6></div>
+  <div class="card-body">
+    <form method="post" class="row g-2 align-items-end">{% csrf_token %}
+      <input type="hidden" name="action" value="release">
+      <div class="col-md-2"><label class="form-label">Версия</label><input class="form-control" name="version" required></div>
+      <div class="col-md-4"><label class="form-label">Название</label><input class="form-control" name="title" required></div>
+      <div class="col-md-3"><label class="form-label">Дата</label><input class="form-control" type="date" name="released_on" required></div>
+      <div class="col-md-3"><button class="btn btn-outline-primary" type="submit">Зарегистрировать</button></div>
+    </form>
+    <ul class="mb-0 mt-3">
+      {% for release in releases %}
+      <li><code>{{ release.version }}</code> — {{ release.title }} ({{ release.released_on|date:"d.m.Y" }})</li>
+      {% empty %}<li class="text-muted">Выпусков пока нет.</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
+
+<div class="card mb-4 no-print">
+  <div class="card-header"><h6 class="mb-0">Реестр выданных лицензий</h6></div>
+  <table class="table mb-0">
+    <thead>
+      <tr>
+        <th>Номер</th>
+        <th>Заказчик</th>
+        <th>Места</th>
+        <th>Срок</th>
+        <th>Поддержка</th>
+        <th>Статус</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in issued %}
+      <tr>
+        <td><a href="{% url 'platform-license-detail' row.license.pk %}"><code>{{ row.license.number }}</code></a></td>
+        <td>{{ row.license.organization.name }}</td>
+        <td>{{ row.used }} / {{ row.license.seats }}</td>
+        <td>{% if row.license.valid_until %}до {{ row.license.valid_until|date:"d.m.Y" }}{% else %}бессрочно{% endif %}</td>
+        <td>{{ row.license.support_until|date:"d.m.Y"|default:"—" }}</td>
+        <td>
+          {% if row.usable %}<span class="badge bg-label-success">действует</span>
+          {% elif row.license.status == "suspended" %}<span class="badge bg-label-warning">приостановлена</span>
+          {% elif row.license.status == "revoked" %}<span class="badge bg-label-danger">отозвана</span>
+          {% elif row.license.status == "draft" %}<span class="badge bg-label-secondary">черновик</span>
+          {% else %}<span class="badge bg-label-warning">не действует</span>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-muted text-center py-4">Лицензии заказчикам ещё не выдавались.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
 <div class="card">
+  <div class="card-header"><h6 class="mb-0">Срок модулей контура</h6></div>
   <table class="table mb-0">
     <thead><tr><th>Модуль</th><th>Включён в подсистеме</th><th>Лицензия до</th></tr></thead>
     <tbody>

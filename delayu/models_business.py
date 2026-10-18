@@ -1817,6 +1817,132 @@ class LicenseEntitlement(models.Model):
         unique_together = [("subsystem", "module")]
 
 
+class CustomerLicense(models.Model):
+    """Выданная заказчику лицензия на платформу и места пользователей."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Черновик"
+        ACTIVE = "active", "Действует"
+        SUSPENDED = "suspended", "Приостановлена"
+        REVOKED = "revoked", "Отозвана"
+
+    subsystem = models.ForeignKey(
+        "Subsystem", on_delete=models.CASCADE, related_name="customer_licenses"
+    )
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.PROTECT, related_name="customer_licenses", verbose_name="Заказчик"
+    )
+    number = models.CharField("Номер", max_length=32, unique=True)
+    title = models.CharField("Наименование", max_length=255)
+    status = models.CharField(
+        "Статус", max_length=16, choices=Status.choices, default=Status.ACTIVE
+    )
+    seats = models.PositiveIntegerField("Мест", default=1)
+    valid_from = models.DateField("Действует с")
+    valid_until = models.DateField("Лицензия до", null=True, blank=True)
+    support_until = models.DateField("Поддержка до", null=True, blank=True)
+    note = models.TextField("Примечание", blank=True)
+    modules = models.ManyToManyField(
+        "ModuleCatalog", blank=True, related_name="customer_licenses", verbose_name="Модули"
+    )
+    issued_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="issued_customer_licenses",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Лицензия заказчика"
+        verbose_name_plural = "Лицензии заказчиков"
+
+    def __str__(self):
+        return f"{self.number} — {self.organization}"
+
+
+class LicenseSeat(models.Model):
+    """Место лицензии, выданное пользователю заказчика."""
+
+    license = models.ForeignKey(
+        CustomerLicense, on_delete=models.CASCADE, related_name="seat_assignments"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="license_seats"
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="license_seats_assigned",
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [("license", "user")]
+        ordering = ["assigned_at"]
+        verbose_name = "Место лицензии"
+        verbose_name_plural = "Места лицензий"
+
+    def __str__(self):
+        return f"{self.license.number} → {self.user}"
+
+
+class ProductRelease(models.Model):
+    """Выпуск платформы, который заказчик получает, пока действует поддержка лицензии."""
+
+    version = models.CharField("Версия", max_length=32, unique=True)
+    title = models.CharField("Заголовок", max_length=255)
+    body = models.TextField("Состав", blank=True)
+    released_on = models.DateField("Дата выпуска")
+
+    class Meta:
+        ordering = ["-released_on", "-id"]
+        verbose_name = "Выпуск платформы"
+        verbose_name_plural = "Выпуски платформы"
+
+    def __str__(self):
+        return self.version
+
+
+class LicenseSupportTicket(models.Model):
+    """Обращение в поддержку по конкретной лицензии заказчика."""
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Открыто"
+        IN_PROGRESS = "in_progress", "В работе"
+        CLOSED = "closed", "Закрыто"
+
+    license = models.ForeignKey(
+        CustomerLicense, on_delete=models.CASCADE, related_name="support_tickets"
+    )
+    number = models.CharField("Номер", max_length=32, unique=True)
+    title = models.CharField("Тема", max_length=255)
+    body = models.TextField("Текст", blank=True)
+    status = models.CharField(
+        "Статус", max_length=16, choices=Status.choices, default=Status.OPEN
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="license_support_tickets",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Обращение по лицензии"
+        verbose_name_plural = "Обращения по лицензиям"
+
+    def __str__(self):
+        return self.number
+
+
 class SystemHealthSnapshot(models.Model):
     subsystem = models.ForeignKey(
         "Subsystem", null=True, blank=True, on_delete=models.CASCADE, related_name="health_snapshots"

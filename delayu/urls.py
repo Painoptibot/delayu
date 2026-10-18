@@ -613,6 +613,12 @@ urlpatterns = [
     # M83–M86
     path("ux/", views.UxHubView.as_view(), name="platform-ux"),
     path("ux/licenses/", views.LicensesView.as_view(), name="platform-licenses"),
+    path("ux/licenses/new/", views.CustomerLicenseCreateView.as_view(), name="platform-license-create"),
+    path(
+        "ux/licenses/<int:pk>/",
+        views.CustomerLicenseDetailView.as_view(),
+        name="platform-license-detail",
+    ),
     path("ux/onboarding/", views.OnboardingListView.as_view(), name="platform-onboarding"),
     path("ux/onboarding/new/", views.OnboardingCreateView.as_view(), name="platform-onboarding-create"),
     path("ux/dashboards/", views.DashboardLayoutsView.as_view(), name="platform-dashboard-layouts"),

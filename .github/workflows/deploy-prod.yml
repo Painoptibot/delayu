@@ -25,6 +25,7 @@ jobs:
           git checkout -f -B main origin/main
           chmod +x deploy/webhook-run.sh deploy/run-deploy.sh deploy/update-prod.sh deploy/deploy-app.sh deploy/enable-https.sh || true
           sudo /opt/delayu/deploy/run-deploy.sh
+          .venv/bin/python manage.py issue_stand_uzhv_license
           for i in 1 2 3 4 5 6 7 8 9 10; do
             code="$(curl -sS -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/auth/login/ || true)"
             echo "health ${i} ${code}"

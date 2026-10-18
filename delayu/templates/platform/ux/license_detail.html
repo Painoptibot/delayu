@@ -1,0 +1,125 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}{{ page_title }} — ДелаЮ{% endblock %}
+{% block page_css %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/css/delayu-license.css' %}" />
+{% endblock %}
+{% block content %}
+{% include "platform/ux/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+  <h4 class="mb-0">{{ license.number }}</h4>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-label-primary" onclick="window.print()">Печать</button>
+    <a href="{% url 'platform-licenses' %}" class="btn btn-label-secondary">К списку</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    {% include "platform/ux/_license_card.html" with license=license used=used visual=visual %}
+  </div>
+  <div class="col-lg-5 no-print">
+    {% if can_change %}
+    <div class="card">
+      <div class="card-header"><h6 class="mb-0">Статус</h6></div>
+      <div class="card-body d-flex flex-wrap gap-2">
+        {% for code, label in status_choices %}
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="status">
+          <input type="hidden" name="status" value="{{ code }}">
+          <button type="submit" class="btn btn-sm {% if license.status == code %}btn-primary{% else %}btn-label-secondary{% endif %}">{{ label }}</button>
+        </form>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card mt-4 no-print">
+  <div class="card-header"><h6 class="mb-0">Поддержка и выпуски</h6></div>
+  <div class="card-body">
+    <p class="mb-2">Версия контура: <strong>{{ installed_version|default:"не отмечена" }}</strong></p>
+    <ul class="mb-3">
+      {% for release in releases %}
+      <li class="mb-1">
+        <code>{{ release.version }}</code> {{ release.title }}
+        {% if can_change %}
+        <form method="post" class="d-inline">{% csrf_token %}
+          <input type="hidden" name="action" value="adopt">
+          <input type="hidden" name="release_id" value="{{ release.pk }}">
+          <button class="btn btn-sm btn-outline-primary" type="submit">Отметить на контуре</button>
+        </form>
+        {% endif %}
+      </li>
+      {% empty %}<li class="text-muted">В срок поддержки выпуски не попадают.</li>{% endfor %}
+    </ul>
+    {% if can_change %}
+    <form method="post" class="row g-2">{% csrf_token %}
+      <input type="hidden" name="action" value="ticket">
+      <div class="col-md-8"><input class="form-control" name="title" placeholder="Тема обращения" required></div>
+      <div class="col-md-4"><button class="btn btn-primary" type="submit">Обращение</button></div>
+    </form>
+    {% endif %}
+    <ul class="mt-3 mb-0">
+      {% for ticket in tickets %}
+      <li>
+        <code>{{ ticket.number }}</code> {{ ticket.title }} — {{ ticket.get_status_display }}
+        {% if can_change %}
+        <form method="post" class="d-inline">{% csrf_token %}
+          <input type="hidden" name="action" value="ticket_status">
+          <input type="hidden" name="ticket_id" value="{{ ticket.pk }}">
+          <input type="hidden" name="ticket_status" value="{% if ticket.status != 'closed' %}closed{% else %}open{% endif %}">
+          <button class="btn btn-sm btn-outline-secondary" type="submit">{% if ticket.status != 'closed' %}Закрыть{% else %}Открыть{% endif %}</button>
+        </form>
+        {% endif %}
+      </li>
+      {% empty %}<li class="text-muted">Обращений по этой лицензии нет.</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div class="card mt-4 no-print">
+  <div class="card-header"><h6 class="mb-0">Пользователи</h6></div>
+  <table class="table mb-0">
+    <thead><tr><th>Пользователь</th><th>Выдано</th><th></th></tr></thead>
+    <tbody>
+      {% for seat in seats %}
+      <tr>
+        <td>{{ seat.user.get_full_name|default:seat.user.username }} <span class="text-muted">{{ seat.user.username }}</span></td>
+        <td>{{ seat.assigned_at|date:"d.m.Y H:i" }}</td>
+        <td class="text-end">
+          {% if can_change %}
+          <form method="post" class="d-inline">{% csrf_token %}
+            <input type="hidden" name="action" value="release">
+            <input type="hidden" name="seat_id" value="{{ seat.pk }}">
+            <button type="submit" class="btn btn-sm btn-label-danger">Освободить</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3" class="text-muted text-center py-4">Места не выданы.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if can_change and usable and free and candidates %}
+  <div class="card-body border-top">
+    <form method="post" class="row g-2 align-items-end">{% csrf_token %}
+      <input type="hidden" name="action" value="assign">
+      <div class="col-md-8">
+        <label class="form-label" for="user_id">Выдать место</label>
+        <select class="form-select" id="user_id" name="user_id" required>
+          {% for user in candidates %}
+          <option value="{{ user.pk }}">{{ user.get_full_name|default:user.username }} ({{ user.username }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4"><button type="submit" class="btn btn-primary">Выдать</button></div>
+    </form>
+  </div>
+  {% elif can_change and usable and free %}
+  <div class="card-body border-top text-muted">В организации заказчика нет пользователей без места.</div>
+  {% endif %}
+</div>
+{% endblock %}

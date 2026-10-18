@@ -1,0 +1,37 @@
+<article class="lic-cert is-{{ visual.tone }}{% if compact %} is-compact{% endif %}" style="--lic-accent: {{ license.subsystem.primary_color|default:'#666cff' }}">
+  <header class="lic-cert-head">
+    <div class="lic-brand">ДелаЮ<small>{{ license.subsystem.name }}</small></div>
+    <div class="lic-kind">Лицензия</div>
+  </header>
+  <div class="lic-cert-body">
+    <p class="lic-number">{{ license.number }}</p>
+    <p class="text-muted small mb-1">Заказчик</p>
+    <p class="lic-customer">{{ license.organization.name }}</p>
+    {% if license.title and license.title != license.organization.name %}
+    <p class="lic-title">{{ license.title }}</p>
+    {% endif %}
+    <div class="lic-meta">
+      <div><span>С</span><strong>{{ license.valid_from|date:"d.m.Y" }}</strong></div>
+      <div><span>До</span><strong>{% if license.valid_until %}{{ license.valid_until|date:"d.m.Y" }}{% else %}бессрочно{% endif %}</strong></div>
+      <div><span>Поддержка</span><strong>{{ license.support_until|date:"d.m.Y"|default:"—" }}</strong></div>
+    </div>
+    <div class="lic-seats" aria-label="Места {{ used }} из {{ license.seats }}">
+      {% for mark in visual.marks %}
+      <i class="lic-seat{% if mark.filled %} is-on{% endif %}"></i>
+      {% endfor %}
+    </div>
+    <div class="lic-bar" title="{{ used }} из {{ license.seats }}"><i style="width: {{ visual.percent }}%"></i></div>
+    <div class="small text-muted mt-1">{{ used }} из {{ license.seats }} мест{% if visual.marks_capped %} · на карточке первые 40{% endif %}</div>
+    <div class="lic-modules">
+      {% for module in license.modules.all %}
+      <span>{{ module.code }}</span>
+      {% empty %}<span>платформа целиком</span>{% endfor %}
+    </div>
+    {% if not compact and license.note %}
+    <p class="lic-foot mb-0">{{ license.note }}</p>
+    {% else %}
+    <p class="lic-foot mb-0">Выдана {{ license.created_at|date:"d.m.Y" }}</p>
+    {% endif %}
+    <div class="lic-stamp">{{ visual.stamp }}</div>
+  </div>
+</article>

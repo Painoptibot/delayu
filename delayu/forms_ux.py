@@ -3,7 +3,45 @@ import json
 from django import forms
 
 from delayu.forms import BootstrapFormMixin
-from delayu.models import OnboardingArticle, UserDashboardLayout
+from delayu.models import CustomerLicense, ModuleCatalog, OnboardingArticle, UserDashboardLayout
+
+
+class CustomerLicenseForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = CustomerLicense
+        fields = [
+            "organization",
+            "title",
+            "seats",
+            "valid_from",
+            "valid_until",
+            "support_until",
+            "modules",
+            "note",
+        ]
+        widgets = {
+            "valid_from": forms.DateInput(attrs={"type": "date"}),
+            "valid_until": forms.DateInput(attrs={"type": "date"}),
+            "support_until": forms.DateInput(attrs={"type": "date"}),
+            "note": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, subsystem=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        from delayu.services.licenses import customer_choices
+
+        self.fields["organization"].queryset = customer_choices(subsystem)
+        self.fields["organization"].label = "Заказчик"
+        self.fields["modules"].queryset = ModuleCatalog.objects.filter(is_active=True).order_by(
+            "sort_order", "code"
+        )
+        self.fields["modules"].required = False
+        self.fields["modules"].help_text = "Пустой список — лицензия на платформу целиком."
+        self.fields["valid_until"].required = False
+        self.fields["valid_until"].help_text = "Пусто — бессрочная лицензия."
+        self.fields["support_until"].required = False
+        self.fields["title"].required = False
+        self.fields["title"].help_text = "Если пусто, подставится название заказчика."
 
 
 class OnboardingArticleForm(BootstrapFormMixin, forms.ModelForm):

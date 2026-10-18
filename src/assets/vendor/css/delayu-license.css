@@ -1,0 +1,206 @@
+.lic-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.lic-cert {
+  --lic-accent: #666cff;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(var(--bs-primary-rgb, 105, 108, 255), 0.22);
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(180deg, rgba(var(--bs-primary-rgb, 105, 108, 255), 0.08), transparent 42%),
+    var(--bs-paper-bg, #fff);
+  box-shadow: 0 0.5rem 1.5rem rgba(34, 48, 62, 0.06);
+  color: var(--bs-body-color);
+}
+
+.lic-cert::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--lic-accent);
+}
+
+.lic-cert-link {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.lic-cert-link:hover .lic-cert {
+  border-color: var(--lic-accent);
+  transform: translateY(-1px);
+}
+
+.lic-cert-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem 0.85rem 1.4rem;
+  border-bottom: 1px dashed rgba(var(--bs-primary-rgb, 105, 108, 255), 0.25);
+}
+
+.lic-brand {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lic-brand small {
+  display: block;
+  margin-top: 0.15rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--bs-secondary-color);
+}
+
+.lic-kind {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lic-accent);
+}
+
+.lic-cert-body {
+  position: relative;
+  padding: 1.1rem 1.25rem 1.15rem 1.4rem;
+}
+
+.lic-number {
+  margin: 0 0 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.lic-cert.is-compact .lic-number {
+  font-size: 1.15rem;
+}
+
+.lic-customer {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+.lic-title {
+  margin: 0.15rem 0 0;
+  color: var(--bs-secondary-color);
+}
+
+.lic-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.lic-meta span {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bs-secondary-color);
+}
+
+.lic-seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 1rem;
+}
+
+.lic-seat {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--bs-primary-rgb, 105, 108, 255), 0.45);
+  background: transparent;
+}
+
+.lic-seat.is-on {
+  background: var(--lic-accent);
+  border-color: var(--lic-accent);
+}
+
+.lic-bar {
+  height: 0.45rem;
+  margin-top: 0.85rem;
+  border-radius: 999px;
+  background: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.12);
+  overflow: hidden;
+}
+
+.lic-bar i {
+  display: block;
+  height: 100%;
+  background: var(--lic-accent);
+}
+
+.lic-modules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.9rem;
+}
+
+.lic-modules span {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(var(--bs-primary-rgb, 105, 108, 255), 0.1);
+  font-size: 0.75rem;
+}
+
+.lic-stamp {
+  position: absolute;
+  right: 1.1rem;
+  bottom: 0.9rem;
+  padding: 0.2rem 0.55rem;
+  border: 2px solid currentColor;
+  border-radius: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-8deg);
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+.lic-cert.is-ok .lic-stamp { color: #28a745; }
+.lic-cert.is-warn .lic-stamp { color: #e6a817; }
+.lic-cert.is-bad .lic-stamp { color: #d32f2f; }
+.lic-cert.is-mute .lic-stamp { color: #8592a3; }
+
+.lic-foot {
+  margin-top: 0.85rem;
+  padding-right: 8rem;
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color);
+}
+
+@media (max-width: 575.98px) {
+  .lic-meta { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .layout-navbar,
+  .layout-menu,
+  .layout-footer,
+  .content-footer,
+  .no-print {
+    display: none !important;
+  }
+  .lic-cert {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}
