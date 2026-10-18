@@ -1,0 +1,18 @@
+# Одноразовый сброс пароля admin на стенде. Файл удаляется сразу после выполнения.
+name: Reset stand admin password
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reset:
+    runs-on: [self-hosted, delayu]
+    steps:
+      - name: Set admin password
+        run: |
+          set -euo pipefail
+          cd /opt/delayu
+          PW="$(.venv/bin/python -c 'import secrets; print(secrets.token_urlsafe(18))')"
+          export DELAYU_ADMIN_RESET_PW="$PW"
+          .venv/bin/python -c 'import os,django; os.environ.setdefault("DJANGO_SETTINGS_MODULE","config.settings"); django.setup(); from django.contrib.auth import get_user_model; User=get_user_model(); u,created=User.objects.get_or_create(username="admin", defaults={"email":"admin@delayu.local"}); u.set_password(os.environ["DELAYU_ADMIN_RESET_PW"]); u.email=u.email or "admin@delayu.local"; u.is_active=True; u.is_staff=True; u.is_superuser=True; u.save(); print("ADMIN_PASSWORD_SET")'
+          echo "NEW_PASSWORD=${PW}"
