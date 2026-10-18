@@ -32,14 +32,12 @@ def license_visual(lic: CustomerLicense, used: int) -> dict:
         tone, stamp = "mute", "Черновик"
     else:
         tone, stamp = "warn", "Не действует"
-    capped = min(seats, 40)
-    filled = min(used, capped)
+    filled = min(used, seats)
     return {
         "tone": tone,
         "stamp": stamp,
         "percent": min(100, round(used * 100 / seats)) if seats else 0,
-        "marks": [{"filled": index < filled} for index in range(capped)],
-        "marks_capped": seats > 40,
+        "marks": [{"filled": index < filled} for index in range(seats)],
     }
 
 
