@@ -38,6 +38,7 @@ def license_visual(lic: CustomerLicense, used: int) -> dict:
         "stamp": stamp,
         "percent": min(100, round(used * 100 / seats)) if seats else 0,
         "marks": [{"filled": index < filled} for index in range(seats)],
+        "over": used > seats,
     }
 
 
@@ -95,6 +96,40 @@ def license_is_usable(lic: CustomerLicense, today=None) -> bool:
 
 def seats_used(lic: CustomerLicense) -> int:
     return lic.seat_assignments.count()
+
+
+def organization_users(lic: CustomerLicense):
+    """Пользователи организации заказчика. Одно членство — одно место на карточке."""
+    memberships = (
+        SubsystemMembership.objects.filter(
+            subsystem_id=lic.subsystem_id,
+            organization_id=lic.organization_id,
+            user__is_active=True,
+        )
+        .select_related("user", "role")
+        .order_by("user__username", "id")
+    )
+    seen = set()
+    holders = []
+    for membership in memberships:
+        if membership.user_id in seen:
+            continue
+        seen.add(membership.user_id)
+        holders.append(membership)
+    return holders
+
+
+def organization_user_count(lic: CustomerLicense) -> int:
+    return (
+        SubsystemMembership.objects.filter(
+            subsystem_id=lic.subsystem_id,
+            organization_id=lic.organization_id,
+            user__is_active=True,
+        )
+        .values("user_id")
+        .distinct()
+        .count()
+    )
 
 
 def support_ended_notice(membership, today=None):

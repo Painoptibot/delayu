@@ -21,7 +21,7 @@
       {% endfor %}
     </div>
     <div class="lic-bar" title="{{ used }} из {{ license.seats }}"><i style="width: {{ visual.percent }}%"></i></div>
-    <div class="small text-muted mt-1">{{ used }} из {{ license.seats }} мест</div>
+    <div class="small text-muted mt-1">{{ used }} из {{ license.seats }} мест{% if visual.over %} — пользователей больше, чем мест{% endif %}</div>
     <div class="lic-modules">
       {% for module in license.modules.all %}
       <span>{{ module.code }}</span>

@@ -1,6 +1,5 @@
 """M83–M86 — лицензии, обучение, дашборды, marketplace."""
 from django.contrib import messages
-from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import TemplateView
@@ -38,21 +37,20 @@ class LicensesView(ModulePermissionMixin, TemplateView):
         ctx["page_title"] = "Лицензии"
         ctx["ux_tab"] = "licenses"
         ctx["rows"] = ux.license_rows(m.subsystem)
-        issued = (
-            CustomerLicense.objects.filter(subsystem=m.subsystem)
-            .select_related("organization", "subsystem")
-            .prefetch_related("modules")
-            .annotate(used=Count("seat_assignments"))
-        )
-        ctx["issued"] = [
-            {
-                "license": lic,
-                "used": lic.used,
-                "usable": license_svc.license_is_usable(lic),
-                "visual": license_svc.license_visual(lic, lic.used),
-            }
-            for lic in issued
-        ]
+        issued = CustomerLicense.objects.filter(subsystem=m.subsystem).select_related(
+            "organization", "subsystem"
+        ).prefetch_related("modules")
+        ctx["issued"] = []
+        for lic in issued:
+            used = license_svc.organization_user_count(lic)
+            ctx["issued"].append(
+                {
+                    "license": lic,
+                    "used": used,
+                    "usable": license_svc.license_is_usable(lic),
+                    "visual": license_svc.license_visual(lic, used),
+                }
+            )
         ctx["can_create"] = user_can(self.request.user, "M83", "create")
         from delayu.models import ProductRelease
 
@@ -148,11 +146,10 @@ class CustomerLicenseDetailView(ModulePermissionMixin, TemplateView):
         ctx["page_title"] = lic.number
         ctx["ux_tab"] = "licenses"
         ctx["license"] = lic
-        ctx["seats"] = lic.seat_assignments.select_related("user", "assigned_by")
-        ctx["used"] = ctx["seats"].count()
+        ctx["holders"] = license_svc.organization_users(lic)
+        ctx["used"] = len(ctx["holders"])
         ctx["usable"] = license_svc.license_is_usable(lic)
         ctx["free"] = max(lic.seats - ctx["used"], 0)
-        ctx["candidates"] = license_svc.assignable_users(lic)
         ctx["can_change"] = user_can(self.request.user, "M83", "change")
         ctx["status_choices"] = CustomerLicense.Status.choices
         ctx["visual"] = license_svc.license_visual(lic, ctx["used"])

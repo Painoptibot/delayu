@@ -80,46 +80,20 @@
 </div>
 
 <div class="card mt-4 no-print">
-  <div class="card-header"><h6 class="mb-0">Пользователи</h6></div>
+  <div class="card-header"><h6 class="mb-0">Пользователи организации</h6></div>
+  <div class="card-body py-2 text-muted">Занятые места совпадают с пользователями организации заказчика. Сейчас {{ used }} из {{ license.seats }}.</div>
   <table class="table mb-0">
-    <thead><tr><th>Пользователь</th><th>Выдано</th><th></th></tr></thead>
+    <thead><tr><th>Пользователь</th><th>Роль</th></tr></thead>
     <tbody>
-      {% for seat in seats %}
+      {% for membership in holders %}
       <tr>
-        <td>{{ seat.user.get_full_name|default:seat.user.username }} <span class="text-muted">{{ seat.user.username }}</span></td>
-        <td>{{ seat.assigned_at|date:"d.m.Y H:i" }}</td>
-        <td class="text-end">
-          {% if can_change %}
-          <form method="post" class="d-inline">{% csrf_token %}
-            <input type="hidden" name="action" value="release">
-            <input type="hidden" name="seat_id" value="{{ seat.pk }}">
-            <button type="submit" class="btn btn-sm btn-label-danger">Освободить</button>
-          </form>
-          {% endif %}
-        </td>
+        <td>{{ membership.user.get_full_name|default:membership.user.username }} <span class="text-muted">{{ membership.user.username }}</span></td>
+        <td>{{ membership.role.name }}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="3" class="text-muted text-center py-4">Места не выданы.</td></tr>
+      <tr><td colspan="2" class="text-muted text-center py-4">В организации заказчика нет пользователей.</td></tr>
       {% endfor %}
     </tbody>
   </table>
-  {% if can_change and usable and free and candidates %}
-  <div class="card-body border-top">
-    <form method="post" class="row g-2 align-items-end">{% csrf_token %}
-      <input type="hidden" name="action" value="assign">
-      <div class="col-md-8">
-        <label class="form-label" for="user_id">Выдать место</label>
-        <select class="form-select" id="user_id" name="user_id" required>
-          {% for user in candidates %}
-          <option value="{{ user.pk }}">{{ user.get_full_name|default:user.username }} ({{ user.username }})</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-4"><button type="submit" class="btn btn-primary">Выдать</button></div>
-    </form>
-  </div>
-  {% elif can_change and usable and free %}
-  <div class="card-body border-top text-muted">В организации заказчика нет пользователей без места.</div>
-  {% endif %}
 </div>
 {% endblock %}
