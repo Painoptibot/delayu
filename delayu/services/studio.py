@@ -173,6 +173,46 @@ def normalize_menu_item(item):
     return None
 
 
+def _layout_item_url(raw) -> str:
+    if isinstance(raw, str):
+        return raw
+    if isinstance(raw, dict):
+        return raw.get("url") or raw.get("url_name") or ""
+    return ""
+
+
+def _header_was_clipped(stored: str, canonical: str) -> bool:
+    """Конструктор меню один раз срезал первое слово заголовка."""
+    if stored == canonical:
+        return False
+    if not stored:
+        return True
+    if not canonical.endswith(stored) or len(canonical) <= len(stored):
+        return False
+    return canonical[-(len(stored) + 1)] == " "
+
+
+def canonical_section_header(header: str, items) -> str:
+    """Вернуть полное имя раздела, если в сохранённом меню остался только хвост."""
+    title = (header or "").strip()
+    known = {section["header"] for section in MENU_SECTIONS}
+    if title in known:
+        return title
+    urls = [url for raw in items or [] if (url := _layout_item_url(raw))]
+    best_header = ""
+    best_score = 0
+    for section in MENU_SECTIONS:
+        canonical = section["header"]
+        if not _header_was_clipped(title, canonical):
+            continue
+        section_urls = {item["url_name"] for item in section["items"]}
+        score = sum(1 for url in urls if url in section_urls)
+        if score > best_score:
+            best_score = score
+            best_header = canonical
+    return best_header or title
+
+
 def normalize_menu_layout(layout):
     out = []
     for block in layout or []:
@@ -182,7 +222,12 @@ def normalize_menu_layout(layout):
             if norm and norm["url"]:
                 items.append(norm)
         if items:
-            out.append({"header": block.get("header", ""), "items": items})
+            out.append(
+                {
+                    "header": canonical_section_header(block.get("header", ""), items),
+                    "items": items,
+                }
+            )
     return out
 
 STUDIO_DASHBOARD_IDS = {w["id"] for w in DASHBOARD_WIDGETS}
@@ -426,7 +471,7 @@ def menu_layout_to_menu_json(layout, membership):
     menu = []
     pinned_items: list[dict] = []
     for block in layout or []:
-        header = block.get("header", "")
+        header = canonical_section_header(block.get("header", ""), block.get("items") or [])
         section_items = []
         for raw in block.get("items") or []:
             norm = normalize_menu_item(raw)

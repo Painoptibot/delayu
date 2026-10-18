@@ -821,7 +821,12 @@ function initMenuEditor(root) {
       var section = document.createElement('div');
       section.className = 'studio-menu-section';
       section.dataset.si = si;
-      section.innerHTML = '<h6 class="mb-2"><i class="ri-drag-move-2-line me-1"></i>' + (sec.header || 'Раздел') + '</h6>';
+      var title = document.createElement('h6');
+      title.className = 'mb-2';
+      title.dataset.header = sec.header || '';
+      title.innerHTML = '<i class="ri-drag-move-2-line me-1"></i>';
+      title.appendChild(document.createTextNode(sec.header || 'Раздел'));
+      section.appendChild(title);
       var list = document.createElement('div');
       list.className = 'studio-menu-items';
       (sec.items || []).forEach(function (entry) {
@@ -881,7 +886,8 @@ function initMenuEditor(root) {
   function collectMenuLayout() {
     var newLayout = [];
     layoutEl.querySelectorAll('.studio-menu-section').forEach(function (sec) {
-      var header = sec.querySelector('h6').textContent.replace(/^\s*[^\s]+\s*/, '').trim();
+      var title = sec.querySelector('h6');
+      var header = title ? title.dataset.header || '' : '';
       var items = [];
       sec.querySelectorAll('.studio-menu-items .studio-menu-item').forEach(function (row) {
         if (!row.dataset.url) return;

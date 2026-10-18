@@ -41,6 +41,17 @@ class StudioAdminWave1Tests(TestCase):
         self.assertEqual(rev.version_label, "v2")
         self.assertIn("menu_layout", rev.snapshot)
 
+    def test_clipped_menu_headers_are_restored(self):
+        layout = [
+            {"header": "", "items": ["platform-home"]},
+            {"header": "работа", "items": ["platform-cabinet"]},
+            {"header": "и лицензии", "items": ["platform-licenses"]},
+            {"header": "Свой раздел", "items": ["platform-cases"]},
+        ]
+        normalized = studio.normalize_menu_layout(layout)
+        headers = [block["header"] for block in normalized]
+        self.assertEqual(headers, ["Главная", "Ежедневная работа", "UX и лицензии", "Свой раздел"])
+
     def test_health_checks_include_roles(self):
         checks = studio_admin.subsystem_health_checks(self.sub)
         ids = {c["id"] for c in checks}
