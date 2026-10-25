@@ -3,7 +3,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from delayu.data.canadian_led_account import ADS, FORMS, PHONES, STAFF, WORKFLOWS
+from delayu.data.canadian_led_account import (
+    ADS,
+    FORMS,
+    OFFICE,
+    PHONES,
+    STAFF,
+    VIKONN_FUNNEL,
+    WORKFLOWS,
+)
 
 FIELDS_PATH = Path(__file__).resolve().parent.parent / "data" / "canadian_led_fields.tsv"
 
@@ -13,6 +21,7 @@ def load_canadian_led(subsystem):
     load_forms(subsystem)
     load_phones(subsystem)
     load_staff(subsystem)
+    load_office(subsystem)
     load_ads(subsystem)
     load_fields(subsystem)
 
@@ -73,6 +82,24 @@ def load_staff(subsystem):
             defaults={"name": name, "role_name": role_name},
         )
     return ServiceStaff.objects.filter(subsystem=subsystem)
+
+
+def load_office(subsystem):
+    from delayu.models_service import ServiceFunnel, ServiceStaff
+
+    for name, email, role_name in OFFICE:
+        ServiceStaff.objects.update_or_create(
+            subsystem=subsystem,
+            email=email,
+            defaults={"name": name, "role_name": role_name},
+        )
+    funnel_name, status, steps = VIKONN_FUNNEL
+    ServiceFunnel.objects.update_or_create(
+        subsystem=subsystem,
+        name=funnel_name,
+        defaults={"status": status, "steps": steps},
+    )
+    return ServiceStaff.objects.filter(subsystem=subsystem, email__in=[row[1] for row in OFFICE])
 
 
 def load_ads(subsystem):

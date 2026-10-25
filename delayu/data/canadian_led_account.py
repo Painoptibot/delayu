@@ -105,6 +105,20 @@ PHONES = (
     ("+1 825-462-4647", "Google Ad Number", "+1 250-409-5657", 60),
 )
 
+# name, email, role. These two run the new desk. The HighLevel directory below stays a snapshot.
+OFFICE = (
+    ("Владимир Ху", "237779@list.ru", "Ведёт заявки"),
+    ("Виталий Кочанов", "info@canadian-led.com", "Подтверждает счёт выше 2 500 C$"),
+)
+
+# Where the visitor stays after a request. Inbound mail still lands in HighLevel during the trial.
+VIKONN_FUNNEL = (
+    "VIKONN",
+    "active",
+    "После заявки клиент остаётся на https://vikonn.com\n"
+    "Пока идёт проверка, входящие заявки сайта остаются в HighLevel. Сделки не переносятся.",
+)
+
 # name, email, role
 STAFF = (
     ("Admin LED Sales", "sales@canadian-led.com", "Account admin"),

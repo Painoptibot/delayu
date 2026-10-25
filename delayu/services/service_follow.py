@@ -330,7 +330,10 @@ def approval_text(customer: ServiceCustomer) -> str:
         if book is not None and book.approval_amount > limit:
             limit = book.approval_amount
     if limit and totals["total"] > limit:
-        return f"Затраты C${totals['total']} выше порога C${limit}. Нужно согласование."
+        return (
+            f"Затраты C${totals['total']} выше порога C${limit}. "
+            "Подтверждает Виталий Кочанов."
+        )
     return ""
 
 

@@ -140,5 +140,8 @@ class ServicePhoneListView(ServiceContourMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         load_canadian_led(self.subsystem())
         context["phones"] = self.subsystem().service_phones.all()
-        context["staff"] = self.subsystem().service_staff.all()
+        staff = self.subsystem().service_staff.all()
+        office_emails = {"237779@list.ru", "info@canadian-led.com"}
+        context["office"] = staff.filter(email__in=office_emails)
+        context["staff"] = staff.exclude(email__in=office_emails)
         return context

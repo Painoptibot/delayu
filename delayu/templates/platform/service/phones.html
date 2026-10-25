@@ -16,6 +16,19 @@
     {% endfor %}
   </tbody>
 </table>
+<h6 class="mt-4">Офис новой системы</h6>
+<table class="table table-sm">
+  <thead><tr><th>Имя</th><th>Почта</th><th>Роль</th></tr></thead>
+  <tbody>
+    {% for person in office %}
+    <tr>
+      <td>{{ person.name }}</td>
+      <td>{{ person.email }}</td>
+      <td>{{ person.role_name }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 <h6 class="mt-4">Люди локации</h6>
 <p class="text-muted">Девять имён из десяти строк на экране. Десятая строка на снимке совпала с уже названной. Это справочник, входы в ДелаЮ им не выданы.</p>
 <table class="table table-sm">

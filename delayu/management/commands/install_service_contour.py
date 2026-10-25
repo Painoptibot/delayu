@@ -91,9 +91,44 @@ class Command(BaseCommand):
             )
             if created:
                 attached += 1
+        office = self._office_logins(subsystem, org, role)
         self.stdout.write(
             self.style.SUCCESS(
                 f"Сервисный контур {subsystem.code}: модулей {subsystem.module_links.count()}, "
-                f"суперпользователей добавлено {attached}."
+                f"суперпользователей добавлено {attached}, входы офиса {office}."
             )
         )
+
+    def _office_logins(self, subsystem, org, role):
+        people = (
+            ("vladimir", "237779@list.ru", "Владимир", "Ху"),
+            ("vitaly", "info@canadian-led.com", "Виталий", "Кочанов"),
+        )
+        opened = 0
+        for username, email, first, last in people:
+            user = User.objects.filter(username=username).first()
+            if user is None:
+                user = User(
+                    username=username,
+                    email=email,
+                    first_name=first,
+                    last_name=last,
+                    is_active=True,
+                )
+                user.set_unusable_password()
+                user.save()
+                opened += 1
+            else:
+                user.email = email
+                user.first_name = first
+                user.last_name = last
+                user.is_active = True
+                user.save(update_fields=["email", "first_name", "last_name", "is_active"])
+            SubsystemMembership.objects.get_or_create(
+                user=user,
+                subsystem=subsystem,
+                organization=org,
+                role=role,
+                defaults={"is_default": not user.subsystem_memberships.exists()},
+            )
+        return opened
