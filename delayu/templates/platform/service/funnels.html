@@ -1,0 +1,44 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">Воронки сайта: квоты и каталоги. У каждой можно править название, шаги и статус.</p>
+<div class="row g-3 mb-4">
+  {% for row in funnel_rows %}
+  <div class="col-md-6">
+    <div class="border rounded p-3 h-100">
+      <div class="d-flex justify-content-between">
+        <strong>{{ row.item.name }}</strong>
+        <span class="text-muted small">{{ row.item.get_status_display }}</span>
+      </div>
+      <pre class="small mt-2 mb-2">{{ row.item.steps }}</pre>
+      <form method="post" class="mb-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="toggle">
+        <input type="hidden" name="funnel_id" value="{{ row.item.pk }}">
+        <button class="btn btn-sm btn-outline-primary" type="submit">{% if row.item.status == "active" %}В черновик{% else %}Включить{% endif %}</button>
+      </form>
+      <details>
+        <summary class="small">Править воронку</summary>
+        <form method="post" class="mt-2">
+          {% csrf_token %}
+          <input type="hidden" name="form_action" value="save">
+          <input type="hidden" name="funnel_id" value="{{ row.item.pk }}">
+          {% for field in row.form %}
+          <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+          {% endfor %}
+          <button class="btn btn-sm btn-primary" type="submit">Сохранить воронку</button>
+        </form>
+      </details>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<h6>Новая воронка</h6>
+<form method="post">
+  {% csrf_token %}
+  {% for field in form %}
+  <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">Сохранить воронку</button>
+</form>
+<style>form input:not([type=checkbox]), form select, form textarea { width: 100%; }</style>
+{% endblock %}

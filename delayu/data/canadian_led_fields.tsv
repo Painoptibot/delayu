@@ -1,0 +1,122 @@
+name	type	folder	key
+What Services Are You Interested In?	Dropdown (multiple)	Form | IAVI Catalog - ATLE Conference	{{contact.what_services_are_you_interested_in}}
+What is your role at the church?	Dropdown (single)	Form | Buy LED Wall Quote (CHURCH-VSL-CONSULTATION)	{{contact.what_is_your_role_at_the_church}}
+AI Knowledge Version	Single line	Additional Info	{{contact.ai_knowledge_version}}
+AI Budget Range CAD	Single line	Additional Info	{{contact.ai_budget_range_cad}}
+AI Last Synced At	Single line	Additional Info	{{contact.ai_last_synced_at}}
+AI Prompt Version	Single line	Additional Info	{{contact.ai_prompt_version}}
+AI Idempotency Key	Single line	Additional Info	{{contact.ai_idempotency_key}}
+AI Last Call Status	Single line	Additional Info	{{contact.ai_last_call_status}}
+AI Last Call End Reason	Single line	Additional Info	{{contact.ai_last_call_end_reason}}
+AI Installation Event City	Single line	Additional Info	{{contact.ai_installation_event_city}}
+AI Requested Height Ft	Number	Additional Info	{{contact.ai_requested_height_ft}}
+AI Calculated Area Sq Ft	Number	Additional Info	{{contact.ai_calculated_area_sq_ft}}
+AI Installation Event Province	Single line	Additional Info	{{contact.ai_installation_event_province}}
+AI Requested Width Ft	Number	Additional Info	{{contact.ai_requested_width_ft}}
+AI Handoff Status	Dropdown (single)	Additional Info	{{contact.ai_handoff_status}}
+AI Screen Environment	Dropdown (single)	Additional Info	{{contact.ai_screen_environment}}
+AI Handoff Reason	Multi line	Additional Info	{{contact.ai_handoff_reason}}
+AI Human Follow Up Required	Dropdown (single)	Additional Info	{{contact.ai_human_follow_up_required}}
+AI Urgency	Dropdown (single)	Additional Info	{{contact.ai_urgency}}
+AI Inbound Intent	Dropdown (single)	Additional Info	{{contact.ai_inbound_intent}}
+AI Last Call Direction	Dropdown (single)	Additional Info	{{contact.ai_last_call_direction}}
+AI Qualification Status	Dropdown (single)	Additional Info	{{contact.ai_qualification_status}}
+AI Last Call Outcome	Dropdown (single)	Additional Info	{{contact.ai_last_call_outcome}}
+AI Call Summary	Multi line	Additional Info	{{contact.ai_call_summary}}
+AI Last Call ID	Single line	Additional Info	{{contact.ai_last_call_id}}
+Rental Qualified At	Date picker	Rental Information	{{contact.rental_qualified_at}}
+Sales Qualified At	Date picker	Sales Information	{{contact.sales_qualified_at}}
+What's the best time to reach you?	Dropdown (single)	Contact	{{contact.best_contact_time}}
+Timeline	Single line	Opportunity Details	{{opportunity.timeline}}
+What do You Organize?	Dropdown (single)	Form | Rental Quote - Toronto	{{contact.what_do_you_organize}}
+What Is Your Event	Dropdown (single)	Form | RENTAL Quote - WP Website (Organic)	{{contact.what_is_your_event}}
+Choose Your Event Type	Dropdown (single)	Form | Catalog - WP Website Pop Up (Organic)	{{contact.choose_your_event_type}}
+Do You Want to Rent or Buy an LED Screen?	Dropdown (single)	Form | CONTACT US - WP Website (Organic)	{{contact.do_you_want_to_rent_or_buy_an_led_screen}}
+meta-budget	Single line	Contact	{{contact.metabudget}}
+What screen size are you considering for your space?	Dropdown (single)	Form | Buy LED Wall Quote (Alberta)	{{contact.contactwhats_your_expected_timeline_for_the_led_screen_project_cbu_copy}}
+Single Dropdown 20frf	Dropdown (single)	Form | Buy LED Wall Quote (Canada)	{{contact.single_dropdown_20frf}}
+What’s your expected timeline for the LED screen project?	Dropdown (single)	Form | Buy LED Wall Quote (Alberta)	{{contact.whats_your_expected_timeline_for_the_led_screen_project}}
+meta-position	Single line	Contact	{{contact.metaposition}}
+Signature	Signature	—	{{contact.signature}}
+Social Insurance Number (optional):	Single line	—	{{contact.social_insurance_number_optional}}
+Incorporation Date, Since:	Date picker	—	{{contact.incorporation_date_since}}
+Business Website:	Single line	—	{{contact.business_website}}
+First and Last name	Single line	—	{{contact.first_and_last_name}}
+Landlord/Mortgagee Holder:	Single line	—	{{contact.landlord_mortgagee_holder}}
+Business Type	Checkbox	—	{{contact.business_type}}
+Email address:	Single line	—	{{contact.email_address}}
+Phone number (Landlord/Mortgagee Holder):	Single line	—	{{contact.phone_number_landlord_mortgagee_holder}}
+Additional Applicant Address:	Single line	—	{{contact.additional_applicant_address}}
+Number of Employees:	Single line	—	{{contact.number_of_employees}}
+Additional Applicant City:	Single line	—	{{contact.additional_applicant_city}}
+Additional Applicant Province:	Single line	—	{{contact.additional_applicant_province}}
+Gross Yearly Revenue:	Single line	—	{{contact.gross_yearly_revenue}}
+Type of Business:	Single line	—	{{contact.type_of_business}}
+PST/QST Number:	Single line	—	{{contact.pst_qst_number}}
+Additional Applicant Postal Code:	Single line	—	{{contact.additional_applicant_postal_code}}
+Phone Number:	Single line	—	{{contact.phone_number}}
+Operating Name (if applicable):	Single line	—	{{contact.operating_name_if_applicable}}
+Reason for Request	Multi line	Additional Info	{{contact.reason_for_request}}
+Open For In-person/Virtual Meeting (in 1-2 weeks)	Dropdown (single)	Sales Information	{{contact.open_for_inpersonvirtual_meeting_in_12_weeks}}
+Decision Maker?	Dropdown (single)	Sales Information	{{contact.decision_maker}}
+Purchasing Price in Range?	Dropdown (single)	Sales Information	{{contact.purchasing_price_in_range}}
+Want to Install Within 6 Months	Dropdown (single)	Sales Information	{{contact.want_to_install_within_6_months}}
+Screen Size Over 30+ Sqft	Dropdown (single)	Sales Information	{{contact.screen_size_over_30_sqft}}
+Relevant Location (AB, QB, ON)?	Dropdown (single)	Sales Information	{{contact.relevant_location_ab_qb_on}}
+Church Project	Dropdown (single)	Sales Information	{{contact.done_similar_projects_before}}
+Single Dropdown 11ief	Dropdown (single)	Form | Catalog - WP Website Pop Up (Organic)	{{contact.single_dropdown_11ief}}
+Venue Booked?	Dropdown (single)	Rental Information	{{contact.venue_booked}}
+Pricing in Range?	Dropdown (single)	Rental Information	{{contact.pricing_in_range}}
+Used LED screen before?	Dropdown (single)	Rental Information	{{contact.are_they_open_to_projectortv_options}}
+Guests Over 200?	Dropdown (single)	Rental Information	{{contact.guests_over_200}}
+Relevant Location (AB, QB)?	Dropdown (single)	Rental Information	{{contact.relevant_location_ab_qb}}
+Event Within 3 Months?	Dropdown (single)	Rental Information	{{contact.event_within_3_months}}
+Hosted Similar Event Before?	Dropdown (single)	Rental Information	{{contact.hosted_similar_event_before}}
+Created At	Single line	Contact	{{contact.created_at}}
+First response time new	Date picker	Contact	{{contact.first_response_time_new}}
+First call	Date picker	First call at	{{contact.first_call}}
+Lead created at	Date picker	Form | Rental Quote - Toronto	{{contact.lead_created_at}}
+meta-next step	Single line	Contact	{{contact.metanext_step}}
+Meta-interested package	Single line	Contact	{{contact.metainterested_package}}
+First response time	Single line	Contact	{{contact.first_response_time}}
+Event Size	Dropdown (single)	General Info	{{contact.event_size}}
+Event Date	Date picker	Form | Rental Quote - Toronto	{{contact.event_date}}
+Event type	Single line	Form | Rental Quote - Toronto	{{contact.event_type}}
+event_guests	Dropdown (single)	Form | Rental Quote - Toronto	{{contact.event_guests}}
+Country	Dropdown (single)	Company Info	{{business.country}}
+Postal Code	Single line	Company Info	{{business.postalcode}}
+Description	Multi line	Company Info	{{business.description}}
+City	Single line	Company Info	{{business.city}}
+State	Single line	Company Info	{{business.state}}
+Address	Single line	Company Info	{{business.address}}
+Website	Single line	Company Info	{{business.website}}
+Email	Email	Company Info	{{business.email}}
+Phone	Phone	Company Info	{{business.phone}}
+Company Name	Single line	Company Info	{{business.name}}
+Your Message	Multi line	Contact	{{contact.your_message}}
+Meta-City	Single line	Contact	{{contact.metacity}}
+Meta-Event Size	Single line	Contact	{{contact.metaevent_size}}
+Meta-Event date	Single line	Contact	{{contact.metaevent_date}}
+Opportunity name	Single line	Opportunity Details	{{opportunity.name}}
+Pipeline	Dropdown (single)	Opportunity Details	{{opportunity.pipeline_id}}
+Stage	Dropdown (single)	Opportunity Details	{{opportunity.pipeline_stage_id}}
+Status	Dropdown (single)	Opportunity Details	{{opportunity.status}}
+Lead value	Monetary	Opportunity Details	{{opportunity.monetary_value}}
+Owner	Dropdown (single)	Opportunity Details	{{opportunity.assigned_to}}
+Opportunity source	Single line	Opportunity Details	{{opportunity.source}}
+Lost reason	Dropdown (single)	Opportunity Details	{{opportunity.lost_reason}}
+Business name	Single line	General Info	{{contact.company_name}}
+Street address	Single line	General Info	{{contact.address1}}
+City	Single line	General Info	{{contact.city}}
+Country	Dropdown (single)	General Info	{{contact.country}}
+State	Single line	General Info	{{contact.state}}
+Postal code	Single line	General Info	{{contact.postal_code}}
+Website	Single line	General Info	{{contact.website}}
+Timezone	Dropdown (single)	General Info	{{contact.timezone}}
+First name	Single line	Contact	{{contact.first_name}}
+Last name	Single line	Contact	{{contact.last_name}}
+Email	Single line	Contact	{{contact.email}}
+Phone	Phone	Contact	{{contact.phone}}
+Contact source	Single line	Contact	{{contact.source}}
+Contact type	Dropdown (single)	Contact	{{contact.type}}
+Date of birth	Date picker	Contact	{{contact.date_of_birth}}

@@ -76,6 +76,10 @@ MIDDLEWARE = [
 
     "django.contrib.sessions.middleware.SessionMiddleware",
 
+    "django.middleware.locale.LocaleMiddleware",
+
+    "delayu.middleware.ui_language.UiLanguageMiddleware",
+
     "django.middleware.common.CommonMiddleware",
     "delayu.middleware.fuel_portal.FuelPortalMiddleware",
 
@@ -199,6 +203,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 LANGUAGE_CODE = "ru-ru"
+
+LANGUAGES = [
+    ("ru", "Русский"),
+    ("en", "English"),
+]
 
 TIME_ZONE = "Europe/Moscow"
 

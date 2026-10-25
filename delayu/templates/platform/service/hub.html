@@ -1,0 +1,29 @@
+{% extends "platform/_page.html" %}
+{% block header_actions %}
+<a class="btn btn-sm btn-outline-primary" href="{% url 'service-deals' %}">Воронка</a>
+<a class="btn btn-sm btn-outline-primary" href="{% url 'service-customers' %}">Заказчики</a>
+<a class="btn btn-sm btn-outline-primary" href="{% url 'service-objects' %}">Объекты</a>
+{% endblock %}
+{% block card_body %}
+<p class="text-muted">Продажа и аренда LED-экрана. В контур перенесён снимок локации Canadian LED: сценарии, поля, формы, номера и кампании. Карточки 468 сделок не копировались.</p>
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><a class="border rounded p-3 d-block text-decoration-none" href="{% url 'service-deals' %}"><div class="text-muted small">Сделки</div><div class="fs-4">{{ deal_count }}</div></a></div>
+  <div class="col-md-3"><a class="border rounded p-3 d-block text-decoration-none" href="{% url 'service-customers' %}"><div class="text-muted small">Заказчики</div><div class="fs-4">{{ customer_count }}</div></a></div>
+  <div class="col-md-3"><a class="border rounded p-3 d-block text-decoration-none" href="{% url 'service-objects' %}"><div class="text-muted small">Объекты</div><div class="fs-4">{{ object_count }}</div></a></div>
+  <div class="col-md-3"><a class="border rounded p-3 d-block text-decoration-none" href="{% url 'service-customers' %}"><div class="text-muted small">Срок уже наступил</div><div class="fs-4">{{ due_count }}</div></a></div>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><a class="border rounded p-3 d-block text-decoration-none" href="{% url 'service-workflows' %}"><div class="text-muted small">Сценарии</div><div class="fs-4">{{ workflow_count }}</div></a></div>
+  <div class="col-md-3"><a class="border rounded p-3 d-block text-decoration-none" href="{% url 'service-fields' %}"><div class="text-muted small">Свои поля</div><div class="fs-4">{{ field_count }}</div></a></div>
+  <div class="col-md-3"><a class="border rounded p-3 d-block text-decoration-none" href="{% url 'service-forms' %}"><div class="text-muted small">Формы</div><div class="fs-4">{{ form_count }}</div></a></div>
+  <div class="col-md-3"><a class="border rounded p-3 d-block text-decoration-none" href="{% url 'service-phones' %}"><div class="text-muted small">Номера</div><div class="fs-4">{{ phone_count }}</div></a></div>
+</div>
+<h6>Недавние карточки</h6>
+<ul class="list-unstyled mb-0">
+  {% for item in recent %}
+  <li class="mb-1"><a href="{% url 'service-customer' item.pk %}">{{ item.number }} — {{ item.display_name }}</a> <span class="text-muted">{{ item.get_stage_display }}</span></li>
+  {% empty %}
+  <li class="text-muted">Карточек ещё нет. Откройте заказчика — диалог, этап и оплата живут в ней.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

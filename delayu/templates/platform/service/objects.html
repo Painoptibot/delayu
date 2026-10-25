@@ -1,0 +1,49 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <table class="table table-sm align-middle">
+      <thead><tr><th>Объект</th><th>Заказчик</th><th>Этап</th><th>Затраты</th></tr></thead>
+      <tbody>
+        {% for site, totals in sites %}
+        <tr>
+          <td><a href="{% url 'service-object' site.pk %}">{{ site.code }} — {{ site.title }}</a></td>
+          <td><a href="{% url 'service-customer' site.customer_id %}">{{ site.customer.display_name }}</a></td>
+          <td>{{ site.get_stage_display }}</td>
+          <td>C${{ totals.total }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-muted">Объектов нет.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="col-lg-5">
+    {% if has_customers %}
+    <h6>Новый объект</h6>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="mb-2">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Открыть объект</button>
+    </form>
+    {% else %}
+    <h6>Сначала заказчик</h6>
+    <p class="text-muted">Объект ведётся на карточку. Откройте её здесь.</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="open_customer">
+      {% for field in customer_form %}
+      <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Открыть карточку</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+<style>form input:not([type=checkbox]), form select, form textarea { width: 100%; }</style>
+{% endblock %}

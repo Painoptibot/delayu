@@ -80,6 +80,22 @@
               <i class="icon-base ri ri-eye-line icon-22px" id="delayu-privacy-icon"></i>
             </a>
           </li>
+          <li class="nav-item me-1">
+            <div class="d-flex align-items-center gap-1" role="group" aria-label="Язык">
+              <form method="post" action="{% url 'set_language' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <input type="hidden" name="language" value="ru">
+                <button class="btn btn-sm rounded-pill px-2 {% if request.LANGUAGE_CODE|slice:':2' != 'en' %}btn-primary{% else %}btn-text-secondary{% endif %}" type="submit" title="Русский">RU</button>
+              </form>
+              <form method="post" action="{% url 'set_language' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <input type="hidden" name="language" value="en">
+                <button class="btn btn-sm rounded-pill px-2 {% if request.LANGUAGE_CODE|slice:':2' == 'en' %}btn-primary{% else %}btn-text-secondary{% endif %}" type="submit" title="English">EN</button>
+              </form>
+            </div>
+          </li>
           {% include 'partials/navbar_shortcuts.html' %}
           {% include 'partials/subsystem_switcher.html' %}
           {% if unread_notifications %}

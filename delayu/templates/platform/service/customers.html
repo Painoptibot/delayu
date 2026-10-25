@@ -1,0 +1,38 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <table class="table table-sm align-middle">
+      <thead><tr><th>Карточка</th><th>Телефон</th><th>Этап</th><th>Оплата</th></tr></thead>
+      <tbody>
+        {% for item in customers %}
+        <tr>
+          <td><a href="{% url 'service-customer' item.pk %}">{{ item.number }} — {{ item.display_name }}</a></td>
+          <td>{{ item.phone|default:"—" }}</td>
+          <td>{{ item.get_stage_display }}</td>
+          <td>{{ item.get_payment_state_display }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-muted">Пока нет заказчиков.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="col-lg-5">
+    <h6>Новая карточка</h6>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="mb-2">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Открыть карточку</button>
+    </form>
+  </div>
+</div>
+<style>
+  form input, form select, form textarea { width: 100%; }
+</style>
+{% endblock %}

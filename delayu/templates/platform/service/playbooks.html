@@ -1,0 +1,81 @@
+{% extends "platform/_page.html" %}
+{% load l10n %}
+{% block card_body %}
+<p class="text-muted">Один плейбук на вид работ. Стадии общие: вход, квалификация, предложение, обязательство, исполнение, закрытие. Новый вид не копирует карточку, счета и объекты.</p>
+{% for row in books %}
+<div class="border rounded p-3 mb-3">
+  <div class="d-flex justify-content-between">
+    <strong>{{ row.title }}</strong>
+    <span class="text-muted small">{{ row.book.job_type }}</span>
+  </div>
+  <div class="small mt-2">Первое касание {{ row.book.sla_first_hours }} ч · стадия {{ row.book.sla_stage_hours }} ч · миля C${{ row.book.mile_rate }} · час C${{ row.book.hour_rate }} · сила C${{ row.book.crew_rate }}</div>
+  <div class="small text-muted mt-1">{{ row.book.steps }}</div>
+  {% if row.book.after_hours %}<div class="small">Вне часов: {{ row.book.after_hours }}</div>{% endif %}
+  <div class="small">Без движения {{ row.book.stale_days }} дн. · гарантия {{ row.book.warranty_days }} дн. · порог C${{ row.book.approval_amount }}</div>
+  {% if row.book.meeting_advances %}<div class="small">Встреча переносит дело на Meeting scheduled.</div>{% endif %}
+  <form method="post" class="row g-1 mt-2">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="norms">
+    <input type="hidden" name="book_id" value="{{ row.book.pk }}">
+    <div class="col-md-2"><input class="form-control form-control-sm" name="stale_days" value="{{ row.book.stale_days }}"></div>
+    <div class="col-md-2"><input class="form-control form-control-sm" name="warranty_days" value="{{ row.book.warranty_days }}"></div>
+    <div class="col-md-2"><input class="form-control form-control-sm" name="approval_amount" value="{{ row.book.approval_amount|unlocalize }}"></div>
+    <div class="col-md-4"><input class="form-control form-control-sm" name="after_hours" value="{{ row.book.after_hours }}"></div>
+    <div class="col-md-2"><button class="btn btn-sm btn-outline-primary" type="submit">Нормы</button></div>
+  </form>
+  <form method="post" class="row g-1 mt-1">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="clone">
+    <input type="hidden" name="book_id" value="{{ row.book.pk }}">
+    <div class="col-md-3"><input class="form-control form-control-sm" name="code" placeholder="Новый код"></div>
+    <div class="col-md-5"><input class="form-control form-control-sm" name="title" placeholder="Копия плейбука"></div>
+    <div class="col-md-2"><button class="btn btn-sm btn-outline-primary" type="submit">Копировать</button></div>
+  </form>
+</div>
+{% endfor %}
+<h6>Новый вид работ</h6>
+<form method="post" class="row g-2 mb-4">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="type">
+  <div class="col-md-3"><input class="form-control" name="code" placeholder="Код, например modules"></div>
+  <div class="col-md-5"><input class="form-control" name="title" placeholder="Название"></div>
+  <div class="col-md-2"><button class="btn btn-primary" type="submit">Добавить плейбук</button></div>
+</form>
+{% if customers %}
+<h6>Дело выбранного вида на существующей карточке</h6>
+<form method="post" class="row g-2">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="deal">
+  <div class="col-md-4">
+    <select class="form-select" name="customer">
+      {% for customer in customers %}<option value="{{ customer.pk }}">{{ customer.display_name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select class="form-select" name="job_type">
+      {% for row in books %}<option value="{{ row.book.job_type }}">{{ row.title }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3"><input class="form-control" name="title" placeholder="Название дела"></div>
+  <div class="col-md-2"><button class="btn btn-outline-primary" type="submit">Открыть дело</button></div>
+</form>
+{% endif %}
+<h6 class="mt-4">Маршрут провинции</h6>
+<form method="post" class="row g-2 mb-4">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="route">
+  <div class="col-md-3">
+    <select class="form-select" name="job_type">
+      {% for row in books %}<option value="{{ row.book.job_type }}">{{ row.title }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2"><input class="form-control" name="province" placeholder="AB"></div>
+  <div class="col-md-4"><input class="form-control" name="owner_name" placeholder="Владелец"></div>
+  <div class="col-md-2"><button class="btn btn-outline-primary" type="submit">Записать маршрут</button></div>
+</form>
+<h6 class="mt-4">Причины паузы и проигрыша</h6>
+<ul class="small">
+  {% for reason in reasons %}<li>{{ reason.get_kind_display }}: {{ reason.title }}</li>{% endfor %}
+</ul>
+<style>form input, form select { width: 100%; }</style>
+{% endblock %}

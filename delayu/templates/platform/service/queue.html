@@ -1,0 +1,59 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">{{ role_label }}. Пауза дела снимает его со срока первого касания. Пауза канала по-прежнему только держит исходящие.</p>
+<p>{{ digest }}</p>
+<form method="post" class="mb-3">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">Эскалировать просроченные задачи наблюдателям</button></form>
+<div class="d-flex gap-2 mb-3">
+  <a class="btn btn-sm {% if role == 'manager' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?role=manager">Руководитель</a>
+  <a class="btn btn-sm {% if role == 'sales' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?role=sales">Продавец</a>
+  <a class="btn btn-sm {% if role == 'dispatcher' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?role=dispatcher">Диспетчер</a>
+</div>
+<div class="row g-3">
+  <div class="col-md-6">
+    <h6>Без владельца</h6>
+    <ul class="list-unstyled small">
+      {% for deal in unassigned %}
+      <li><a href="{% url 'service-customer' deal.customer_id %}">{{ deal.number }}</a> — {{ deal.title }}</li>
+      {% empty %}<li class="text-muted">Неназначенных нет.</li>{% endfor %}
+    </ul>
+    <h6>Просрочен SLA первого касания</h6>
+    <ul class="list-unstyled small">
+      {% for deal in sla %}
+      <li><a href="{% url 'service-customer' deal.customer_id %}">{{ deal.number }}</a> — {{ deal.title }}</li>
+      {% empty %}<li class="text-muted">Просрочки нет.</li>{% endfor %}
+    </ul>
+    <h6>Без движения</h6>
+    <ul class="list-unstyled small">
+      {% for deal in stale %}
+      <li><a href="{% url 'service-customer' deal.customer_id %}">{{ deal.number }}</a> — {{ deal.title }}</li>
+      {% empty %}<li class="text-muted">Застывших дел нет.</li>{% endfor %}
+    </ul>
+    <h6>Следующее действие наступило</h6>
+    <ul class="list-unstyled small">
+      {% for deal in due %}
+      <li><a href="{% url 'service-customer' deal.customer_id %}">{{ deal.number }}</a> — {{ deal.next_on }}</li>
+      {% empty %}<li class="text-muted">На сегодня действий нет.</li>{% endfor %}
+    </ul>
+    <h6>Пауза дела</h6>
+    <ul class="list-unstyled small">
+      {% for deal in paused %}
+      <li>{{ deal.number }} — {{ deal.pause_reason }}</li>
+      {% empty %}<li class="text-muted">На паузе ничего нет.</li>{% endfor %}
+    </ul>
+  </div>
+  <div class="col-md-6">
+    <h6>Просроченные задачи</h6>
+    <ul class="list-unstyled small">
+      {% for task in overdue %}
+      <li>{{ task.title }} · <a href="{% url 'service-customer' task.customer_id %}">{{ task.customer.display_name }}</a></li>
+      {% empty %}<li class="text-muted">Просроченных задач нет.</li>{% endfor %}
+    </ul>
+    <h6>Площадки в работе</h6>
+    <ul class="list-unstyled small">
+      {% for site in sites %}
+      <li><a href="{% url 'service-object' site.pk %}">{{ site.code }}</a> — {{ site.title }}</li>
+      {% empty %}<li class="text-muted">Для этой роли площадки скрыты или их нет.</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

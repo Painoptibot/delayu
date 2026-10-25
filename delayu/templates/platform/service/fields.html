@@ -1,0 +1,19 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">{{ field_count }} своих полей из локации Canadian LED, папок {{ folders }}. Это каталог вопросов. Ответы 468 сделок сюда не копировались: в снимке не было карточек контактов.</p>
+<table class="table table-sm">
+  <thead><tr><th>Папка</th><th>Поле</th><th>Тип</th><th>Карточка</th></tr></thead>
+  <tbody>
+    {% for field in fields %}
+    <tr>
+      <td>{{ field.folder|default:"—" }}</td>
+      <td>{{ field.name }}</td>
+      <td>{{ field.field_type }}</td>
+      <td>{{ field.get_record_display }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="text-muted">Полей нет.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

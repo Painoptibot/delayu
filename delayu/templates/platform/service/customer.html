@@ -1,0 +1,306 @@
+{% extends "platform/_page.html" %}
+{% block header_actions %}
+<a class="btn btn-sm btn-outline-primary" href="{% url 'service-customers' %}">К списку</a>
+{% endblock %}
+{% block card_body %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <h6>{{ customer.number }}</h6>
+    <form method="post" class="mb-3">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save">
+      {% for field in form %}
+      <div class="mb-2">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Сохранить атрибуты</button>
+    </form>
+    <h6 class="mt-3">Сделки</h6>
+    <ul class="list-unstyled small">
+      {% for row in deals %}
+      <li class="mb-2">
+        {{ row.deal.number }} — {{ row.deal.title }}
+        <span class="text-muted">{{ row.deal.get_stage_display }} · {{ row.universal }}{% if row.deal.status == 'lost' %} · Lost{% endif %}{% if row.deal.owner_name %} · {{ row.deal.owner_name }}{% else %} · без владельца{% endif %}{% if row.deal.paused %} · пауза{% endif %}{% if row.deal.qualification %} · {{ row.deal.qualification }}{% endif %}</span>
+        <form method="post" class="d-flex gap-1 mt-1">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="move_deal">
+          <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+          <select class="form-select form-select-sm" name="stage">
+            {% for code, label in stages %}
+            <option value="{{ code }}" {% if row.deal.stage == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+            <option value="lost" {% if row.deal.status == 'lost' %}selected{% endif %}>Lost</option>
+          </select>
+          <button class="btn btn-sm btn-outline-primary" type="submit">Ок</button>
+        </form>
+        <details class="mt-1">
+          <summary class="small">Править</summary>
+          <form method="post" class="mt-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_deal">
+            <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+            {% for field in row.form %}
+            <div class="mb-1"><label class="form-label small" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+            {% endfor %}
+            <button class="btn btn-sm btn-primary" type="submit">Сохранить сделку</button>
+          </form>
+        </details>
+      </li>
+      {% empty %}
+      <li class="text-muted">Сделок нет.</li>
+      {% endfor %}
+    </ul>
+    <h6 class="mt-3">Задачи</h6>
+    <ul class="list-unstyled small">
+      {% for task in tasks %}
+      <li class="mb-1">
+        {% if task.done %}<s>{{ task.title }}</s>{% else %}{{ task.title }}{% endif %}
+        {% if task.due_on %}<span class="text-muted"> · {{ task.due_on }}</span>{% endif %}
+        <form method="post" class="d-inline">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="task_toggle">
+          <input type="hidden" name="task_id" value="{{ task.pk }}">
+          <button class="btn btn-sm btn-link p-0" type="submit">{% if task.done %}Вернуть{% else %}Сделано{% endif %}</button>
+        </form>
+      </li>
+      {% empty %}
+      <li class="text-muted">Задач нет.</li>
+      {% endfor %}
+    </ul>
+    <form method="post" class="mb-3">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="task">
+      {% for field in task_form %}
+      <div class="mb-1"><label class="form-label small" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <button class="btn btn-sm btn-outline-primary" type="submit">Поставить задачу</button>
+    </form>
+    <p class="small text-muted mb-1">Затраты по площадкам этого заказчика: C${{ totals.total }}</p>
+    <ul class="list-unstyled small">
+      {% for site in sites %}
+      <li><a href="{% url 'service-object' site.pk %}">{{ site.code }} — {{ site.title }}</a> · {{ site.get_stage_display }}</li>
+      {% empty %}
+      <li class="text-muted">Объектов нет.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Диалог</h6>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="release">
+        <button class="btn btn-sm btn-outline-primary" type="submit">Отправить подошедшие по сроку</button>
+      </form>
+    </div>
+    <div class="border rounded p-3 mb-3" style="max-height: 28rem; overflow: auto;">
+      {% for msg in thread %}
+      <div class="mb-3 {% if msg.direction == 'out' %}text-end{% endif %}">
+        <div class="small text-muted">
+          {{ msg.channel_label }} · {{ msg.get_author_kind_display }} · {{ msg.get_kind_display }}
+          {% if msg.status == 'scheduled' %} · ждёт {{ msg.scheduled_for }}{% endif %}
+          {% if msg.last_error %} · {{ msg.last_error }}{% endif %}
+        </div>
+        <div>{{ msg.body }}</div>
+      </div>
+      {% empty %}
+      <p class="text-muted mb-0">Переписка пустая. Входящее с любого канала и ответ агента остаются здесь.</p>
+      {% endfor %}
+    </div>
+    <form method="post" class="row g-2 align-items-end">
+      {% csrf_token %}
+      <div class="col-md-3">
+        <label class="form-label">Канал</label>
+        <select class="form-select" name="channel">
+          {% for channel in ready_channels %}
+          <option value="{{ channel.code }}">{{ channel.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">Текст</label>
+        <input class="form-control" name="body" placeholder="Вопрос заказчика или реплика">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Срок для этапа или оплаты</label>
+        <input class="form-control" type="datetime-local" name="when">
+      </div>
+      <div class="col-12 d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-primary" name="action" value="inbound" type="submit">Записать входящее</button>
+        <button class="btn btn-primary" name="action" value="ask" type="submit">Спросить агента</button>
+        <button class="btn btn-outline-primary" name="action" value="stage" type="submit">Сообщить об этапе</button>
+        <button class="btn btn-outline-primary" name="action" value="payment" type="submit">Сообщить об оплате</button>
+      </div>
+    </form>
+    <p class="small text-muted mt-2 mb-0">Заказчику в США агент пишет по-английски: этап монтажа, счёт и затраты на выезд. Каналы те же, что в HighLevel: SMS, телефон, почта, Facebook, Instagram, WhatsApp, TikTok, Google Business и чат на сайте. Канал на паузе исходящее не принимает. Пауза дела останавливает SLA и не глушит канал.</p>
+  </div>
+</div>
+<div class="row g-4 mt-1">
+  <div class="col-lg-6">
+    <h6>Сопровождение</h6>
+    {% for row in deals %}
+    <div class="border rounded p-3 mb-3">
+      <div class="fw-semibold">{{ row.deal.number }} · {{ row.universal }}</div>
+      <form method="post" class="row g-2 mt-1">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="owner">
+        <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+        <div class="col-md-6"><input class="form-control form-control-sm" name="owner_name" value="{{ row.deal.owner_name }}" placeholder="Владелец"></div>
+        <div class="col-md-6"><input class="form-control form-control-sm" name="observers" value="{{ row.deal.observers }}" placeholder="Наблюдатели"></div>
+        <div class="col-12"><button class="btn btn-sm btn-outline-primary" type="submit">Назначить</button></div>
+      </form>
+      <form method="post" class="d-flex gap-1 mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="advance">
+        <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+        <select class="form-select form-select-sm" name="stage">
+          {% for code, label in stages %}<option value="{{ code }}">{{ label }}</option>{% endfor %}
+          <option value="lost">Lost</option>
+        </select>
+        <select class="form-select form-select-sm" name="lost_reason">
+          <option value="">Причина проигрыша</option>
+          {% for reason in lost_reasons %}<option value="{{ reason.title }}">{{ reason.title }}</option>{% endfor %}
+        </select>
+        <button class="btn btn-sm btn-primary" type="submit">По плейбуку</button>
+      </form>
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="repeat"><input type="hidden" name="deal_id" value="{{ row.deal.pk }}"><button class="btn btn-sm btn-outline-primary" type="submit">Повторить дело</button></form>
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="playbook_message"><input type="hidden" name="deal_id" value="{{ row.deal.pk }}"><button class="btn btn-sm btn-outline-primary" type="submit">Текст стадии</button></form>
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="resume"><input type="hidden" name="deal_id" value="{{ row.deal.pk }}"><button class="btn btn-sm btn-outline-primary" type="submit">Снять паузу</button></form>
+      </div>
+      <form method="post" class="d-flex gap-1 mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="pause">
+        <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+        <select class="form-select form-select-sm" name="pause_reason">
+          {% for reason in pause_reasons %}<option value="{{ reason.title }}">{{ reason.title }}</option>{% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-primary" type="submit">Пауза дела</button>
+      </form>
+      {% if sites %}
+      <form method="post" class="d-flex gap-1 mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="site_link">
+        <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+        <select class="form-select form-select-sm" name="site_id">
+          {% for site in sites %}<option value="{{ site.pk }}">{{ site.title }}</option>{% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-primary" type="submit">Площадка</button>
+      </form>
+      {% endif %}
+      <form method="post" class="row g-1 mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="crew">
+        <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+        <div class="col-md-4"><input class="form-control form-control-sm" name="crew_title" placeholder="Сила или техника"></div>
+        <div class="col-md-2"><input class="form-control form-control-sm" name="planned" placeholder="План"></div>
+        <div class="col-md-2"><input class="form-control form-control-sm" name="actual" placeholder="Факт"></div>
+        <div class="col-md-2"><input class="form-control form-control-sm" name="unit" value="чел"></div>
+        <div class="col-md-2"><button class="btn btn-sm btn-outline-primary" type="submit">Силы</button></div>
+        <div class="col-12"><label class="small"><input type="checkbox" name="damaged"> Повреждение</label></div>
+      </form>
+    </div>
+    {% empty %}
+    <p class="text-muted">Сначала откройте дело. Контакты можно добавить сразу.</p>
+    {% endfor %}
+    <h6>Контакты организации</h6>
+    <ul class="list-unstyled small">
+      {% for person in contacts %}
+      <li>{{ person.name }}{% if person.role_name %} · {{ person.role_name }}{% endif %}{% if person.decides %} · решение{% endif %}</li>
+      {% empty %}<li class="text-muted">Контактов нет. Организация записана в поле карточки.</li>{% endfor %}
+    </ul>
+    <form method="post" class="row g-1">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="contact">
+      <div class="col-md-4"><input class="form-control form-control-sm" name="name" placeholder="Имя"></div>
+      <div class="col-md-3"><input class="form-control form-control-sm" name="role_name" placeholder="Роль"></div>
+      <div class="col-md-3"><input class="form-control form-control-sm" name="phone" placeholder="Телефон"></div>
+      <div class="col-md-2"><button class="btn btn-sm btn-outline-primary" type="submit">Добавить</button></div>
+      <div class="col-12"><label class="small"><input type="checkbox" name="decides"> Принимает решение</label></div>
+    </form>
+    {% if duplicates %}<p class="small">Тот же телефон уже есть на другой карточке.</p>{% endif %}
+    {% if approval %}<p class="small">{{ approval }}</p>{% endif %}
+    {% if checks %}
+    <h6 class="mt-3">Пункты плейбука</h6>
+    <ul class="list-unstyled small">
+      {% for row in checks %}
+      <li>
+        {{ row.deal.number }} · {{ row.item.title }}{% if row.done %} · сделано{% endif %}
+        <form method="post" class="d-inline">{% csrf_token %}
+          <input type="hidden" name="action" value="check">
+          <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+          <input type="hidden" name="item_id" value="{{ row.item.pk }}">
+          <button class="btn btn-sm btn-link p-0" type="submit">Отметить</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if crew_lines %}
+    <h6 class="mt-3">План и факт</h6>
+    <ul class="list-unstyled small">
+      {% for line in crew_lines %}
+      <li>{{ line.title }}: план {{ line.planned }} {{ line.unit }}, факт {{ line.actual }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  <div class="col-lg-6">
+    {% for row in deals %}
+    <form method="post" class="d-flex gap-1 mb-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="next">
+      <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+      <input class="form-control form-control-sm" type="date" name="next_on" value="{{ row.deal.next_on|date:'Y-m-d' }}">
+      <button class="btn btn-sm btn-outline-primary" type="submit">Следующее действие</button>
+    </form>
+    <form method="post" class="d-flex gap-1 mb-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="note">
+      <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+      <input class="form-control form-control-sm" name="body" placeholder="Заметка сотруднику">
+      <button class="btn btn-sm btn-outline-primary" type="submit">Заметка</button>
+    </form>
+    <form method="post" class="mb-2">{% csrf_token %}
+      <input type="hidden" name="action" value="route">
+      <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+      <button class="btn btn-sm btn-outline-primary" type="submit">Владелец по провинции</button>
+    </form>
+    {% if row.deal.revision %}<div class="small text-muted mb-2">Редакция {{ row.deal.revision }}{% if row.deal.warranty_on %} · гарантия до {{ row.deal.warranty_on }}{% endif %}</div>{% endif %}
+    {% endfor %}
+    {% if sites %}
+    <form method="post" class="row g-1 mb-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="gear">
+      <div class="col-md-4">
+        <select class="form-select form-select-sm" name="site_id">{% for site in sites %}<option value="{{ site.pk }}">{{ site.title }}</option>{% endfor %}</select>
+      </div>
+      <div class="col-md-3"><input class="form-control form-control-sm" name="gear_title" placeholder="Экран"></div>
+      <div class="col-md-3"><input class="form-control form-control-sm" name="serial" placeholder="Серийный номер"></div>
+      <div class="col-md-2"><button class="btn btn-sm btn-outline-primary" type="submit">Номер</button></div>
+    </form>
+    {% endif %}
+    {% if gears %}
+    <ul class="list-unstyled small">{% for gear in gears %}<li>{{ gear.title }} · {{ gear.serial }}</li>{% endfor %}</ul>
+    {% endif %}
+    <form method="post" class="mb-2">{% csrf_token %}<input type="hidden" name="action" value="deposit"><button class="btn btn-sm btn-outline-primary" type="submit">Задаток / остаток последнего счёта</button></form>
+    {% if others %}
+    <form method="post" class="d-flex gap-1 mb-3">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="merge">
+      <select class="form-select form-select-sm" name="other_id">{% for other in others %}<option value="{{ other.pk }}">{{ other.number }} {{ other.display_name }}</option>{% endfor %}</select>
+      <button class="btn btn-sm btn-outline-primary" type="submit">Собрать в эту карточку</button>
+    </form>
+    {% endif %}
+    <h6>Хронология дела</h6>
+    <ul class="list-unstyled small">
+      {% for row in story %}
+      <li class="mb-1"><span class="text-muted">{{ row.kind }}</span> — {{ row.text }}</li>
+      {% empty %}<li class="text-muted">Лента соберёт сообщения, стадии, задачи, счета и выезды.</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+<style>form input:not([type=checkbox]), form select, form textarea { width: 100%; }</style>
+{% endblock %}

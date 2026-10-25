@@ -1,0 +1,56 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">Реклама Google, Meta и Bing. Лид из кампании открывает сделку с этим источником. Кампанию можно поправить или выключить.</p>
+{% for row in ad_rows %}
+<div class="border rounded p-3 mb-2">
+  <div class="d-flex justify-content-between">
+    <strong>{{ row.item.name }}</strong>
+    <span class="text-muted small">{{ row.item.network }} · {{ row.item.province|default:"—" }} · {{ row.item.get_job_type_display }}{% if not row.item.active %} · выключена{% endif %}</span>
+  </div>
+  <form method="post" class="mt-2">
+    {% csrf_token %}
+    <input type="hidden" name="form_action" value="toggle">
+    <input type="hidden" name="ad_id" value="{{ row.item.pk }}">
+    <button class="btn btn-sm btn-outline-primary" type="submit">{% if row.item.active %}Выключить{% else %}Включить{% endif %}</button>
+  </form>
+  <details class="mt-2">
+    <summary class="small">Править кампанию</summary>
+    <form method="post" class="mt-2">
+      {% csrf_token %}
+      <input type="hidden" name="form_action" value="save">
+      <input type="hidden" name="ad_id" value="{{ row.item.pk }}">
+      {% for field in row.form %}
+      <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <button class="btn btn-sm btn-primary" type="submit">Сохранить кампанию</button>
+    </form>
+  </details>
+</div>
+{% empty %}
+<p class="text-muted">Кампаний нет.</p>
+{% endfor %}
+<div class="row g-4 mt-2">
+  <div class="col-lg-6">
+    <h6>Новая кампания</h6>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Включить кампанию</button>
+    </form>
+  </div>
+  <div class="col-lg-6">
+    <h6>Лид из кампании</h6>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="lead">
+      {% for field in lead_form %}
+      <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Открыть лид</button>
+    </form>
+  </div>
+</div>
+<style>form input:not([type=checkbox]), form select, form textarea { width: 100%; }</style>
+{% endblock %}

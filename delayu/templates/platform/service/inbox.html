@@ -1,0 +1,16 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">Вся переписка контура. Сообщение остаётся в карточке заказчика, сюда оно попадает той же строкой.</p>
+{% for msg in thread %}
+<div class="border rounded p-2 mb-2">
+  <div class="small text-muted">
+    <a href="{% url 'service-customer' msg.customer_id %}">{{ msg.customer.number }} — {{ msg.customer.display_name }}</a>
+    · {{ msg.channel_label }} · {{ msg.get_direction_display }} · {{ msg.get_kind_display }}
+    {% if msg.status == "scheduled" %} · ждёт {{ msg.scheduled_for }}{% endif %}
+  </div>
+  <div>{{ msg.body }}</div>
+</div>
+{% empty %}
+<p class="text-muted mb-0">Переписки ещё нет. Входящее с каналов и ответ агента появятся здесь и в карточке.</p>
+{% endfor %}
+{% endblock %}

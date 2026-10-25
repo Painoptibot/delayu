@@ -1,0 +1,34 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">Письмо ложится в карточку каждого заказчика с меткой. Пустая метка — все карточки. Готовое письмо можно поправить и записать снова.</p>
+{% for row in mailing_rows %}
+<div class="border rounded p-3 mb-2">
+  <strong>{{ row.item.subject }}</strong>
+  <div class="small text-muted">{{ row.item.audience|default:"все" }} · карточек {{ row.item.sent_count }}</div>
+  <pre class="small mb-2">{{ row.item.body }}</pre>
+  <details>
+    <summary class="small">Править письмо</summary>
+    <form method="post" class="mt-2">
+      {% csrf_token %}
+      <input type="hidden" name="mailing_id" value="{{ row.item.pk }}">
+      {% for field in row.form %}
+      <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <button class="btn btn-sm btn-outline-primary" name="form_action" value="save" type="submit">Сохранить текст</button>
+      <button class="btn btn-sm btn-primary" name="form_action" value="resend" type="submit">Записать в карточки снова</button>
+    </form>
+  </details>
+</div>
+{% empty %}
+<p class="text-muted">Рассылок нет.</p>
+{% endfor %}
+<h6 class="mt-4">Новое письмо</h6>
+<form method="post">
+  {% csrf_token %}
+  {% for field in form %}
+  <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">Записать в карточки</button>
+</form>
+<style>form input:not([type=checkbox]), form select, form textarea { width: 100%; }</style>
+{% endblock %}

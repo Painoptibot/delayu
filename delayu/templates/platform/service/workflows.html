@@ -1,0 +1,41 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">Опубликованный сценарий срабатывает сам. Черновик не запускается. У строки можно сменить папку, событие и действие.</p>
+{% for row in workflow_rows %}
+<div class="border rounded p-3 mb-2">
+  <div class="d-flex justify-content-between align-items-start gap-3">
+    <div>
+      <strong>{{ row.item.name }}</strong>
+      <div class="small text-muted">{{ row.item.folder }} · {{ row.item.get_status_display }} · прошли {{ row.item.enrolled }}{% if row.item.action == "stored" %} · снимок, сам не запускается{% endif %}</div>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="toggle">
+      <input type="hidden" name="workflow_id" value="{{ row.item.pk }}">
+      <button class="btn btn-sm btn-outline-primary" type="submit">{% if row.item.status == "published" %}В черновик{% else %}Опубликовать{% endif %}</button>
+    </form>
+  </div>
+  <details class="mt-2">
+    <summary class="small">Править сценарий</summary>
+    <form method="post" class="row g-2 mt-1">
+      {% csrf_token %}
+      <input type="hidden" name="form_action" value="save">
+      <input type="hidden" name="workflow_id" value="{{ row.item.pk }}">
+      {% for field in row.form %}
+      <div class="col-md-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <div class="col-12"><button class="btn btn-sm btn-primary" type="submit">Сохранить сценарий</button></div>
+    </form>
+  </details>
+</div>
+{% endfor %}
+<h6 class="mt-4">Новый сценарий</h6>
+<form method="post" class="row g-2">
+  {% csrf_token %}
+  {% for field in form %}
+  <div class="col-md-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+  {% endfor %}
+  <div class="col-12"><button class="btn btn-primary" type="submit">Опубликовать</button></div>
+</form>
+<style>form input:not([type=checkbox]), form select, form textarea { width: 100%; }</style>
+{% endblock %}

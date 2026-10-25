@@ -1,0 +1,43 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">Те же две заявки, что на сайте Canadian LED. Каждая открывает заказчика и сделку в New Lead. Если правила квалификации выполнены, сделка сразу уходит в Qualified.</p>
+{% if recent %}
+<h6>Уже открытые заявки</h6>
+<ul class="list-unstyled mb-4">
+  {% for deal in recent %}
+  <li><a href="{% url 'service-customer' deal.customer_id %}">{{ deal.number }} — {{ deal.title }}</a> <span class="text-muted">{{ deal.get_stage_display }} · {{ deal.source }}</span></li>
+  {% endfor %}
+</ul>
+{% endif %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <h6>Квота на покупку</h6>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="kind" value="sale">
+      {% for field in sale_form %}
+      <div class="mb-2">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Открыть сделку на покупку</button>
+    </form>
+  </div>
+  <div class="col-lg-6">
+    <h6>Квота на аренду</h6>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="kind" value="rental">
+      {% for field in rental_form %}
+      <div class="mb-2">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Открыть сделку на аренду</button>
+    </form>
+  </div>
+</div>
+<style>form input, form select, form textarea { width: 100%; }</style>
+{% endblock %}

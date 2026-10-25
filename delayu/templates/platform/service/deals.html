@@ -1,0 +1,78 @@
+{% extends "platform/_page.html" %}
+{% block header_actions %}
+<a class="btn btn-sm btn-outline-primary" href="{% url 'service-customers' %}">Заказчики</a>
+{% endblock %}
+{% block card_body %}
+<p class="text-muted">Воронка LED SALES. Сделка живёт у заказчика: перенос стадии обновляет его карточку.</p>
+<div class="d-flex gap-3 pb-2 mb-4" style="overflow-x: auto;">
+  {% for column in columns %}
+  <div style="min-width: 230px; max-width: 250px;">
+    <div class="small text-muted mb-2">{{ column.label }} · {{ column.deals|length }}</div>
+    {% for row in column.deals %}
+    <div class="border rounded p-2 mb-2">
+      <a href="{% url 'service-customer' row.deal.customer_id %}">{{ row.deal.title }}</a>
+      <div class="small text-muted">{{ row.deal.number }} · {{ row.deal.customer.display_name }}</div>
+      <div class="small">{{ row.deal.get_job_type_display }}{% if row.deal.city %} · {{ row.deal.city }}{% endif %}{% if row.deal.value %} · C${{ row.deal.value }}{% endif %}</div>
+      {% if row.deal.qualification %}<div class="small text-muted">{{ row.deal.qualification }}</div>{% endif %}
+      <form method="post" class="d-flex gap-1 mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="move">
+        <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+        <select class="form-select form-select-sm" name="stage">
+          {% for code, label in stages %}
+          <option value="{{ code }}" {% if code == column.code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-primary" type="submit">Ок</button>
+      </form>
+      <details class="mt-2">
+        <summary class="small">Править сделку</summary>
+        <form method="post" class="mt-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="edit">
+          <input type="hidden" name="deal_id" value="{{ row.deal.pk }}">
+          {% for field in row.form %}
+          <div class="mb-1"><label class="form-label small" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+          {% endfor %}
+          <button class="btn btn-sm btn-primary" type="submit">Сохранить</button>
+        </form>
+      </details>
+    </div>
+    {% empty %}
+    <div class="text-muted small">Пусто</div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+<h6>Новая сделка</h6>
+{% if has_customers %}
+<form method="post" class="row g-2">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="create">
+  {% for field in form %}
+  <div class="col-md-4">
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+  </div>
+  {% endfor %}
+  <div class="col-12">
+    <button class="btn btn-primary" type="submit">Поставить в воронку</button>
+  </div>
+</form>
+{% else %}
+<h6>Сначала заказчик</h6>
+<p class="text-muted">Сделка открывается на карточку. Заполните её здесь, потом вернитесь к воронке.</p>
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="open_customer">
+  {% for field in customer_form %}
+  <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">Открыть карточку</button>
+</form>
+{% endif %}
+<style>
+  form input:not([type=checkbox]), form select, form textarea { width: 100%; }
+</style>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">Задачи по карточкам. Новая задача ставится в карточке заказчика.</p>
+<table class="table table-sm align-middle">
+  <thead><tr><th>Задача</th><th>Заказчик</th><th>Срок</th><th></th></tr></thead>
+  <tbody>
+    {% for task in tasks %}
+    <tr>
+      <td>{% if task.done %}<s>{{ task.title }}</s>{% else %}{{ task.title }}{% endif %}{% if task.note %}<div class="small text-muted">{{ task.note }}</div>{% endif %}</td>
+      <td><a href="{% url 'service-customer' task.customer_id %}">{{ task.customer.display_name }}</a></td>
+      <td>{{ task.due_on|default:"—" }}</td>
+      <td>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="task_id" value="{{ task.pk }}">
+          <button class="btn btn-sm btn-outline-primary" type="submit">{% if task.done %}Вернуть{% else %}Сделано{% endif %}</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="text-muted">Задач нет.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

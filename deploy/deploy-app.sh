@@ -47,6 +47,9 @@ set -a && source "${APP_DIR}/.env" && set +a
 echo "==> Миграции"
 "${VENV}/bin/python" manage.py migrate --noinput
 
+echo "==> Сервисный контур"
+"${VENV}/bin/python" manage.py install_service_contour || echo "service contour: не поставлен"
+
 echo "==> Топливный пропуск (Новороссийск)"
 "${VENV}/bin/python" manage.py seed_fuel_novorossiysk || true
 

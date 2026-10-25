@@ -1,0 +1,79 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">SMS, звонок и WhatsApp ищут карточку по номеру. Незнакомый номер открывает сделку New Lead. Провайдер ещё не подключён: текст остаётся в ленте, наружу сам не уходит.</p>
+<form method="post" class="row g-2 align-items-end mb-4">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="inbound">
+  <div class="col-md-2">
+    <label class="form-label">Канал</label>
+    <select class="form-select" name="channel">
+      {% for channel in live_channels %}
+      <option value="{{ channel.code }}">{{ channel.title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Телефон или почта</label>
+    <input class="form-control" name="address" placeholder="+1 825 258 5393">
+  </div>
+  <div class="col-md-5">
+    <label class="form-label">Текст</label>
+    <input class="form-control" name="body" placeholder="Что сказал заказчик">
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-primary" type="submit">Принять входящее</button>
+  </div>
+</form>
+<table class="table align-middle">
+  <thead><tr><th>Канал</th><th>Куда ложится диалог</th><th>Статус</th><th></th></tr></thead>
+  <tbody>
+    {% for row in channel_rows %}
+    <tr>
+      <td>
+        {{ row.item.title }}
+        <div class="small text-muted">{{ row.item.code }}</div>
+      </td>
+      <td>{{ row.item.detail }}</td>
+      <td>{{ row.item.get_status_display }}</td>
+      <td>
+        <form method="post" class="d-inline">
+          {% csrf_token %}
+          <input type="hidden" name="channel_id" value="{{ row.item.pk }}">
+          <button class="btn btn-sm btn-outline-primary" type="submit">{% if row.item.status == "ready" %}Пауза{% else %}Снова принимать{% endif %}</button>
+        </form>
+        <details class="mt-2">
+          <summary class="small">Править</summary>
+          <form method="post" class="mt-2">
+            {% csrf_token %}
+            <input type="hidden" name="form_action" value="save">
+            <input type="hidden" name="channel_id" value="{{ row.item.pk }}">
+            {% for field in row.form %}
+            <div class="mb-1"><label class="form-label small" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+            {% endfor %}
+            <button class="btn btn-sm btn-primary" type="submit">Сохранить</button>
+          </form>
+          {% if not row.seeded %}
+          <form method="post" class="mt-2">
+            {% csrf_token %}
+            <input type="hidden" name="form_action" value="delete">
+            <input type="hidden" name="channel_id" value="{{ row.item.pk }}">
+            <button class="btn btn-sm btn-outline-danger" type="submit">Удалить</button>
+          </form>
+          {% endif %}
+        </details>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<h6>Новый канал</h6>
+<form method="post" class="row g-2">
+  {% csrf_token %}
+  <input type="hidden" name="form_action" value="create">
+  {% for field in channel_form %}
+  <div class="col-md-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+  {% endfor %}
+  <div class="col-12"><button class="btn btn-primary" type="submit">Добавить канал</button></div>
+</form>
+<style>form input:not([type=checkbox]), form select, form textarea { width: 100%; }</style>
+{% endblock %}

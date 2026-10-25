@@ -92,6 +92,8 @@ _RAW = [
     ("M85", "Конструктор дашбордов", G.UX, False, 85),
     ("M86", "Каталог коннекторов", G.UX, False, 86),
     ("M87", "Odysseus workspace", G.AI, False, 87),
+    ("S01", "Карточка заказчика", G.COMMS, False, 131),
+    ("S02", "Объекты и выезды", G.CASES, False, 132),
 ]
 
 MODULES_FULL = [

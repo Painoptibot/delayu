@@ -7,6 +7,11 @@ class SystemView(TemplateView):
     template_name = "pages/system/not-found.html"
     status = ""
 
+    def dispatch(self, request, *args, **kwargs):
+        if self.status not in ("", None):
+            return self.get(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         # A function to init the global layout. It is defined in web_project/__init__.py file
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))

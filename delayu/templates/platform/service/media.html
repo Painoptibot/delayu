@@ -1,0 +1,43 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">Медиатека LED: церкви, арены, ремонт модулей. Файл можно приложить или оставить только карточку. Карточку можно поправить или убрать.</p>
+{% for row in media_rows %}
+<div class="border rounded p-3 mb-2">
+  <div class="d-flex justify-content-between">
+    <strong>{% if row.item.file %}<a href="{{ row.item.file.url }}">{{ row.item.title }}</a>{% else %}{{ row.item.title }}{% endif %}</strong>
+    <span class="text-muted small">{{ row.item.folder|default:"без папки" }} · {{ row.item.get_kind_display }}</span>
+  </div>
+  {% if row.item.note %}<div class="small text-muted">{{ row.item.note }}</div>{% endif %}
+  {% if row.item.deal %}<div class="small">Дело {{ row.item.deal.number }}{% if row.item.job_type %} · {{ row.item.job_type }}{% endif %}</div>{% endif %}
+  <details class="mt-2">
+    <summary class="small">Править</summary>
+    <form method="post" enctype="multipart/form-data" class="mt-2">
+      {% csrf_token %}
+      <input type="hidden" name="form_action" value="save">
+      <input type="hidden" name="media_id" value="{{ row.item.pk }}">
+      {% for field in row.form %}
+      <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <button class="btn btn-sm btn-primary" type="submit">Сохранить</button>
+    </form>
+    <form method="post" class="mt-2">
+      {% csrf_token %}
+      <input type="hidden" name="form_action" value="delete">
+      <input type="hidden" name="media_id" value="{{ row.item.pk }}">
+      <button class="btn btn-sm btn-outline-danger" type="submit">Убрать из медиатеки</button>
+    </form>
+  </details>
+</div>
+{% empty %}
+<p class="text-muted">Файлов нет.</p>
+{% endfor %}
+<h6 class="mt-4">Новый файл</h6>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {% for field in form %}
+  <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">Добавить в медиатеку</button>
+</form>
+<style>form input:not([type=checkbox]), form select, form textarea { width: 100%; }</style>
+{% endblock %}

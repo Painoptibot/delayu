@@ -1,0 +1,47 @@
+{% extends "platform/_page.html" %}
+{% block card_body %}
+<p class="text-muted">Счета в канадских долларах. Отправленный счёт ставит оплату и стадию Invoice Sent. Оплаченный закрывает оплату в карточке. Черновик можно потом отметить отправленным или оплаченным.</p>
+{% for row in invoice_rows %}
+<div class="border rounded p-3 mb-2">
+  <div class="d-flex justify-content-between">
+    <strong>{{ row.item.number }} — {{ row.item.title }}</strong>
+    <span class="text-muted small">{{ row.item.customer.display_name }} · C${{ row.item.amount }} · {{ row.item.get_status_display }}</span>
+  </div>
+  <details class="mt-2">
+    <summary class="small">Править счёт</summary>
+    <form method="post" class="row g-2 mt-1">
+      {% csrf_token %}
+      <input type="hidden" name="form_action" value="save">
+      <input type="hidden" name="invoice_id" value="{{ row.item.pk }}">
+      {% for field in row.form %}
+      <div class="col-md-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+      <div class="col-12"><button class="btn btn-sm btn-primary" type="submit">Сохранить счёт</button></div>
+    </form>
+  </details>
+</div>
+{% empty %}
+<p class="text-muted">Счетов нет.</p>
+{% endfor %}
+{% if has_customers %}
+<h6 class="mt-4">Новый счёт</h6>
+<form method="post" class="row g-2">
+  {% csrf_token %}
+  {% for field in form %}
+  <div class="col-md-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+  {% endfor %}
+  <div class="col-12"><button class="btn btn-primary" type="submit">Создать счёт</button></div>
+</form>
+{% else %}
+<h6 class="mt-4">Сначала заказчик</h6>
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="open_customer">
+  {% for field in customer_form %}
+  <div class="mb-2"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">Открыть карточку</button>
+</form>
+{% endif %}
+<style>form input:not([type=checkbox]), form select, form textarea { width: 100%; }</style>
+{% endblock %}

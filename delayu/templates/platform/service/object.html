@@ -1,0 +1,127 @@
+{% extends "platform/_page.html" %}
+{% block header_actions %}
+<a class="btn btn-sm btn-outline-primary" href="{% url 'service-customer' site.customer_id %}">Карточка заказчика</a>
+<a class="btn btn-sm btn-outline-primary" href="{% url 'service-objects' %}">К списку</a>
+{% endblock %}
+{% block card_body %}
+<p class="mb-3">{{ site.code }} · {{ site.customer.display_name }} · {{ site.get_status_display }}</p>
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="border rounded p-3"><div class="text-muted small">Дорога</div><strong>C${{ totals.travel }}</strong></div></div>
+  <div class="col-md-3"><div class="border rounded p-3"><div class="text-muted small">Часы сотрудников</div><strong>C${{ totals.labor }}</strong></div></div>
+  <div class="col-md-3"><div class="border rounded p-3"><div class="text-muted small">Силы и средства</div><strong>C${{ totals.resources }}</strong></div></div>
+  <div class="col-md-3"><div class="border rounded p-3"><div class="text-muted small">Всего на объект</div><strong>C${{ totals.total }}</strong></div></div>
+</div>
+<form method="post" class="row g-2 mb-4">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="save">
+  {% for field in form %}
+  <div class="col-md-4">
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+  </div>
+  {% endfor %}
+  <div class="col-12"><button class="btn btn-primary" type="submit">Сохранить объект</button></div>
+</form>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <h6>Выезды</h6>
+    <table class="table table-sm">
+      <thead><tr><th>Когда</th><th>Кто</th><th>Мили</th><th>Часы</th><th>Итого</th></tr></thead>
+      <tbody>
+        {% for row in visits %}
+        <tr>
+          <td>{{ row.item.departed_on }}</td>
+          <td>{{ row.item.employee.get_full_name|default:row.item.employee.username }}</td>
+          <td>{{ row.item.distance_mi }}</td>
+          <td>{{ row.item.hours }}</td>
+          <td>
+            C${{ row.item.total_cost }}
+            <details>
+              <summary class="small">Править</summary>
+              <form method="post" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="visit_save">
+                <input type="hidden" name="visit_id" value="{{ row.item.pk }}">
+                {% for field in row.form %}
+                <div class="mb-1"><label class="form-label small">{{ field.label }}</label>{{ field }}</div>
+                {% endfor %}
+                <button class="btn btn-sm btn-primary" type="submit">Пересчитать</button>
+              </form>
+              <form method="post" class="mt-1">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="visit_delete">
+                <input type="hidden" name="visit_id" value="{{ row.item.pk }}">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Снять</button>
+              </form>
+            </details>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">Выездов нет.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <form method="post" class="row g-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="visit">
+      {% for field in visit_form %}
+      <div class="col-md-6">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <div class="col-12"><button class="btn btn-outline-primary" type="submit">Посчитать выезд</button></div>
+    </form>
+  </div>
+  <div class="col-lg-6">
+    <h6>Силы и средства</h6>
+    <table class="table table-sm">
+      <thead><tr><th>Вид</th><th>Что</th><th>Кол-во</th><th>Сумма</th></tr></thead>
+      <tbody>
+        {% for row in forces %}
+        <tr>
+          <td>{{ row.item.get_kind_display }}</td>
+          <td>{{ row.item.title }}</td>
+          <td>{{ row.item.quantity }} {{ row.item.unit }}</td>
+          <td>
+            C${{ row.item.total_cost }}
+            <details>
+              <summary class="small">Править</summary>
+              <form method="post" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="resource_save">
+                <input type="hidden" name="resource_id" value="{{ row.item.pk }}">
+                {% for field in row.form %}
+                <div class="mb-1"><label class="form-label small">{{ field.label }}</label>{{ field }}</div>
+                {% endfor %}
+                <button class="btn btn-sm btn-primary" type="submit">Пересчитать</button>
+              </form>
+              <form method="post" class="mt-1">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="resource_delete">
+                <input type="hidden" name="resource_id" value="{{ row.item.pk }}">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Снять</button>
+              </form>
+            </details>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-muted">Списаний нет.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <form method="post" class="row g-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="resource">
+      {% for field in force_form %}
+      <div class="col-md-6">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <div class="col-12"><button class="btn btn-outline-primary" type="submit">Списать на объект</button></div>
+    </form>
+  </div>
+</div>
+<style>form input:not([type=checkbox]), form select, form textarea { width: 100%; }</style>
+{% endblock %}

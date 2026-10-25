@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from django.views.generic import RedirectView
 
 from . import (
@@ -21,6 +21,7 @@ from . import (
 from delayu.uzhv.support import UzhvSupportChatView
 
 urlpatterns = [
+    path("", include("delayu.urls_service")),
     path("internal/deploy/", views_deploy.deploy_webhook, name="deploy-webhook"),
     path("landing/", views_landing.LandingView.as_view(), name="platform-landing"),
     path("welcome", views_welcome.WelcomeRedirectView.as_view()),
